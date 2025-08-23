@@ -2,11 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { Player } from "../../domain/game/player";
 import type { PlayerState } from "../../domain/game/player";
 
-export function usePlayer(initial: PlayerState = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 }) {
+export function usePlayer(
+  initial: PlayerState = { x: 0, y: 0, vx: 0, vy: 0, angle: 0, experience: 0, health: 100 },
+) {
   const playerRef = useRef<Player>(new Player(initial));
-  const [playerPos, setPlayerPos] = useState<{ x: number; y: number }>({
+  const [playerPos, setPlayerPos] = useState<{
+    x: number;
+    y: number;
+    experience: number;
+    health: number;
+  }>({
     x: initial.x,
     y: initial.y,
+    experience: initial.experience ?? 0,
+    health: initial.health ?? 100,
   });
   const prevSpeedRef = useRef<number>(playerRef.current.getSpeedMultiplier());
 
@@ -24,9 +33,14 @@ export function usePlayer(initial: PlayerState = { x: 0, y: 0, vx: 0, vy: 0, ang
     }
   }, []);
 
-  function updatePlayer(dt: number, actions: Set<string>) {
-    playerRef.current.update(dt, actions);
-    setPlayerPos({ x: playerRef.current.state.x, y: playerRef.current.state.y });
+  function updatePlayer(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
+    playerRef.current.update(dt, actions, visitedPlanet);
+    setPlayerPos({
+      x: playerRef.current.state.x,
+      y: playerRef.current.state.y,
+      experience: playerRef.current.state.experience ?? 0,
+      health: playerRef.current.state.health ?? 100,
+    });
     // Persist speed multiplier if it changed
     const current = playerRef.current.getSpeedMultiplier();
     if (current !== prevSpeedRef.current) {

@@ -4,6 +4,8 @@ import type { Planet } from "../../domain/game/planets";
 
 export function HudPanel({
   player,
+  score = 0,
+  health = 100,
   planets,
   screenW,
   screenH,
@@ -15,6 +17,8 @@ export function HudPanel({
   onOpenSettings,
 }: {
   player: { x: number; y: number };
+  score?: number;
+  health?: number;
   planets: Planet[];
   screenW: number;
   screenH: number;
@@ -29,6 +33,8 @@ export function HudPanel({
     <div className="pointer-events-none absolute inset-0 p-4 flex items-start justify-between">
       <Hud
         player={player}
+        score={score}
+        health={health}
         planets={planets}
         screenW={screenW}
         screenH={screenH}

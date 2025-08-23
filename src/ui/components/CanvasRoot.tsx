@@ -64,6 +64,8 @@ export default function CanvasRoot() {
         />
         <HudPanel
           player={playerPos}
+          experience={playerPos.experience}
+          health={playerPos.health}
           planets={planets}
           screenW={size.width}
           screenH={size.height}

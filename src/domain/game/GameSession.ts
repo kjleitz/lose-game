@@ -32,16 +32,6 @@ export class GameSession {
     maybeGenerateRegion: (center: { x: number; y: number }, regionKey: string) => void,
     dt: number,
   ) {
-    updatePlayer(dt, actions);
-    setCameraPosition(this.camera, this.player.state.x, this.player.state.y);
-    // Procedural planet generation by region (grid-based)
-    const gridStep = Math.max(this.size.width, this.size.height) / 3;
-    const REGION_SIZE = gridStep; // generate once per grid cell crossed
-    const regionX = Math.floor(this.player.state.x / REGION_SIZE);
-    const regionY = Math.floor(this.player.state.y / REGION_SIZE);
-    const regionKey = `${regionX},${regionY}`;
-    // Center generation around the player's current position so new cells appear ahead
-    maybeGenerateRegion({ x: this.player.state.x, y: this.player.state.y }, regionKey);
     // Check proximity to planets
     let foundPlanet: Planet | null = null;
     for (const planet of this.planets) {
@@ -51,6 +41,17 @@ export class GameSession {
         break;
       }
     }
+    // Pass visitedPlanet to updatePlayer
+    updatePlayer(dt, actions, !!foundPlanet);
+    setCameraPosition(this.camera, this.player.state.x, this.player.state.y);
+    // Procedural planet generation by region (grid-based)
+    const gridStep = Math.max(this.size.width, this.size.height) / 3;
+    const REGION_SIZE = gridStep; // generate once per grid cell crossed
+    const regionX = Math.floor(this.player.state.x / REGION_SIZE);
+    const regionY = Math.floor(this.player.state.y / REGION_SIZE);
+    const regionKey = `${regionX},${regionY}`;
+    // Center generation around the player's current position so new cells appear ahead
+    maybeGenerateRegion({ x: this.player.state.x, y: this.player.state.y }, regionKey);
     if (foundPlanet) {
       this.notification = `Arrived at planet! (${foundPlanet.id})`;
     } else {

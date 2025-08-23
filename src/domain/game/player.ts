@@ -4,6 +4,8 @@ export type PlayerState = {
   vx: number;
   vy: number;
   angle: number;
+  experience?: number;
+  health?: number;
 };
 
 export class Player {
@@ -13,10 +15,14 @@ export class Player {
   private readonly MAX_MULT = 5;
 
   constructor(initial: PlayerState) {
-    this.state = { ...initial };
+    this.state = {
+      ...initial,
+      experience: initial.experience ?? 0,
+      health: initial.health ?? 100,
+    };
   }
 
-  update(dt: number, actions: Set<string>) {
+  update(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
     const TURN_SPEED = 2.5;
     const BASE_THRUST = 280; // base ship thrust (units/sec^2)
     const DRAG = 0.98;
@@ -40,6 +46,14 @@ export class Player {
     this.state.y += this.state.vy * dt;
     this.state.vx *= DRAG;
     this.state.vy *= DRAG;
+    // Example: decrease health if moving fast
+    if (Math.abs(this.state.vx) + Math.abs(this.state.vy) > 500) {
+      this.state.health = Math.max(0, (this.state.health ?? 100) - Math.floor(1 * dt * 10));
+    }
+    // Increment experience if visiting a planet
+    if (visitedPlanet) {
+      this.state.experience = (this.state.experience ?? 0) + 10;
+    }
   }
 
   getSpeedMultiplier() {
