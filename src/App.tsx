@@ -1,4 +1,4 @@
-import CanvasRoot from "./ui/CanvasRoot";
+import CanvasRoot from "./ui/components/CanvasRoot";
 import "./App.css";
 
 export default function App() {

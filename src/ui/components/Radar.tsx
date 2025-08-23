@@ -1,0 +1,81 @@
+import type { Planet } from "../../domain/game/planets";
+import PlanetSVG from "./PlanetSVG";
+import { RadarService } from "../../domain/services/RadarService";
+
+interface RadarProps {
+  player: { x: number; y: number };
+  planets: Planet[];
+  screenW: number;
+  screenH: number;
+}
+
+export default function Radar({ player, planets, screenW, screenH }: RadarProps) {
+  const radarService = new RadarService(screenW, screenH);
+  const RADAR_SIZE = radarService.RADAR_SIZE;
+  return (
+    <div className="absolute right-8 bottom-8 z-10">
+      <svg width={RADAR_SIZE} height={RADAR_SIZE} style={{ display: "block" }}>
+        <defs>
+          <clipPath id="radar-clip">
+            <circle cx={RADAR_SIZE / 2} cy={RADAR_SIZE / 2} r={RADAR_SIZE / 2 - 2} />
+          </clipPath>
+        </defs>
+        <circle
+          cx={RADAR_SIZE / 2}
+          cy={RADAR_SIZE / 2}
+          r={RADAR_SIZE / 2 - 2}
+          fill="#222"
+          stroke="#888"
+          strokeWidth={2}
+        />
+        {/* Player dot */}
+        <circle
+          cx={RADAR_SIZE / 2}
+          cy={RADAR_SIZE / 2}
+          r={6}
+          fill="#fff"
+          stroke="#0ff"
+          strokeWidth={2}
+        />
+        {/* Planets and edge indicators */}
+        {planets.map((p) => {
+          const dx = p.x - player.x;
+          const dy = p.y - player.y;
+          const angle = Math.atan2(dy, dx);
+          const { x, y, r } = radarService.toRadarCoordsAndScale(player, p.x, p.y, p.radius);
+          const radarCenter = RADAR_SIZE / 2;
+          const radarRadius = radarCenter - 2;
+          const distToCenter = Math.hypot(x - radarCenter, y - radarCenter);
+          if (distToCenter <= radarRadius + r) {
+            return (
+              <g key={p.id} clipPath="url(#radar-clip)">
+                <PlanetSVG planet={p} x={x} y={y} r={r} />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth={1}
+                  opacity={0.8}
+                />
+              </g>
+            );
+          } else {
+            const arrow = radarService.getEdgeArrow(angle);
+            return (
+              <polygon
+                key={p.id}
+                points={arrow.points.map(([px, py]) => `${px},${py}`).join(" ")}
+                fill={p.color}
+                stroke="#fff"
+                strokeWidth={1}
+                opacity={0.85}
+              />
+            );
+          }
+        })}
+      </svg>
+    </div>
+  );
+}
