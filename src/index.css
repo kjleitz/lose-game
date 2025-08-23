@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-hud-bg text-slate-100 antialiased;
+  margin: 0;
+}
+
+.hud-panel {
+  @apply font-hud bg-hud-bg/80 border border-hud-accent/30 rounded-md shadow-lg;
+}
+
+.hud-text {
+  @apply font-hud text-hud-accent tracking-wider;
+}

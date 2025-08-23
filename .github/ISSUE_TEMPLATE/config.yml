@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributor Guide
+    url: https://github.com/keegan/lose-game/blob/main/AGENTS.md
+    about: Read this first if you plan to contribute.
