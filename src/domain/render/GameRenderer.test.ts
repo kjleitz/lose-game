@@ -16,6 +16,12 @@ describe("GameRenderer", () => {
       clearRect: () => {},
       fillRect: () => {},
       fillStyle: "",
+      save: () => {},
+      restore: () => {},
+      beginPath: () => {},
+      arc: () => {},
+      fill: () => {},
+      stroke: () => {},
       canvas: { width: 800, height: 600 } as HTMLCanvasElement,
     };
     const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };

@@ -12,10 +12,11 @@ describe("Player", () => {
     const initial = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
     const player = new Player(initial);
     player.update(1, new Set(["thrust"]));
-    expect(player.state.vx).not.toBe(0);
-    expect(player.state.vy).not.toBe(0);
-    expect(player.state.x).not.toBe(0);
-    expect(player.state.y).not.toBe(0);
+    // Angle=0 thrust accelerates along +x only
+    expect(player.state.vx).toBeGreaterThan(0);
+    expect(player.state.vy).toBe(0);
+    expect(player.state.x).toBeGreaterThan(0);
+    expect(player.state.y).toBe(0);
   });
 
   it("updates angle with turnLeft and turnRight", () => {

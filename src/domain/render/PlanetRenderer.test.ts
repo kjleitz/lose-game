@@ -14,6 +14,9 @@ describe("PlanetRenderer", () => {
       // No-op for required methods
       setTransform: () => {},
       fillRect: () => {},
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
       beginPath: () => {},
       arc: () => {},
       fill: () => {},

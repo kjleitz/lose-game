@@ -1,6 +1,13 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render } from "@testing-library/react";
 import { CanvasRenderer } from "./CanvasRenderer";
+
+// Avoid relying on actual 2D canvas context implementation
+vi.mock("../../domain/render/GameRenderer", () => ({
+  GameRenderer: class {
+    render() {}
+  },
+}));
 
 describe("CanvasRenderer", () => {
   it("renders a canvas element", () => {
@@ -13,7 +20,7 @@ describe("CanvasRenderer", () => {
         size={{ width: 300, height: 150 }}
       />,
     );
-    const canvas = screen.getByRole("img", { hidden: true });
-    expect(canvas.tagName).toBe("CANVAS");
+    const canvas = document.querySelector("canvas");
+    expect(canvas?.tagName).toBe("CANVAS");
   });
 });

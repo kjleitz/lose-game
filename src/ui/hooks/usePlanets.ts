@@ -9,7 +9,7 @@ export function usePlanets(
   const managerRef = useRef<PlanetManager>(new PlanetManager(size, initialCenter));
   const [planets, setPlanets] = useState<Planet[]>(managerRef.current.getPlanets());
 
-  function maybeGenerateRegion(center: { x: number; y: number }, regionKey: string, count = 4) {
+  function maybeGenerateRegion(center: { x: number; y: number }, regionKey: string, count = 16) {
     managerRef.current.maybeGenerateRegion(center, regionKey, count, size);
     setPlanets([...managerRef.current.getPlanets()]);
   }

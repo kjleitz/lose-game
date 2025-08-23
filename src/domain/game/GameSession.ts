@@ -34,12 +34,14 @@ export class GameSession {
   ) {
     updatePlayer(dt, actions);
     setCameraPosition(this.camera, this.player.state.x, this.player.state.y);
-    // Procedural planet generation by region
-    const REGION_SIZE = Math.max(this.size.width, this.size.height) * 4;
+    // Procedural planet generation by region (grid-based)
+    const gridStep = Math.max(this.size.width, this.size.height) / 3;
+    const REGION_SIZE = gridStep; // generate once per grid cell crossed
     const regionX = Math.floor(this.player.state.x / REGION_SIZE);
     const regionY = Math.floor(this.player.state.y / REGION_SIZE);
     const regionKey = `${regionX},${regionY}`;
-    maybeGenerateRegion({ x: regionX * REGION_SIZE, y: regionY * REGION_SIZE }, regionKey);
+    // Center generation around the player's current position so new cells appear ahead
+    maybeGenerateRegion({ x: this.player.state.x, y: this.player.state.y }, regionKey);
     // Check proximity to planets
     let foundPlanet: Planet | null = null;
     for (const planet of this.planets) {

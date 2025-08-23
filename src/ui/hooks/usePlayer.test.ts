@@ -14,8 +14,8 @@ describe("usePlayer", () => {
       result.current.updatePlayer(1, new Set(["thrust"]));
     });
     // After thrust, position should change
-    expect(result.current.playerPos.x).not.toBe(0);
-    expect(result.current.playerPos.y).not.toBe(0);
+    expect(result.current.playerPos.x).toBeGreaterThan(0);
+    expect(result.current.playerPos.y).toBe(0);
   });
 
   it("playerRef always points to Player instance", () => {

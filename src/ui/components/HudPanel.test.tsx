@@ -1,21 +1,34 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { HudPanel } from "./HudPanel";
 
 describe("HudPanel", () => {
-  it("renders the HUD panel div", () => {
-    const { container } = render(
+  function renderPanel(overrides?: Partial<React.ComponentProps<typeof HudPanel>>) {
+    return render(
       <HudPanel
         player={{ x: 0, y: 0 }}
         planets={[]}
         screenW={800}
         screenH={600}
-        notification={"Test notification"}
-        actions={new Set(["move"])}
-        paused={false}
+        notification={overrides?.notification ?? "Hello"}
+        actions={overrides?.actions ?? new Set()}
+        paused={overrides?.paused ?? false}
       />,
     );
-    const div = container.querySelector(".hud-panel.px-3.py-2.space-y-1.pointer-events-auto");
-    expect(div).not.toBeNull();
+  }
+
+  it("shows 'idle' when there are no actions", () => {
+    renderPanel({ actions: new Set() });
+    expect(screen.getByText("idle")).toBeInTheDocument();
+  });
+
+  it("lists current actions when present", () => {
+    renderPanel({ actions: new Set(["thrust", "turnLeft"]) });
+    expect(screen.getByText(/thrust, turnLeft|turnLeft, thrust/)).toBeInTheDocument();
+  });
+
+  it("indicates when paused", () => {
+    renderPanel({ paused: true });
+    expect(screen.getByText("paused")).toBeInTheDocument();
   });
 });

@@ -7,6 +7,7 @@ import { GameLoopProvider } from "./GameLoopProvider";
 import { CanvasRenderer } from "./CanvasRenderer";
 import { HudPanel } from "./HudPanel";
 import { GameSession } from "../../domain/game/GameSession";
+import SettingsModal from "./SettingsModal";
 
 function useCanvasSize() {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -26,6 +27,7 @@ export default function CanvasRoot() {
   const { actions, updateActions } = useInput();
   const [paused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Create GameSession instance
   const gameSessionRef = useRef<GameSession | null>(null);
@@ -50,7 +52,6 @@ export default function CanvasRoot() {
     // CanvasRenderer handles all drawing
     // No-op here, handled by CanvasRenderer
   }
-
   return (
     <div className="relative w-screen h-screen overflow-hidden">
       <GameLoopProvider update={update} render={render}>
@@ -69,6 +70,29 @@ export default function CanvasRoot() {
           notification={notification}
           actions={actions}
           paused={paused}
+          speedMultiplier={playerRef.current.getSpeedMultiplier()}
+          onChangeSpeed={(n) => {
+            playerRef.current.setSpeedMultiplier(n);
+            try {
+              window.localStorage.setItem("lose.speedMultiplier", String(n));
+            } catch {
+              // ignore errors
+            }
+          }}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+        <SettingsModal
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          speed={playerRef.current.getSpeedMultiplier()}
+          onChangeSpeed={(n) => {
+            playerRef.current.setSpeedMultiplier(n);
+            try {
+              window.localStorage.setItem("lose.speedMultiplier", String(n));
+            } catch {
+              // ignore errors
+            }
+          }}
         />
       </GameLoopProvider>
     </div>
