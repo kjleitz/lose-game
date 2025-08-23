@@ -1,0 +1,10 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <g>
+  <!-- Outer blue glow: inverted cone -->
+  <polygon points='8,24 0,16 0,32' fill='#57aaff' fill-opacity='0.5'/>
+  <!-- Inner white-hot core: smaller cone -->
+  <polygon points='8,24 2,18 2,30' fill='#ffffff' fill-opacity='0.8'/>
+  <!-- Red accent (afterburner): narrow cone -->
+  <polygon points='8,24 4,20 4,28' fill='#ff3c3c' fill-opacity='0.7'/>
+  </g>
+</svg>

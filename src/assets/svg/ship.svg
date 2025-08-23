@@ -1,0 +1,12 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <g>
+  <!-- Hull: white base color -->
+  <polygon points='40,24 8,12 8,36' fill='#fff' stroke='#b0b6be' stroke-width='2'/>
+  <!-- Cockpit: blue-tinted window triangle at the tip -->
+  <polygon points='40,24 30,21 30,27' fill='#57aaff' fill-opacity='0.7' stroke='#1e355e' stroke-width='1'/>
+    <!-- Accent stripe -->
+    <rect x='18' y='22' width='10' height='4' rx='1' fill='#ff3c3c' opacity='0.8'/>
+    <!-- Engine glow (subtle) -->
+    <ellipse cx='10' cy='24' rx='2.5' ry='4' fill='#57aaff' opacity='0.5'/>
+  </g>
+</svg>

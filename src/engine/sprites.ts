@@ -1,53 +1,64 @@
+// Module-level cache for the SVG image and loaded state
+let shipImg: HTMLImageElement | null = null;
+let shipImgLoaded = false;
+
 export function drawShipTriangle(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   angle: number,
-  color = "#57ffd8",
   size = 24,
 ) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.beginPath();
-  // Triangle pointing along +X axis
-  const half = size / 2;
-  ctx.moveTo(half, 0);
-  ctx.lineTo(-half, -half * 0.6);
-  ctx.lineTo(-half, half * 0.6);
-  ctx.closePath();
-  ctx.fillStyle = color + "AA"; // translucent fill
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
+  if (!shipImg) {
+    shipImg = new window.Image();
+    shipImg.src = "/src/assets/svg/ship.svg";
+    shipImg.onload = () => {
+      shipImgLoaded = true;
+    };
+  }
+  if (shipImgLoaded && shipImg) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.drawImage(shipImg, -size / 2, -size / 2, size, size);
+    ctx.restore();
+  }
+  // No fallback: only draw SVG if loaded
 }
+
+// Module-level cache for the thruster SVG image and loaded state
+let thrusterImg: HTMLImageElement | null = null;
+let thrusterImgLoaded = false;
 
 export function drawThruster(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   angle: number,
-  color = "#57ffd8",
   size = 24,
   power = 1,
 ) {
-  // Draw a simple flare behind the ship
-  const back = size / 2;
-  const length = size * (0.8 + 1.2 * power);
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.beginPath();
-  ctx.moveTo(-back, 0);
-  ctx.lineTo(-back - length, -size * 0.25);
-  ctx.lineTo(-back - length, size * 0.25);
-  ctx.closePath();
-  ctx.fillStyle = color + "55"; // translucent inner
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
+  if (!thrusterImg) {
+    thrusterImg = new window.Image();
+    thrusterImg.src = "/src/assets/svg/thruster.svg";
+    thrusterImg.onload = () => {
+      thrusterImgLoaded = true;
+    };
+  }
+  if (thrusterImgLoaded && thrusterImg) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    // Optionally scale the SVG based on power
+    const scale = 0.8 + 1.2 * power;
+    ctx.drawImage(
+      thrusterImg,
+      (-size / 2) * scale,
+      (-size / 2) * scale,
+      size * scale,
+      size * scale,
+    );
+    ctx.restore();
+  }
+  // No fallback: only draw SVG if loaded
 }

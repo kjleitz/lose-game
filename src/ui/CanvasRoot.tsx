@@ -148,9 +148,9 @@ export default function CanvasRoot() {
       if (thrusting) {
         const speed = Math.hypot(ship.vx, ship.vy);
         const power = Math.min(1, 0.3 + speed / 300);
-        drawThruster(ctx, ship.x, ship.y, ship.angle, "#57ffd8", 24, power);
+        drawThruster(ctx, ship.x, ship.y, ship.angle, 48, power);
       }
-      drawShipTriangle(ctx, ship.x, ship.y, ship.angle, "#57ffd8", 24);
+      drawShipTriangle(ctx, ship.x, ship.y, ship.angle, 48);
 
       // FX layer hook for later (particles, etc.)
     };
