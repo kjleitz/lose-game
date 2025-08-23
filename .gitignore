@@ -45,3 +45,9 @@ Thumbs.db
 
 # Optional: ignore docs build output
 /docs/dist/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
