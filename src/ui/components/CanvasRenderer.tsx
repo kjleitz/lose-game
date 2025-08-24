@@ -1,17 +1,22 @@
 import { useRef, useEffect } from "react";
 import { GameRenderer } from "../../domain/render/GameRenderer";
 import type { Planet } from "../../domain/game/planets";
+import type { Enemy } from "../../domain/game/enemies";
 
 export function CanvasRenderer({
   player,
   camera,
   planets,
+  projectiles,
+  enemies,
   actions,
   size,
 }: {
   player: { x: number; y: number; vx: number; vy: number; angle: number };
   camera: { x: number; y: number; zoom: number };
   planets: Planet[];
+  projectiles: Array<{ x: number; y: number; radius: number }>;
+  enemies: Enemy[];
   actions: Set<string>;
   size: { width: number; height: number };
 }) {
@@ -20,6 +25,8 @@ export function CanvasRenderer({
   const playerRef = useRef(player);
   const cameraRef = useRef(camera);
   const planetsRef = useRef(planets);
+  const projectilesRef = useRef(projectiles);
+  const enemiesRef = useRef(enemies);
   const actionsRef = useRef(actions);
   const sizeRef = useRef(size);
 
@@ -32,6 +39,12 @@ export function CanvasRenderer({
   useEffect(() => {
     planetsRef.current = planets;
   }, [planets]);
+  useEffect(() => {
+    projectilesRef.current = projectiles;
+  }, [projectiles]);
+  useEffect(() => {
+    enemiesRef.current = enemies;
+  }, [enemies]);
   useEffect(() => {
     actionsRef.current = actions;
   }, [actions]);
@@ -65,6 +78,8 @@ export function CanvasRenderer({
         playerRef.current,
         cameraRef.current,
         planetsRef.current,
+        projectilesRef.current,
+        enemiesRef.current,
         actionsRef.current,
         sizeRef.current,
         dpr,

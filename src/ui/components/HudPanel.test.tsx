@@ -1,16 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { HudPanel } from "./HudPanel";
+import { ControlsPanel } from "../hud/panels/ControlsPanel";
 
-describe("HudPanel", () => {
-  function renderPanel(overrides?: Partial<React.ComponentProps<typeof HudPanel>>) {
+describe("ControlsPanel", () => {
+  function renderPanel(overrides?: Partial<React.ComponentProps<typeof ControlsPanel>>) {
     return render(
-      <HudPanel
-        player={{ x: 0, y: 0 }}
-        planets={[]}
-        screenW={800}
-        screenH={600}
-        notification={overrides?.notification ?? "Hello"}
+      <ControlsPanel
         actions={overrides?.actions ?? new Set()}
         paused={overrides?.paused ?? false}
       />,

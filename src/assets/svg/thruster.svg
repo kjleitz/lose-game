@@ -1,10 +1,10 @@
 <svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
   <g>
-  <!-- Outer blue glow: inverted cone -->
-  <polygon points='8,24 0,16 0,32' fill='#57aaff' fill-opacity='0.5'/>
-  <!-- Inner white-hot core: smaller cone -->
-  <polygon points='8,24 2,18 2,30' fill='#ffffff' fill-opacity='0.8'/>
-  <!-- Red accent (afterburner): narrow cone -->
-  <polygon points='8,24 4,20 4,28' fill='#ff3c3c' fill-opacity='0.7'/>
+  <!-- Outer blue glow: narrow teardrop with very rounded end -->
+  <path d='M 0 24 L 8 20 Q 12 24 8 28 Z' fill='#57aaff' fill-opacity='0.5'/>
+  <!-- Inner white-hot core: narrower teardrop -->
+  <path d='M 2 24 L 8 21 Q 11 24 8 27 Z' fill='#ffffff' fill-opacity='0.8'/>
+  <!-- Red accent (afterburner): very narrow teardrop -->
+  <path d='M 4 24 L 8 22 Q 10 24 8 26 Z' fill='#ff3c3c' fill-opacity='0.7'/>
   </g>
 </svg>

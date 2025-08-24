@@ -1,0 +1,44 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='32' height='20' viewBox='0 0 32 20'>
+  <defs>
+    <!-- Multi-layered flame gradient -->
+    <radialGradient id='flameCore' cx='0.2' cy='0.5' r='0.9'>
+      <stop offset='0%' stop-color='#ffb700' stop-opacity='1'/>
+      <stop offset='30%' stop-color='#ff9500' stop-opacity='0.95'/>
+      <stop offset='60%' stop-color='#e76f51' stop-opacity='0.8'/>
+      <stop offset='85%' stop-color='#c44536' stop-opacity='0.5'/>
+      <stop offset='100%' stop-color='#264653' stop-opacity='0.1'/>
+    </radialGradient>
+    
+    <linearGradient id='flameTail' x1='0' y1='0.5' x2='1' y2='0.5'>
+      <stop offset='0%' stop-color='#ff9500' stop-opacity='0.8'/>
+      <stop offset='50%' stop-color='#e76f51' stop-opacity='0.4'/>
+      <stop offset='100%' stop-color='#c44536' stop-opacity='0.1'/>
+    </linearGradient>
+  </defs>
+  
+  <g>
+    <!-- Outer flame envelope with sleek shape -->
+    <path d='M 2 10
+             Q 8 5, 16 7
+             Q 24 8, 30 10
+             Q 24 12, 16 13
+             Q 8 15, 2 10 Z' 
+          fill='url(#flameTail)' opacity='0.6'/>
+    
+    <!-- Main thruster flame body -->
+    <ellipse cx='8' cy='10' rx='20' ry='7' fill='url(#flameCore)' opacity='0.8'/>
+    
+    <!-- Inner core with rounded ends -->
+    <ellipse cx='10' cy='10' rx='12' ry='4' fill='#ff9500' opacity='0.9'/>
+    
+    <!-- Hot center streak -->
+    <ellipse cx='12' cy='10' rx='6' ry='2.5' fill='#ffb700' opacity='0.95'/>
+    
+    <!-- Plasma wisps -->
+    <ellipse cx='6' cy='8' rx='3' ry='1' fill='#ff9500' opacity='0.7'/>
+    <ellipse cx='6' cy='12' rx='3' ry='1' fill='#ff9500' opacity='0.7'/>
+    
+    <!-- Core hotspot -->
+    <ellipse cx='14' cy='10' rx='2.5' ry='1.5' fill='#ffffff' opacity='0.8'/>
+  </g>
+</svg>

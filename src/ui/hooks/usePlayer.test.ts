@@ -5,7 +5,7 @@ import { usePlayer } from "./usePlayer";
 describe("usePlayer", () => {
   it("initializes with correct player position", () => {
     const { result } = renderHook(() => usePlayer({ x: 1, y: 2, vx: 0, vy: 0, angle: 0 }));
-    expect(result.current.playerPos).toEqual({ x: 1, y: 2 });
+    expect(result.current.playerPos).toEqual({ x: 1, y: 2, experience: 0, health: 100 });
   });
 
   it("updates player position when updatePlayer is called", () => {

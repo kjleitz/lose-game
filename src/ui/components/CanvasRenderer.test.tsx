@@ -16,6 +16,8 @@ describe("CanvasRenderer", () => {
         player={{ x: 0, y: 0, vx: 0, vy: 0, angle: 0 }}
         camera={{ x: 0, y: 0, zoom: 1 }}
         planets={[]}
+        projectiles={[]}
+        enemies={[]}
         actions={new Set()}
         size={{ width: 300, height: 150 }}
       />,

@@ -1,12 +1,41 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+<svg xmlns='http://www.w3.org/2000/svg' width='64' height='32' viewBox='0 0 64 32'>
+  <defs>
+    <!-- Art deco white gradient -->
+    <linearGradient id='whiteGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#f8f9fa'/>
+      <stop offset='50%' stop-color='#ffffff'/>
+      <stop offset='100%' stop-color='#e9ecef'/>
+    </linearGradient>
+    
+    <!-- Cockpit -->
+    <radialGradient id='cockpitGrad' cx='0.3' cy='0.3' r='0.8'>
+      <stop offset='0%' stop-color='#74c0fc'/>
+      <stop offset='60%' stop-color='#339af0'/>
+      <stop offset='100%' stop-color='#1971c2'/>
+    </radialGradient>
+  </defs>
+  
   <g>
-  <!-- Hull: white base color -->
-  <polygon points='40,24 8,12 8,36' fill='#fff' stroke='#b0b6be' stroke-width='2'/>
-  <!-- Cockpit: blue-tinted window triangle at the tip -->
-  <polygon points='40,24 30,21 30,27' fill='#57aaff' fill-opacity='0.7' stroke='#1e355e' stroke-width='1'/>
-    <!-- Accent stripe -->
-    <rect x='18' y='22' width='10' height='4' rx='1' fill='#ff3c3c' opacity='0.8'/>
-    <!-- Engine glow (subtle) -->
-    <ellipse cx='10' cy='24' rx='2.5' ry='4' fill='#57aaff' opacity='0.5'/>
+    <!-- Main SR-71 body: long sleek fuselage -->
+    <polygon points='60,16 20,12 6,16 20,20' fill='url(#whiteGrad)' stroke='#dee2e6' stroke-width='1'/>
+    
+    <!-- Signature swept delta wings -->
+    <polygon points='48,16 20,8 8,16 20,24 48,16' fill='url(#whiteGrad)' stroke='#dee2e6' stroke-width='1'/>
+    
+    <!-- Wing leading edge accent -->
+    <polygon points='42,16 20,10 12,16 20,22' fill='#ffffff' opacity='0.9'/>
+    
+    <!-- Cockpit canopy -->
+    <ellipse cx='28' cy='16' rx='8' ry='4' fill='url(#cockpitGrad)' stroke='#1971c2' stroke-width='0.8'/>
+    
+    <!-- Engine nacelles -->
+    <ellipse cx='22' cy='12' rx='6' ry='2' fill='#f8f9fa' stroke='#ced4da' stroke-width='0.5'/>
+    <ellipse cx='22' cy='20' rx='6' ry='2' fill='#f8f9fa' stroke='#ced4da' stroke-width='0.5'/>
+    
+    <!-- Central spine -->
+    <line x1='10' y1='16' x2='50' y2='16' stroke='#dee2e6' stroke-width='1.5'/>
+    
+    <!-- Wing tips -->
+    <polygon points='12,16 8,14 8,18' fill='#e9ecef'/>
   </g>
 </svg>

@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: lts/*
           cache: "npm"
 
       - name: Install
@@ -29,7 +29,7 @@ jobs:
       - name: Lint
         run: npm run -s lint
 
-      - name: Test
+      - name: Test (Vitest)
         run: npm run -s test -- --run
 
       - name: Build

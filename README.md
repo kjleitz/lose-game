@@ -2,6 +2,16 @@
 
 Top‑down 2D open‑world space exploration game. Canvas for the world; React for HUD/menus. Browser‑only.
 
+Documentation
+
+- Docs index: docs/index.md
+- Architecture: docs/architecture.md
+- Testing: docs/testing.md
+- CI: docs/ci.md
+- HUD: docs/hud.md
+- ADRs: docs/decisions/
+- Contributing: CONTRIBUTING.md
+
 ## Getting Started
 
 - Node 24, npm

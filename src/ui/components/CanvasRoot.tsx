@@ -5,9 +5,10 @@ import { usePlanets } from "../hooks/usePlanets";
 import { useInput } from "../hooks/useInput";
 import { GameLoopProvider } from "./GameLoopProvider";
 import { CanvasRenderer } from "./CanvasRenderer";
-import { HudPanel } from "./HudPanel";
+import Hud from "../hud/Hud";
 import { GameSession } from "../../domain/game/GameSession";
 import SettingsModal from "./SettingsModal";
+import type { Enemy } from "../../domain/game/enemies";
 
 function useCanvasSize() {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -28,23 +29,32 @@ export default function CanvasRoot() {
   const [paused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [projectiles, setProjectiles] = useState<Array<{ x: number; y: number; radius: number }>>(
+    [],
+  );
+  const [enemies, setEnemies] = useState<Enemy[]>([]);
 
-  // Create GameSession instance
+  // Create GameSession instance - only recreate when essential deps change
   const gameSessionRef = useRef<GameSession | null>(null);
   useEffect(() => {
-    gameSessionRef.current = new GameSession({
-      camera: cameraRef.current,
-      player: playerRef.current,
-      planets,
-      size,
-    });
-  }, [cameraRef, playerRef, planets, size]);
+    if (!gameSessionRef.current) {
+      gameSessionRef.current = new GameSession({
+        camera: cameraRef.current,
+        player: playerRef.current,
+        planets,
+        size,
+      });
+    }
+  }, [cameraRef, planets, playerRef, size]); // Removed planets from dependency array
 
   function update(dt: number) {
     updateActions();
     if (gameSessionRef.current) {
       gameSessionRef.current.update(actions, updatePlayer, maybeGenerateRegion, dt);
       setNotification(gameSessionRef.current.notification);
+      // Trigger a light update for projectiles reference used by renderer
+      setProjectiles(gameSessionRef.current.projectiles.slice());
+      setEnemies(gameSessionRef.current.enemies.slice());
     }
   }
 
@@ -59,10 +69,12 @@ export default function CanvasRoot() {
           player={playerRef.current.state}
           camera={cameraRef.current}
           planets={planets}
+          projectiles={projectiles}
+          enemies={enemies}
           actions={actions}
           size={size}
         />
-        <HudPanel
+        <Hud
           player={playerPos}
           experience={playerPos.experience}
           health={playerPos.health}

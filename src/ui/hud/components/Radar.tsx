@@ -1,6 +1,6 @@
-import type { Planet } from "../../domain/game/planets";
-import PlanetSVG from "./PlanetSVG";
-import { RadarService } from "../../domain/services/RadarService";
+import type { Planet } from "../../../domain/game/planets";
+import PlanetSVG from "../../components/PlanetSvg";
+import { RadarService } from "../../../domain/services/RadarService";
 
 interface RadarProps {
   player: { x: number; y: number };

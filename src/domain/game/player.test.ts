@@ -5,7 +5,7 @@ describe("Player", () => {
   it("initializes with correct state", () => {
     const initial = { x: 0, y: 0, vx: 1, vy: 2, angle: 0 };
     const player = new Player(initial);
-    expect(player.state).toEqual(initial);
+    expect(player.state).toEqual({ ...initial, experience: 0, health: 100 });
   });
 
   it("updates position and velocity with thrust", () => {

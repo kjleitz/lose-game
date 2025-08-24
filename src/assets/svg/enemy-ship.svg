@@ -1,0 +1,54 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='28' viewBox='0 0 48 28'>
+  <defs>
+    <!-- Muscle car orange gradient -->
+    <linearGradient id='muscleGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#fd7e14'/>
+      <stop offset='50%' stop-color='#ff922b'/>
+      <stop offset='100%' stop-color='#ffa94d'/>
+    </linearGradient>
+    
+    <!-- Dark cockpit -->
+    <radialGradient id='darkCockpit' cx='0.3' cy='0.3' r='0.8'>
+      <stop offset='0%' stop-color='#495057'/>
+      <stop offset='60%' stop-color='#343a40'/>
+      <stop offset='100%' stop-color='#212529'/>
+    </radialGradient>
+  </defs>
+  
+  <g>
+    <!-- Main wings: wide, stubby muscle car style -->
+    <polygon points='32,14 12,6 8,14 12,22' fill='url(#muscleGrad)' stroke='#e8590c' stroke-width='1'/>
+    
+    <!-- Main body: wide, boxy muscle car profile -->
+    <rect x='6' y='10' width='32' height='8' rx='3' fill='url(#muscleGrad)' stroke='#e8590c' stroke-width='1.2'/>
+    
+    <!-- Front nose: curved and aggressive -->
+    <path d='M 38 11 Q 44 14 38 17 L 38 11 Z' fill='url(#muscleGrad)' stroke='#e8590c' stroke-width='1'/>
+    
+    <!-- Rear spoiler/fins -->
+    <polygon points='6,10 2,8 2,20 6,18' fill='#fd7e14' stroke='#e8590c' stroke-width='1'/>
+    
+    <!-- Side air intakes -->
+    <rect x='18' y='8' width='8' height='2' fill='#495057' stroke='#343a40' stroke-width='0.5'/>
+    <rect x='18' y='18' width='8' height='2' fill='#495057' stroke='#343a40' stroke-width='0.5'/>
+    
+    <!-- Cockpit canopy: centered and wide -->
+    <ellipse cx='28' cy='14' rx='6' ry='3' fill='url(#darkCockpit)' stroke='#212529' stroke-width='0.8'/>
+    
+    <!-- Twin exhaust pipes -->
+    <ellipse cx='4' cy='12' rx='3' ry='1.5' fill='#495057' stroke='#343a40' stroke-width='0.8'/>
+    <ellipse cx='4' cy='16' rx='3' ry='1.5' fill='#495057' stroke='#343a40' stroke-width='0.8'/>
+    
+    <!-- Wing struts -->
+    <line x1='12' y1='10' x2='18' y2='8' stroke='#e8590c' stroke-width='1.5'/>
+    <line x1='12' y1='18' x2='18' y2='20' stroke='#e8590c' stroke-width='1.5'/>
+    
+    <!-- Racing stripes -->
+    <rect x='10' y='13' width='26' height='1' fill='#495057' opacity='0.8'/>
+    <rect x='10' y='15' width='26' height='1' fill='#495057' opacity='0.8'/>
+    
+    <!-- Side panels -->
+    <rect x='12' y='11' width='20' height='1.5' fill='#ffa94d' opacity='0.9'/>
+    <rect x='12' y='15.5' width='20' height='1.5' fill='#ffa94d' opacity='0.9'/>
+  </g>
+</svg>

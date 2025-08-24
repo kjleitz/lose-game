@@ -1,8 +1,10 @@
 import { StarfieldRenderer } from "./StarfieldRenderer";
 import { PlanetRenderer } from "./PlanetRenderer";
 import { ShipRenderer } from "./ShipRenderer";
+import { EnemyRenderer } from "./EnemyRenderer";
 import { CameraTransform } from "./CameraTransform";
 import type { Planet } from "../../domain/game/planets";
+import type { Enemy } from "../game/enemies";
 
 export class GameRenderer {
   render(
@@ -10,6 +12,8 @@ export class GameRenderer {
     player: { x: number; y: number; vx: number; vy: number; angle: number },
     camera: { x: number; y: number; zoom: number },
     planets: Planet[],
+    projectiles: Array<{ x: number; y: number; radius: number }>,
+    enemies: Enemy[],
     actions: Set<string>,
     size: { width: number; height: number },
     dpr: number,
@@ -46,9 +50,23 @@ export class GameRenderer {
     const planetRenderer = new PlanetRenderer();
     planetRenderer.render(ctx, planets, (planet) => planet.radius);
 
+    // Draw enemies beneath ship/projectiles
+    const enemyRenderer = new EnemyRenderer();
+    enemyRenderer.render(ctx, enemies);
+
     // Draw ship and thruster
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
+
+    // Draw projectiles
+    ctx.save();
+    ctx.fillStyle = "#ffd166";
+    for (const p of projectiles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
 
     // FX layer hook for later (particles, etc.)
   }

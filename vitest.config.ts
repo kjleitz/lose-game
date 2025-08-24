@@ -5,6 +5,12 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/setupTests.ts",
     css: true,
+    include: [
+      // Unit and component tests only
+      "src/**/*.{test,spec}.{ts,tsx}",
+      "tests/**/*.{test,spec}.{ts,tsx}",
+    ],
+    exclude: ["e2e/**", "tests-examples/**", "node_modules/**", "dist/**"],
     coverage: {
       reporter: ["text", "html"],
     },
