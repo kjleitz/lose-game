@@ -1,4 +1,3 @@
-// ...existing code...
 // Planet generation and data
 import { generatePlanet } from "./planetGenerator";
 

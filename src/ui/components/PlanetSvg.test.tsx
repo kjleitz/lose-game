@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import PlanetSVG from "./PlanetSvg";
+import PlanetSvg from "./PlanetSvg";
 
-describe("PlanetSVG", () => {
+describe("PlanetSvg", () => {
   const basePlanet = {
     id: "p1",
     x: 0,
@@ -15,7 +15,7 @@ describe("PlanetSVG", () => {
   it("renders a solid planet as a circle", () => {
     const { container } = render(
       <svg>
-        <PlanetSVG planet={{ ...basePlanet, design: "solid" }} x={0} y={0} r={10} />
+        <PlanetSvg planet={{ ...basePlanet, design: "solid" }} x={0} y={0} r={10} />
       </svg>,
     );
     expect(container.querySelector("circle")).not.toBeNull();
@@ -25,7 +25,7 @@ describe("PlanetSVG", () => {
   it("renders a ringed planet with an ellipse", () => {
     const { container } = render(
       <svg>
-        <PlanetSVG planet={{ ...basePlanet, design: "ringed" }} x={0} y={0} r={10} />
+        <PlanetSvg planet={{ ...basePlanet, design: "ringed" }} x={0} y={0} r={10} />
       </svg>,
     );
     expect(container.querySelector("ellipse")).not.toBeNull();
@@ -34,7 +34,7 @@ describe("PlanetSVG", () => {
   it("renders a striped planet with multiple circles", () => {
     const { container } = render(
       <svg>
-        <PlanetSVG planet={{ ...basePlanet, design: "striped" }} x={0} y={0} r={10} />
+        <PlanetSvg planet={{ ...basePlanet, design: "striped" }} x={0} y={0} r={10} />
       </svg>,
     );
     // Should have more than one circle (main + stripes)
@@ -44,7 +44,7 @@ describe("PlanetSVG", () => {
   it("renders a spotted planet with multiple circles", () => {
     const { container } = render(
       <svg>
-        <PlanetSVG planet={{ ...basePlanet, design: "spotted" }} x={0} y={0} r={10} />
+        <PlanetSvg planet={{ ...basePlanet, design: "spotted" }} x={0} y={0} r={10} />
       </svg>,
     );
     // Should have more than one circle (main + spots)
