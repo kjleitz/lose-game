@@ -18,6 +18,21 @@ describe("ShipRenderer", () => {
       closePath: () => {},
       fill: () => {},
       stroke: () => {},
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
+      rotate: () => {},
+      drawImage: () => {},
+      createLinearGradient: () =>
+        ({
+          addColorStop: () => {},
+        }) as CanvasGradient,
+      strokeStyle: "",
+      lineWidth: 1,
+      lineCap: "butt" as CanvasLineCap,
+      lineJoin: "round" as CanvasLineJoin,
+      globalAlpha: 1,
+      globalCompositeOperation: "source-over" as GlobalCompositeOperation,
       canvas: { width: 800, height: 600 } as HTMLCanvasElement,
     };
     const player = { x: 100, y: 100, vx: 10, vy: 5, angle: Math.PI / 4 };

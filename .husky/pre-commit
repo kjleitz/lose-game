@@ -1,2 +1,8 @@
+echo "Running typecheck..."
+npm run typecheck
+
 echo "Running lint-staged pre-commit..."
 npx --no-install lint-staged
+
+echo "Running tests..."
+npm run test -- --run
