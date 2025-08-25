@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { InputManager } from "../../application/game/inputManager";
+import { InputManager } from "../../engine/input";
 
 export function useInput() {
   const managerRef = useRef<InputManager>(new InputManager());
