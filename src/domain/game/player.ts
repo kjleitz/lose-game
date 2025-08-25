@@ -1,3 +1,5 @@
+import { PlayerInventoryManager, type PlayerInventory } from "./inventory/PlayerInventory";
+
 export type PlayerState = {
   x: number;
   y: number;
@@ -10,6 +12,7 @@ export type PlayerState = {
 
 export class Player {
   public state: PlayerState;
+  public inventory: PlayerInventory;
   private speedMultiplier = 1;
   private readonly MIN_MULT = 0.25;
   private readonly MAX_MULT = 5;
@@ -20,6 +23,9 @@ export class Player {
       experience: initial.experience ?? 0,
       health: initial.health ?? 100,
     };
+    
+    // Initialize player inventory (20 slots, 100kg max weight)
+    this.inventory = new PlayerInventoryManager(20, 100);
   }
 
   update(dt: number, actions: Set<string>, visitedPlanet?: boolean) {

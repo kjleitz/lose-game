@@ -3,6 +3,11 @@ import type { Player } from "../player";
 import type { GameSession } from "../GameSession";
 import type { Planet } from "../planets";
 import { setCameraPosition } from "../../render/camera";
+import { WeaponSystem } from "../weapons/WeaponSystem";
+import { FloraInstanceImpl } from "../flora/FloraSpecies";
+import { FloraTemplates } from "../flora/FloraTemplates";
+import type { DamageableEntity } from "../damage/DamageableEntity";
+import { DamageType } from "../damage/DamageableEntity";
 
 export interface PlanetSurface {
   planetId: string;
@@ -28,12 +33,11 @@ export interface Resource {
   amount: number;
 }
 
-export interface Creature {
+export interface Creature extends DamageableEntity {
   id: string;
   x: number;
   y: number;
   type: "passive" | "neutral" | "hostile";
-  health: number;
   radius: number;
 }
 
@@ -43,6 +47,9 @@ export class PlanetMode extends GameMode {
   private currentPlanet?: Planet;
   private surface?: PlanetSurface;
   private landingSite = { x: 0, y: 0 };
+  private weaponSystem = new WeaponSystem();
+  private floraTemplates = new FloraTemplates();
+  private damageableEntities: DamageableEntity[] = [];
 
   constructor() {
     super();
@@ -62,11 +69,19 @@ export class PlanetMode extends GameMode {
       return;
     }
 
+    // Handle weapon firing
+    if (actions.has("fire")) {
+      this.handleWeaponFire(player, session);
+    }
+
     // Update player with planet physics
     player.updatePlanet(dt, actions);
 
     // Set camera to follow player on planet surface
     setCameraPosition(session.camera, player.state.x, player.state.y);
+
+    // Update weapon system and projectiles
+    this.weaponSystem.update(dt, this.damageableEntities);
 
     // Check for resource collection
     this.checkResourceCollection(player);
@@ -74,8 +89,13 @@ export class PlanetMode extends GameMode {
     // Update creatures (basic for now)
     this.updateCreatures(dt);
 
+    // Remove dead entities
+    this.removeDeadEntities();
+
     // Set notification
-    session.notification = `Exploring ${this.currentPlanet.id} - Press T to takeoff`;
+    const projectileCount = this.weaponSystem.getAllProjectiles().length;
+    const entityCount = this.damageableEntities.length;
+    session.notification = `Exploring ${this.currentPlanet.id} - Press T to takeoff, F to fire (${projectileCount} shots, ${entityCount} entities)`;
   }
 
   canTransitionTo(mode: GameModeType): boolean {
@@ -122,11 +142,47 @@ export class PlanetMode extends GameMode {
     return this.surface;
   }
 
+  get weaponSystemData(): WeaponSystem {
+    return this.weaponSystem;
+  }
+
+  private handleWeaponFire(player: Player, _session: GameSession): void {
+    const weapon = this.weaponSystem.getEquippedWeapon(player);
+    if (!weapon) {
+      return;
+    }
+
+    // Simple target: shoot in the direction player is facing
+    const targetDistance = 200; // Distance ahead of player
+    const targetX = player.state.x + Math.cos(player.state.angle) * targetDistance;
+    const targetY = player.state.y + Math.sin(player.state.angle) * targetDistance;
+
+    const result = this.weaponSystem.fireWeapon(player, weapon, targetX, targetY);
+    
+    if (!result.success && result.reason) {
+      // Could add a notification system here later
+      console.log(`Weapon fire failed: ${result.reason}`);
+    }
+  }
+
+  private removeDeadEntities(): void {
+    this.damageableEntities = this.damageableEntities.filter(entity => {
+      if (entity.health.currentHealth <= 0) {
+        entity.onDestruction();
+        return false;
+      }
+      return true;
+    });
+  }
+
   private generatePlanetSurface(planet: Planet): void {
     // Simple procedural planet surface generation
     const terrain: TerrainFeature[] = [];
     const resources: Resource[] = [];
     const creatures: Creature[] = [];
+
+    // Clear damageable entities from previous generation
+    this.damageableEntities = [];
 
     // Generate landing site (clear area) - use planet's position as reference
     // But for planet surface exploration, we want coordinates relative to the landing site
@@ -140,13 +196,28 @@ export class PlanetMode extends GameMode {
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance;
 
+      const featureType = Math.random() > 0.5 ? "rock" : "vegetation";
       terrain.push({
         id: `terrain-${i}`,
         x,
         y,
-        type: Math.random() > 0.5 ? "rock" : "vegetation",
+        type: featureType,
         size: 20 + Math.random() * 30,
       });
+
+      // Generate flora for vegetation features
+      if (featureType === "vegetation") {
+        const speciesType = Math.random() > 0.5 ? "oak_tree" : "berry_bush";
+        const species = this.floraTemplates.getSpecies(speciesType);
+        if (species) {
+          const floraInstance = new FloraInstanceImpl(
+            `flora_${i}`,
+            { x, y },
+            species
+          );
+          this.damageableEntities.push(floraInstance);
+        }
+      }
     }
 
     // Generate some resources
@@ -175,15 +246,13 @@ export class PlanetMode extends GameMode {
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance;
 
-      const creatureTypes: Creature["type"][] = ["passive", "neutral", "hostile"];
-      creatures.push({
-        id: `creature-${i}`,
-        x,
-        y,
-        type: creatureTypes[Math.floor(Math.random() * creatureTypes.length)],
-        health: 50 + Math.floor(Math.random() * 50),
-        radius: 15 + Math.random() * 10,
-      });
+      const creatureTypes: ("passive" | "neutral" | "hostile")[] = ["passive", "neutral", "hostile"];
+      const creatureType = creatureTypes[Math.floor(Math.random() * creatureTypes.length)];
+      
+      // Create creature as damageable entity
+      const creature = this.createDamageableCreature(`creature-${i}`, x, y, creatureType);
+      creatures.push(creature);
+      this.damageableEntities.push(creature);
     }
 
     this.surface = {
@@ -239,6 +308,104 @@ export class PlanetMode extends GameMode {
     return {
       x: this.currentPlanet.x + Math.cos(angle) * distance,
       y: this.currentPlanet.y + Math.sin(angle) * distance,
+    };
+  }
+
+  private createDamageableCreature(id: string, x: number, y: number, type: "passive" | "neutral" | "hostile"): Creature {
+    const baseHealth = type === "passive" ? 30 : type === "neutral" ? 50 : 80;
+    const health = baseHealth + Math.floor(Math.random() * 30);
+    
+    return {
+      id,
+      x,
+      y,
+      type,
+      radius: 15 + Math.random() * 10,
+      position: { x, y },
+      health: {
+        maxHealth: health,
+        currentHealth: health,
+        resistances: new Map([
+          ["physical" as DamageType, type === "hostile" ? 0.2 : 0.1],
+          ["energy" as DamageType, type === "passive" ? 0.3 : 0.1],
+        ]),
+        vulnerabilities: new Map(),
+        regeneration: type === "passive" ? 2 : 0.5,
+        invulnerabilityPeriod: 500,
+        lastDamageTime: 0,
+      },
+      dropTable: {
+        guaranteed: [
+          { itemType: "organic_matter", minQuantity: 1, maxQuantity: 3, probability: 1.0 },
+        ],
+        possible: [
+          { itemType: "alien_hide", minQuantity: 1, maxQuantity: 2, probability: 0.6 },
+        ],
+        rare: [
+          { itemType: "rare_essence", minQuantity: 1, maxQuantity: 1, probability: 0.1 },
+        ],
+        modifiers: [],
+      },
+      destructionEffect: {
+        particles: [{
+          type: type === "hostile" ? "blood_splatter" : "sparkle",
+          count: 10,
+          velocity: { x: 0, y: 0 },
+          color: type === "hostile" ? "#ff0000" : "#00ff00",
+        }],
+        sound: "creature_death",
+        duration: 1000,
+      },
+      takeDamage: function(damage) {
+        const now = Date.now();
+        
+        // Check invulnerability period
+        if (now - this.health.lastDamageTime < this.health.invulnerabilityPeriod) {
+          return {
+            damageDealt: 0,
+            blocked: damage.amount,
+            killed: false,
+            effects: [],
+            knockback: { x: 0, y: 0 },
+          };
+        }
+
+        // Calculate actual damage
+        const resistance = this.health.resistances.get(damage.type) || 0;
+        const vulnerability = this.health.vulnerabilities.get(damage.type) || 0;
+        const modifier = 1 - resistance + vulnerability;
+        
+        let actualDamage = Math.max(1, Math.floor(damage.amount * modifier));
+        if (damage.critical) {
+          actualDamage = Math.floor(actualDamage * 1.5);
+        }
+
+        this.health.currentHealth = Math.max(0, this.health.currentHealth - actualDamage);
+        this.health.lastDamageTime = now;
+
+        // Simple knockback based on damage direction
+        const knockback = { x: Math.random() * 20 - 10, y: Math.random() * 20 - 10 };
+
+        return {
+          damageDealt: actualDamage,
+          blocked: damage.amount - actualDamage,
+          killed: this.health.currentHealth === 0,
+          effects: [],
+          knockback,
+        };
+      },
+      onDestruction: function() {
+        console.log(`${this.type} creature ${this.id} has been defeated!`);
+      },
+      getVisualDamageState: function() {
+        const healthPercent = this.health.currentHealth / this.health.maxHealth;
+        if (healthPercent >= 0.8) return "pristine" as any;
+        if (healthPercent >= 0.6) return "light" as any;
+        if (healthPercent >= 0.4) return "damaged" as any;
+        if (healthPercent >= 0.2) return "heavy" as any;
+        if (healthPercent > 0) return "critical" as any;
+        return "destroyed" as any;
+      }
     };
   }
 }

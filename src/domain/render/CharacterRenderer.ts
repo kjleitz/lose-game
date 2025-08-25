@@ -7,15 +7,18 @@ export class CharacterRenderer {
   ) {
     ctx.save();
     ctx.translate(player.x, player.y);
+    
+    // Rotate to face the direction the player is looking/moving
+    ctx.rotate(player.angle);
 
     // Determine if character is moving
     const isMoving = Math.abs(player.vx) > 1 || Math.abs(player.vy) > 1;
     const isRunning = actions.has("boost");
 
-    // Character body (circle)
+    // Character body (oval for more directional look)
     ctx.fillStyle = isRunning ? "#FF6B6B" : "#4ECDC4"; // Red when running, teal when walking
     ctx.beginPath();
-    ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, size * 0.4, size * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Character outline
@@ -23,61 +26,80 @@ export class CharacterRenderer {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Simple face
-    ctx.fillStyle = "#2C3E50";
-
-    // Eyes
-    ctx.beginPath();
-    ctx.arc(-size * 0.15, -size * 0.1, 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(size * 0.15, -size * 0.1, 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Simple mouth (smile or neutral based on movement)
-    ctx.beginPath();
-    if (isMoving) {
-      // Happy face when moving
-      ctx.arc(0, size * 0.1, size * 0.2, 0, Math.PI);
-    } else {
-      // Neutral face when still
-      ctx.moveTo(-size * 0.1, size * 0.2);
-      ctx.lineTo(size * 0.1, size * 0.2);
-    }
+    // Draw weapon (plasma pistol)
+    ctx.fillStyle = "#666";
+    ctx.strokeStyle = "#333";
     ctx.lineWidth = 1;
-    ctx.stroke();
+    
+    // Gun barrel
+    ctx.fillRect(size * 0.3, -2, size * 0.4, 4);
+    ctx.strokeRect(size * 0.3, -2, size * 0.4, 4);
+    
+    // Gun grip
+    ctx.fillRect(size * 0.15, -3, size * 0.2, 6);
+    ctx.strokeRect(size * 0.15, -3, size * 0.2, 6);
+    
+    // Firing indicator when space is pressed
+    if (actions.has("fire")) {
+      ctx.fillStyle = "#00ff88";
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = "#00ff88";
+      ctx.beginPath();
+      ctx.arc(size * 0.7, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
 
-    // Movement indicator (simple legs/motion lines)
+    // Head/face direction indicator
+    ctx.fillStyle = "#2C3E50";
+    
+    // Front-facing indicator (nose/direction marker)
+    ctx.beginPath();
+    ctx.moveTo(size * 0.2, 0);
+    ctx.lineTo(size * 0.35, -3);
+    ctx.lineTo(size * 0.35, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Eyes 
+    ctx.beginPath();
+    ctx.arc(size * 0.05, -size * 0.15, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(size * 0.05, size * 0.15, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Movement indicator (legs in direction-oriented coordinate system)
     if (isMoving) {
       const time = Date.now() * 0.01;
-      const legOffset = Math.sin(time) * 5;
+      const legOffset = Math.sin(time) * 3;
 
       ctx.strokeStyle = isRunning ? "#FF6B6B" : "#4ECDC4";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
 
-      // Left leg
+      // Left leg (from body perspective)
       ctx.beginPath();
-      ctx.moveTo(-size * 0.3, size * 0.4);
-      ctx.lineTo(-size * 0.3 + legOffset, size * 0.7);
+      ctx.moveTo(-size * 0.2, size * 0.3);
+      ctx.lineTo(-size * 0.2 + legOffset, size * 0.5);
       ctx.stroke();
 
-      // Right leg
+      // Right leg (from body perspective)
       ctx.beginPath();
-      ctx.moveTo(size * 0.3, size * 0.4);
-      ctx.lineTo(size * 0.3 - legOffset, size * 0.7);
+      ctx.moveTo(-size * 0.2, -size * 0.3);
+      ctx.lineTo(-size * 0.2 - legOffset, -size * 0.5);
       ctx.stroke();
 
       if (isRunning) {
-        // Speed lines when running
+        // Speed lines when running (behind the character)
         ctx.strokeStyle = "#FFD93D";
         ctx.lineWidth = 1;
         ctx.globalAlpha = 0.7;
 
         for (let i = 0; i < 3; i++) {
-          const offset = (i + 1) * 8;
+          const offset = (i + 1) * 6;
           ctx.beginPath();
-          ctx.moveTo(-size - offset, -3 + i * 2);
-          ctx.lineTo(-size - offset + 6, -3 + i * 2);
+          ctx.moveTo(-size * 0.6 - offset, -2 + i * 1);
+          ctx.lineTo(-size * 0.6 - offset + 4, -2 + i * 1);
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
@@ -85,16 +107,16 @@ export class CharacterRenderer {
     } else {
       // Static legs when not moving
       ctx.strokeStyle = "#4ECDC4";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
 
       ctx.beginPath();
-      ctx.moveTo(-size * 0.3, size * 0.4);
-      ctx.lineTo(-size * 0.3, size * 0.7);
+      ctx.moveTo(-size * 0.2, size * 0.3);
+      ctx.lineTo(-size * 0.2, size * 0.5);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(size * 0.3, size * 0.4);
-      ctx.lineTo(size * 0.3, size * 0.7);
+      ctx.moveTo(-size * 0.2, -size * 0.3);
+      ctx.lineTo(-size * 0.2, -size * 0.5);
       ctx.stroke();
     }
 

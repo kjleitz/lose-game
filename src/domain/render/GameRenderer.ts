@@ -108,11 +108,15 @@ export class GameRenderer {
     dpr: number,
     gameSession?: GameSession | null,
   ) {
-    // Get planet surface data
+    // Get planet surface data and weapon system
     const planetMode = gameSession?.getCurrentMode();
     const surface =
       planetMode?.type === "planet"
         ? (planetMode as { surfaceData?: PlanetSurface }).surfaceData
+        : undefined;
+    const weaponSystem = 
+      planetMode?.type === "planet"
+        ? (planetMode as { weaponSystemData?: any }).weaponSystemData
         : undefined;
 
     // Planet surface background
@@ -128,5 +132,28 @@ export class GameRenderer {
     // Draw character instead of ship
     const characterRenderer = new CharacterRenderer();
     characterRenderer.render(ctx, player, actions, 32);
+
+    // Draw projectiles from weapon system
+    if (weaponSystem) {
+      ctx.save();
+      ctx.fillStyle = "#00ff88"; // Bright green for energy projectiles
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = "#00ff88";
+      
+      const projectiles = weaponSystem.getAllProjectiles();
+      for (const p of projectiles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add motion trail
+        ctx.fillStyle = "rgba(0, 255, 136, 0.3)";
+        ctx.beginPath();
+        ctx.arc(p.x - p.vx * 0.01, p.y - p.vy * 0.01, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#00ff88";
+      }
+      ctx.restore();
+    }
   }
 }

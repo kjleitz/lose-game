@@ -9,6 +9,7 @@ import Hud from "../hud/Hud";
 import { GameSession } from "../../domain/game/GameSession";
 import SettingsModal from "./SettingsModal";
 import type { Enemy } from "../../domain/game/enemies";
+import type { Item } from "../../domain/game/items/Item";
 
 function useCanvasSize() {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -29,6 +30,7 @@ export default function CanvasRoot() {
   const [paused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [inventoryVisible, setInventoryVisible] = useState(false);
   const [projectiles, setProjectiles] = useState<Array<{ x: number; y: number; radius: number }>>(
     [],
   );
@@ -48,7 +50,14 @@ export default function CanvasRoot() {
   }, [cameraRef, planets, playerRef, size]); // Removed planets from dependency array
 
   function update(dt: number) {
+    const previousActions = new Set(actions);
     updateActions();
+    
+    // Handle inventory toggle (only on key press, not hold)
+    if (actions.has("inventory") && !previousActions.has("inventory")) {
+      setInventoryVisible(prev => !prev);
+    }
+    
     if (gameSessionRef.current) {
       gameSessionRef.current.update(actions, updatePlayer, maybeGenerateRegion, dt);
       setNotification(gameSessionRef.current.notification);
@@ -68,6 +77,19 @@ export default function CanvasRoot() {
   function render() {
     // CanvasRenderer handles all drawing
     // No-op here, handled by CanvasRenderer
+  }
+
+  function handleItemUse(item: Item) {
+    console.log("Using item:", item.name);
+    // TODO: Implement item use logic based on item type
+  }
+
+  function handleItemDrop(item: Item, quantity: number) {
+    console.log("Dropping item:", item.name, "quantity:", quantity);
+    // TODO: Implement item dropping logic
+    if (playerRef.current.inventory) {
+      playerRef.current.inventory.removeItem(item.id, quantity);
+    }
   }
   return (
     <div className="relative w-screen h-screen overflow-hidden">
@@ -93,6 +115,8 @@ export default function CanvasRoot() {
           actions={actions}
           paused={paused}
           speedMultiplier={playerRef.current.getSpeedMultiplier()}
+          inventory={playerRef.current.inventory}
+          inventoryVisible={inventoryVisible}
           onChangeSpeed={(n) => {
             playerRef.current.setSpeedMultiplier(n);
             try {
@@ -102,6 +126,9 @@ export default function CanvasRoot() {
             }
           }}
           onOpenSettings={() => setSettingsOpen(true)}
+          onToggleInventory={() => setInventoryVisible(prev => !prev)}
+          onItemUse={handleItemUse}
+          onItemDrop={handleItemDrop}
         />
         <SettingsModal
           open={settingsOpen}

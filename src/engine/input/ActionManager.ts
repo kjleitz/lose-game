@@ -1,4 +1,4 @@
-import type { Action, ActionState, ActionQueue, ActionEvent } from "./ActionTypes";
+import type { ActionState, ActionQueue } from "./ActionTypes";
 import { mapKeyToAction } from "./KeyBindings";
 
 export function createActionState(): ActionState {

@@ -1,6 +1,9 @@
 import Radar from "./components/Radar";
 import Notification from "./components/Notification";
+import InventoryPanel from "./components/InventoryPanel";
 import type { Planet } from "../../domain/game/planets";
+import type { PlayerInventory } from "../../domain/game/inventory/PlayerInventory";
+import type { Item } from "../../domain/game/items/Item";
 import { StatusPanel } from "./panels/StatusPanel";
 import { ControlsPanel } from "./panels/ControlsPanel";
 
@@ -15,8 +18,13 @@ interface HudProps {
   actions: Set<string>;
   paused: boolean;
   speedMultiplier?: number;
+  inventory?: PlayerInventory;
+  inventoryVisible?: boolean;
   onChangeSpeed?: (n: number) => void;
   onOpenSettings?: () => void;
+  onToggleInventory?: () => void;
+  onItemUse?: (item: Item) => void;
+  onItemDrop?: (item: Item, quantity: number) => void;
 }
 
 export default function Hud({
@@ -30,8 +38,13 @@ export default function Hud({
   actions,
   paused,
   speedMultiplier,
+  inventory,
+  inventoryVisible = false,
   onChangeSpeed,
   onOpenSettings,
+  onToggleInventory,
+  onItemUse,
+  onItemDrop,
 }: HudProps) {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
@@ -47,6 +60,15 @@ export default function Hud({
           speedMultiplier={speedMultiplier}
           onChangeSpeed={onChangeSpeed}
           onOpenSettings={onOpenSettings}
+        />
+      </div>
+      <div className="pointer-events-auto">
+        <InventoryPanel
+          inventory={inventory}
+          visible={inventoryVisible}
+          onToggle={onToggleInventory}
+          onItemUse={onItemUse}
+          onItemDrop={onItemDrop}
         />
       </div>
     </div>

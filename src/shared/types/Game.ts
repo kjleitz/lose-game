@@ -1,3 +1,5 @@
+import type { ActionState } from "../../engine/input/ActionTypes";
+
 export interface GameState {
   [key: string]: unknown;
 }
@@ -28,19 +30,23 @@ export interface Game {
 
 export interface GameEngine {
   readonly input: InputManager;
-  readonly renderer: RenderingEngine;
-  readonly camera: CameraSystem;
+  readonly renderer: any; // TODO: Will be RenderingEngine
+  readonly camera: any; // TODO: Will be CameraSystem
 }
 
 // These will be implemented as we extract the systems
 export interface InputManager {
-  // Will match our existing InputManager
+  actions: ActionState;
 }
 
 export interface RenderingEngine {
   // Will wrap our existing rendering system
+  render?: () => void;
 }
 
 export interface CameraSystem {
   // Will wrap our existing camera system
+  x?: number;
+  y?: number;
+  zoom?: number;
 }

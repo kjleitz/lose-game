@@ -1,7 +1,7 @@
 import type { Game, GameState, TransitionData, GameEngine } from "../../shared/types/Game";
 import type { Player } from "../../domain/game/player";
 import type { Planet } from "../../domain/game/planets";
-import { setCameraPosition } from "../../domain/render/camera";
+// import { setCameraPosition } from "../../domain/render/camera"; // TODO: Remove when camera system is extracted
 
 export interface PlanetSurface {
   planetId: string;
@@ -128,7 +128,6 @@ export class PlanetGame implements Game {
 
   receiveTransition(data: TransitionData): void {
     // Handle landing from space mode
-    const planetId = data.planetId as string | undefined;
     const planet = data.planet as Planet | undefined;
     
     if (planet) {

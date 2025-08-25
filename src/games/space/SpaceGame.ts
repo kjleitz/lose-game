@@ -7,7 +7,7 @@ import { createProjectile, stepProjectile } from "../../domain/game/projectiles"
 import { createEnemy } from "../../domain/game/enemies";
 import type { Blackboard, Node } from "../../domain/ai/bt";
 import { buildPatrolSeekTree } from "../../domain/ai/enemy/trees";
-import { setCameraPosition } from "../../domain/render/camera";
+// import { setCameraPosition } from "../../domain/render/camera"; // TODO: Remove when camera system is extracted
 
 export interface SpaceGameState extends GameState {
   playerPosition: { x: number; y: number };

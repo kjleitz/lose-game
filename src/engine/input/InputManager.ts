@@ -1,5 +1,4 @@
 import { createActionQueue, createActionState, enqueueKeyEvent, consumeQueue } from "./ActionManager";
-import type { ActionState, ActionQueue } from "./ActionTypes";
 
 export class InputManager {
   public actions = createActionState();

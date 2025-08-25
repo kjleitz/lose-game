@@ -8,10 +8,13 @@ const DEFAULT_KEY_TO_ACTION: Record<string, Action | undefined> = {
   KeyA: "turnLeft",
   ArrowRight: "turnRight",
   KeyD: "turnRight",
+  ArrowDown: "interact",
+  KeyS: "interact",
   Space: "fire",
   KeyE: "interact",
   KeyL: "land",
   KeyT: "takeoff",
+  KeyI: "inventory",
   // Optional speed controls
   ShiftLeft: "boost",
   ShiftRight: "boost",

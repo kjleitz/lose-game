@@ -1,5 +1,5 @@
 import type { Game, TransitionData } from "../shared/types/Game";
-import { createGameEngine, type GameEngineConfig } from "../engine/core";
+import { createGameEngine, type GameEngineConfig, GameEngine } from "../engine/core";
 import { SpaceGame, type SpaceGameConfig } from "../games/space/SpaceGame";
 import { PlanetGame } from "../games/planet/PlanetGame";
 import type { Player } from "../domain/game/player";
@@ -17,15 +17,17 @@ export interface GameManagerConfig {
 export class GameManager {
   private currentGame: Game | null = null;
   private games: Map<string, Game> = new Map();
-  private engine: any; // GameEngine type from engine/core
-  private player: Player;
+  private engine: GameEngine;
+  private _player: Player;
+  private _size: { width: number; height: number };
 
   // For backward compatibility during transition
   public camera: { x: number; y: number; zoom: number };
   public notification: string | null = null;
 
   constructor(config: GameManagerConfig) {
-    this.player = config.player;
+    this._player = config.player;
+    this._size = config.size;
     this.camera = { x: 0, y: 0, zoom: 1 };
 
     // Create engine
@@ -46,10 +48,10 @@ export class GameManager {
 
     // Set up transition callbacks
     spaceGame.setModeTransitionCallback((targetMode, data) => {
-      this.switchToGame(targetMode, data);
+      this.switchToGame(targetMode, data as TransitionData);
     });
     planetGame.setModeTransitionCallback((targetMode, data) => {
-      this.switchToGame(targetMode, data);
+      this.switchToGame(targetMode, data as TransitionData);
     });
     planetGame.setPlayer(config.player);
 
@@ -96,7 +98,12 @@ export class GameManager {
     this.updateNotifications();
   }
 
-  update(dt: number): void {
+  update(dt: number, externalActions?: Set<string>): void {
+    // Sync input actions from external system during transition
+    if (externalActions) {
+      this.engine.updateInputActions(externalActions);
+    }
+    
     this.currentGame?.update(dt);
     this.updateCamera();
     this.updateNotifications();
@@ -154,10 +161,19 @@ export class GameManager {
     return undefined;
   }
 
+  // Getters for backward compatibility
+  get player(): Player {
+    return this._player;
+  }
+
+  get size(): { width: number; height: number } {
+    return this._size;
+  }
+
   private updateCamera(): void {
     // Set camera to follow player
-    this.camera.x = this.player.state.x;
-    this.camera.y = this.player.state.y;
+    this.camera.x = this._player.state.x;
+    this.camera.y = this._player.state.y;
   }
 
   private updateNotifications(): void {
@@ -165,7 +181,7 @@ export class GameManager {
       // Check proximity to planets
       let nearPlanet: Planet | null = null;
       for (const planet of this.planets) {
-        const dist = Math.hypot(this.player.state.x - planet.x, this.player.state.y - planet.y);
+        const dist = Math.hypot(this._player.state.x - planet.x, this._player.state.y - planet.y);
         if (dist < planet.radius + 60) {
           nearPlanet = planet;
           break;
