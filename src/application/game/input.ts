@@ -6,7 +6,9 @@ export type Action =
   | "interact"
   | "boost"
   | "speedUp"
-  | "speedDown";
+  | "speedDown"
+  | "land"
+  | "takeoff";
 
 // Default key bindings
 const DEFAULT_KEY_TO_ACTION: Record<string, Action | undefined> = {
@@ -18,6 +20,8 @@ const DEFAULT_KEY_TO_ACTION: Record<string, Action | undefined> = {
   KeyD: "turnRight",
   Space: "fire",
   KeyE: "interact",
+  KeyL: "land",
+  KeyT: "takeoff",
   // Optional speed controls
   ShiftLeft: "boost",
   ShiftRight: "boost",

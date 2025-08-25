@@ -2,9 +2,13 @@ import { StarfieldRenderer } from "./StarfieldRenderer";
 import { PlanetRenderer } from "./PlanetRenderer";
 import { ShipRenderer } from "./ShipRenderer";
 import { EnemyRenderer } from "./EnemyRenderer";
+import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
+import { CharacterRenderer } from "./CharacterRenderer";
 import { CameraTransform } from "./CameraTransform";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
+import type { GameSession } from "../game/GameSession";
+import type { PlanetSurface } from "../game/modes/PlanetMode";
 
 export class GameRenderer {
   render(
@@ -17,10 +21,36 @@ export class GameRenderer {
     actions: Set<string>,
     size: { width: number; height: number },
     dpr: number,
+    gameSession?: GameSession | null,
   ) {
-    // Clear to black every frame
+    // Determine current game mode
+    const currentMode = gameSession?.getCurrentModeType() || "space";
+
+    // Clear screen
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    if (currentMode === "space") {
+      this.renderSpaceMode(ctx, player, camera, planets, projectiles, enemies, actions, size, dpr);
+    } else if (currentMode === "planet") {
+      this.renderPlanetMode(ctx, player, camera, actions, size, dpr, gameSession);
+    }
+
+    // FX layer hook for later (particles, etc.)
+  }
+
+  private renderSpaceMode(
+    ctx: CanvasRenderingContext2D,
+    player: { x: number; y: number; vx: number; vy: number; angle: number },
+    camera: { x: number; y: number; zoom: number },
+    planets: Planet[],
+    projectiles: Array<{ x: number; y: number; radius: number }>,
+    enemies: Enemy[],
+    actions: Set<string>,
+    size: { width: number; height: number },
+    dpr: number,
+  ) {
+    // Black space background
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -67,7 +97,36 @@ export class GameRenderer {
       ctx.fill();
     }
     ctx.restore();
+  }
 
-    // FX layer hook for later (particles, etc.)
+  private renderPlanetMode(
+    ctx: CanvasRenderingContext2D,
+    player: { x: number; y: number; vx: number; vy: number; angle: number },
+    camera: { x: number; y: number; zoom: number },
+    actions: Set<string>,
+    size: { width: number; height: number },
+    dpr: number,
+    gameSession?: GameSession | null,
+  ) {
+    // Get planet surface data
+    const planetMode = gameSession?.getCurrentMode();
+    const surface =
+      planetMode?.type === "planet"
+        ? (planetMode as { surfaceData?: PlanetSurface }).surfaceData
+        : undefined;
+
+    // Planet surface background
+    const planetSurfaceRenderer = new PlanetSurfaceRenderer();
+
+    // Set up world transform for planet surface
+    const [a, b, c, d, e, f] = CameraTransform.getTransform(camera, size.width, size.height, dpr);
+    ctx.setTransform(a, b, c, d, e, f);
+
+    // Render planet surface
+    planetSurfaceRenderer.render(ctx, surface);
+
+    // Draw character instead of ship
+    const characterRenderer = new CharacterRenderer();
+    characterRenderer.render(ctx, player, actions, 32);
   }
 }

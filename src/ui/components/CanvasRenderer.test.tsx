@@ -20,6 +20,7 @@ describe("CanvasRenderer", () => {
         enemies={[]}
         actions={new Set()}
         size={{ width: 300, height: 150 }}
+        gameSession={null}
       />,
     );
     const canvas = document.querySelector("canvas");

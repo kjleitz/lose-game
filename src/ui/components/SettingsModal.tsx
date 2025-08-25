@@ -23,6 +23,8 @@ const ACTION_LABELS: Record<Action, string> = {
   boost: "Boost",
   speedUp: "Speed Up",
   speedDown: "Speed Down",
+  land: "Land on Planet",
+  takeoff: "Take Off",
 };
 
 export default function SettingsModal({ open, onClose, speed, onChangeSpeed }: SettingsModalProps) {

@@ -1,26 +1,55 @@
-# Documentation Index
+# L.O.S.E. Documentation
 
-This index provides an entry point for developers and AI agents. Start with the overview, then dive into architecture, decisions (ADRs), testing, and CI.
+Welcome to the L.O.S.E. (Lots of Outer Space to Explore) documentation hub.
+
+## 🚀 Quick Start
+
+- **New to L.O.S.E.?** → [Newcomer's Guide](newcomer-guide.md) - Essential reading for new contributors
+- [Code Map](code-map.md) - Overview of the codebase structure
+- [Development Playbook](dev-playbook.md) - How to develop and contribute
+- [Testing Guide](testing.md) - Testing strategies and tools
+
+## 🎮 Dual-Game Architecture
+
+L.O.S.E. features a unique dual-game system where players seamlessly switch between space exploration and planet surface exploration.
+
+- [Dual-Game System Architecture](architecture/dual-game-system.md) - Complete architectural overview
+- [Landable Planets](landable-planets.md) - Design and implementation guide
+
+### Game Modes
+
+- **Space Mode**: Ship-based exploration, combat, and planet discovery
+- **Planet Mode**: Character-based surface exploration, creatures, and resources
+- **Transitions**: Seamless switching via landing (L) and takeoff (T)
+
+## 🏗️ Architecture & Systems
+
+- [Architecture Decisions](decisions/) - ADRs documenting key decisions
+- [Data Flow](data-flow.md) - How data moves through the application
+- [HUD System](hud.md) - User interface and HUD components
+- [Enemy AI](enemy-ai.md) - Behavior tree implementation for enemies
+
+## 🛠️ Development
+
+- [Performance](performance.md) - Performance optimization strategies
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [CI/CD](ci.md) - Continuous integration setup
+- [Glossary](glossary.md) - Terms and concepts
+- [AI Collaboration](ai-collab.md) - Working with AI assistants
+
+## 📋 Legacy Documentation
 
 - Project Overview: docs/overview.md
 - Architecture: docs/architecture.md
-- ADRs (Decisions): docs/decisions/
 - Roadmap: docs/roadmap.md
-- Testing Strategy: docs/testing.md
-- CI Workflows: docs/ci.md
-- HUD Structure: docs/hud.md
-- Enemy AI: docs/enemy-ai.md
 - Domain Structure (proposed DDD): docs/proposed-ddd-structure.md
 - Active Tasks: docs/tasks.md
-- Glossary: docs/glossary.md
 - Repository Guidelines: AGENTS.md
 - Contributing Guide: CONTRIBUTING.md
-- Dev Playbook: docs/dev-playbook.md
-- Code Map: docs/code-map.md
-- Data Flow: docs/data-flow.md
-- Performance Guide: docs/performance.md
-- Troubleshooting: docs/troubleshooting.md
-- AI Collaboration: docs/ai-collab.md
+
+## 🎯 Current Focus
+
+We're evolving toward a true dual-game architecture where SpaceMode and PlanetMode operate as independent games sharing a common engine. See [ADR-0008](decisions/adr-0008-engine-extraction-plan.md) for the complete roadmap.
 
 Quick Start
 

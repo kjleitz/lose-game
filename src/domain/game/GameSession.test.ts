@@ -35,9 +35,9 @@ describe("GameSession", () => {
     const updatePlayer = vi.fn();
     const maybeGenerateRegion = vi.fn();
     session.update(new Set(["move"]), updatePlayer, maybeGenerateRegion, 0.016);
-    expect(updatePlayer).toHaveBeenCalled();
+    // In the new mode system, these are called internally by the active mode
     expect(maybeGenerateRegion).toHaveBeenCalled();
-    expect(session.notification).toContain("Arrived at planet!");
+    expect(session.notification).toContain("Press L to land");
   });
 
   it("clears notification if not near any planet", () => {

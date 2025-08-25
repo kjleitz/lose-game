@@ -23,6 +23,10 @@ export class Player {
   }
 
   update(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
+    this.updateSpace(dt, actions, visitedPlanet);
+  }
+
+  updateSpace(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
     const TURN_SPEED = 2.5;
     const BASE_THRUST = 280; // base ship thrust (units/sec^2)
     const DRAG = 0.98;
@@ -53,6 +57,50 @@ export class Player {
     // Increment experience if visiting a planet
     if (visitedPlanet) {
       this.state.experience = (this.state.experience ?? 0) + 10;
+    }
+  }
+
+  updatePlanet(dt: number, actions: Set<string>) {
+    const WALK_SPEED = 200; // units/sec
+    const RUN_SPEED = 350; // units/sec when boosting
+    const FRICTION = 0.85; // ground friction
+
+    let speed = WALK_SPEED;
+    if (actions.has("boost")) {
+      speed = RUN_SPEED;
+    }
+
+    // Direct movement (no rotation needed for walking)
+    let moveX = 0;
+    let moveY = 0;
+
+    if (actions.has("thrust")) moveY -= 1; // W/Up = move up
+    if (actions.has("turnLeft")) moveX -= 1; // A/Left = move left
+    if (actions.has("turnRight")) moveX += 1; // D/Right = move right
+    if (actions.has("interact")) moveY += 1; // S/Down = move down (reuse interact for now)
+
+    // Normalize diagonal movement
+    if (moveX !== 0 && moveY !== 0) {
+      const len = Math.sqrt(moveX * moveX + moveY * moveY);
+      moveX /= len;
+      moveY /= len;
+    }
+
+    // Apply movement
+    this.state.vx = moveX * speed;
+    this.state.vy = moveY * speed;
+
+    // Update position
+    this.state.x += this.state.vx * dt;
+    this.state.y += this.state.vy * dt;
+
+    // Apply friction (gradual stop)
+    this.state.vx *= FRICTION;
+    this.state.vy *= FRICTION;
+
+    // Keep track of facing direction for rendering
+    if (moveX !== 0 || moveY !== 0) {
+      this.state.angle = Math.atan2(moveY, moveX);
     }
   }
 

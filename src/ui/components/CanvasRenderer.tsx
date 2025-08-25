@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { GameRenderer } from "../../domain/render/GameRenderer";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../../domain/game/enemies";
+import type { GameSession } from "../../domain/game/GameSession";
 
 export function CanvasRenderer({
   player,
@@ -11,6 +12,7 @@ export function CanvasRenderer({
   enemies,
   actions,
   size,
+  gameSession,
 }: {
   player: { x: number; y: number; vx: number; vy: number; angle: number };
   camera: { x: number; y: number; zoom: number };
@@ -19,6 +21,7 @@ export function CanvasRenderer({
   enemies: Enemy[];
   actions: Set<string>;
   size: { width: number; height: number };
+  gameSession: GameSession | null;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // Refs to always have latest props in animation loop
@@ -29,6 +32,7 @@ export function CanvasRenderer({
   const enemiesRef = useRef(enemies);
   const actionsRef = useRef(actions);
   const sizeRef = useRef(size);
+  const gameSessionRef = useRef(gameSession);
 
   useEffect(() => {
     playerRef.current = player;
@@ -51,6 +55,9 @@ export function CanvasRenderer({
   useEffect(() => {
     sizeRef.current = size;
   }, [size]);
+  useEffect(() => {
+    gameSessionRef.current = gameSession;
+  }, [gameSession]);
 
   // Only resize canvas when size changes
   useEffect(() => {
@@ -83,6 +90,7 @@ export function CanvasRenderer({
         actionsRef.current,
         sizeRef.current,
         dpr,
+        gameSessionRef.current,
       );
       if (running) requestAnimationFrame(renderFrame);
     }

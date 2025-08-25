@@ -58,6 +58,13 @@ export default function CanvasRoot() {
     }
   }
 
+  // Update planets in GameSession when they change
+  useEffect(() => {
+    if (gameSessionRef.current && planets.length > 0) {
+      gameSessionRef.current.updatePlanets(planets);
+    }
+  }, [planets]);
+
   function render() {
     // CanvasRenderer handles all drawing
     // No-op here, handled by CanvasRenderer
@@ -73,6 +80,7 @@ export default function CanvasRoot() {
           enemies={enemies}
           actions={actions}
           size={size}
+          gameSession={gameSessionRef.current}
         />
         <Hud
           player={playerPos}
