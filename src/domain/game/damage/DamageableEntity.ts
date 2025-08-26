@@ -11,24 +11,25 @@ export interface DamageableEntity {
 }
 
 export interface HealthComponent {
-  readonly maxHealth: number;
+  maxHealth: number;
   currentHealth: number;
   readonly resistances: Map<DamageType, number>; // 0-1, reduction factor
-  readonly vulnerabilities: Map<DamageType, number>; // >1, amplification factor  
+  readonly vulnerabilities: Map<DamageType, number>; // >1, amplification factor
   readonly regeneration: number; // health per second
   readonly invulnerabilityPeriod: number; // ms after taking damage
   lastDamageTime: number;
 }
 
-export enum DamageType {
-  PHYSICAL = "physical", // cutting, crushing, piercing
-  FIRE = "fire", // burning, heat
-  COLD = "cold", // freezing, ice
-  ENERGY = "energy", // lasers, electricity
-  CHEMICAL = "chemical", // poison, acid
-  EXPLOSIVE = "explosive", // blast damage
-  ENVIRONMENTAL = "environmental", // falling, drowning
-}
+export const DamageType = {
+  PHYSICAL: "physical", // cutting, crushing, piercing
+  FIRE: "fire", // burning, heat
+  COLD: "cold", // freezing, ice
+  ENERGY: "energy", // lasers, electricity
+  CHEMICAL: "chemical", // poison, acid
+  EXPLOSIVE: "explosive", // blast damage
+  ENVIRONMENTAL: "environmental", // falling, drowning
+} as const;
+export type DamageType = (typeof DamageType)[keyof typeof DamageType];
 
 export interface DamageEvent {
   readonly amount: number;
@@ -80,11 +81,25 @@ export interface DropCondition {
   readonly skill?: number; // minimum skill level required
 }
 
-export interface DropModifier {
-  readonly type: "tool_bonus" | "skill_bonus" | "damage_type_bonus";
-  readonly condition: any;
+export type ToolBonusModifier = {
+  readonly type: "tool_bonus";
+  readonly condition: { tool: string };
   readonly multiplier: number;
-}
+};
+
+export type SkillBonusModifier = {
+  readonly type: "skill_bonus";
+  readonly condition?: unknown;
+  readonly multiplier: number;
+};
+
+export type DamageTypeBonusModifier = {
+  readonly type: "damage_type_bonus";
+  readonly condition: { damageType: DamageType };
+  readonly multiplier: number;
+};
+
+export type DropModifier = ToolBonusModifier | SkillBonusModifier | DamageTypeBonusModifier;
 
 export interface DestructionEffect {
   readonly particles: ParticleEffect[];
@@ -99,14 +114,15 @@ export interface ParticleEffect {
   readonly color: string;
 }
 
-export enum DamageVisualState {
-  PRISTINE = "pristine", // 100-80% health
-  LIGHTLY_DAMAGED = "light", // 80-60% health
-  DAMAGED = "damaged", // 60-40% health
-  HEAVILY_DAMAGED = "heavy", // 40-20% health
-  CRITICAL = "critical", // 20-1% health
-  DESTROYED = "destroyed", // 0% health
-}
+export const DamageVisualState = {
+  PRISTINE: "pristine", // 100-80% health
+  LIGHTLY_DAMAGED: "light", // 80-60% health
+  DAMAGED: "damaged", // 60-40% health
+  HEAVILY_DAMAGED: "heavy", // 40-20% health
+  CRITICAL: "critical", // 20-1% health
+  DESTROYED: "destroyed", // 0% health
+} as const;
+export type DamageVisualState = (typeof DamageVisualState)[keyof typeof DamageVisualState];
 
 export abstract class BaseDamageableEntity implements DamageableEntity {
   readonly id: string;

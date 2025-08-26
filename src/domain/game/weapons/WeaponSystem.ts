@@ -1,7 +1,9 @@
 import type { DamageableEntity, DamageEvent, DamageType } from "../damage/DamageableEntity";
-import type { Item, ToolType } from "../items/Item";
-import { BaseItemType } from "../items/Item";
+import type { Item } from "../items/Item";
+import { BaseItemType, ItemQuality, ItemRarity } from "../items/Item";
 import type { Player } from "../player";
+
+// Weapon properties are read dynamically from item.properties (unknown) with runtime guards
 
 export interface Projectile {
   id: string;
@@ -28,22 +30,16 @@ export class WeaponSystem {
   private projectiles: Map<string, Projectile> = new Map();
   private nextProjectileId = 1;
 
-  fireWeapon(
-    player: Player,
-    weapon: Item,
-    targetX: number,
-    targetY: number
-  ): WeaponFireResult {
+  fireWeapon(player: Player, weapon: Item, targetX: number, targetY: number): WeaponFireResult {
     // Validate weapon
     if (!this.isWeapon(weapon)) {
       return { success: false, reason: "Not a weapon" };
     }
 
-    const weaponProps = weapon.properties as any;
-    
+    const weaponProps = weapon.properties as unknown;
+
     // Check durability
-    if (weapon.properties.durability && 
-        weapon.properties.durability.currentDurability <= 0) {
+    if (weapon.properties.durability && weapon.properties.durability.currentDurability <= 0) {
       return { success: false, reason: "Weapon broken" };
     }
 
@@ -51,12 +47,12 @@ export class WeaponSystem {
     const dx = targetX - player.state.x;
     const dy = targetY - player.state.y;
     const distance = Math.hypot(dx, dy);
-    
+
     if (distance === 0) {
       return { success: false, reason: "Invalid target" };
     }
 
-    const speed = (weaponProps as any).projectileSpeed || 600;
+    const speed = this.getWeaponProjectileSpeed(weaponProps);
     const vx = (dx / distance) * speed;
     const vy = (dy / distance) * speed;
 
@@ -67,9 +63,9 @@ export class WeaponSystem {
       y: player.state.y,
       vx,
       vy,
-      damage: (weaponProps as any).damage || 20,
-      damageType: (weaponProps as any).damageType || "physical",
-      range: (weaponProps as any).range || 500,
+      damage: this.getWeaponDamage(weaponProps),
+      damageType: this.getWeaponDamageType(weaponProps),
+      range: this.getWeaponRange(weaponProps),
       distanceTraveled: 0,
       sourcePlayerId: "player", // Assuming single player for now
       weaponType: weapon.type,
@@ -92,7 +88,7 @@ export class WeaponSystem {
       // Update projectile position
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
-      
+
       const frameDistance = Math.hypot(projectile.vx * dt, projectile.vy * dt);
       projectile.distanceTraveled += frameDistance;
 
@@ -105,9 +101,12 @@ export class WeaponSystem {
       // Check for collisions with entities
       let hit = false;
       for (const entity of entities) {
-        const distance = Math.hypot(projectile.x - entity.position.x, projectile.y - entity.position.y);
+        const distance = Math.hypot(
+          projectile.x - entity.position.x,
+          projectile.y - entity.position.y,
+        );
         const hitRadius = 15; // Basic hit radius, could be based on entity size
-        
+
         if (distance <= hitRadius) {
           // Hit the entity
           const damageEvent: DamageEvent = {
@@ -140,14 +139,14 @@ export class WeaponSystem {
   }
 
   private isWeapon(item: Item): boolean {
-    return item.baseType === BaseItemType.TOOL && 
-           (item.properties as any).toolType === "weapon";
+    return item.baseType === BaseItemType.WEAPON;
   }
 
   private damageWeapon(weapon: Item, damage: number): void {
     if (weapon.properties.durability) {
-      weapon.properties.durability.currentDurability = Math.max(0, 
-        weapon.properties.durability.currentDurability - damage
+      weapon.properties.durability.currentDurability = Math.max(
+        0,
+        weapon.properties.durability.currentDurability - damage,
       );
     }
   }
@@ -163,7 +162,7 @@ export class WeaponSystem {
     return {
       id: "basic_blaster",
       type: "plasma_pistol",
-      baseType: BaseItemType.TOOL,
+      baseType: BaseItemType.WEAPON,
       name: "Basic Plasma Pistol",
       description: "A simple energy weapon for planetary exploration",
       properties: {
@@ -174,19 +173,60 @@ export class WeaponSystem {
         durability: {
           maxDurability: 100,
           currentDurability: 100,
+          repairability: { canRepair: false, requiredMaterials: [], repairCost: 0 },
+          degradationRate: 1,
         },
-        toolType: "weapon" as ToolType,
+        quality: ItemQuality.COMMON,
+        rarity: ItemRarity.COMMON,
+        tradeable: true,
+        dropOnDeath: false,
         damage: 25,
-        damageType: "energy" as DamageType,
+        damageType: "energy",
         range: 400,
         projectileSpeed: 800,
         fireRate: 2.0, // shots per second
         energyCost: 5,
-      } as any,
+      },
       stats: {
         value: 150,
       },
+      requirements: {},
       effects: [],
+      metadata: { discoveredAt: Date.now() },
     };
   }
+
+  private getWeaponDamage(props: unknown): number {
+    if (props && typeof props === "object" && "damage" in props) {
+      const damage = props.damage;
+      return typeof damage === "number" ? damage : 20;
+    }
+    return 20;
+  }
+
+  private getWeaponRange(props: unknown): number {
+    if (props && typeof props === "object" && "range" in props) {
+      const range = props.range;
+      return typeof range === "number" ? range : 500;
+    }
+    return 500;
+  }
+
+  private getWeaponProjectileSpeed(props: unknown): number {
+    if (props && typeof props === "object" && "projectileSpeed" in props) {
+      const speed = props.projectileSpeed;
+      return typeof speed === "number" ? speed : 600;
+    }
+    return 600;
+  }
+
+  private getWeaponDamageType(props: unknown): DamageType {
+    if (props && typeof props === "object" && "damageType" in props) {
+      const damageType = props.damageType;
+      return (typeof damageType === "string" ? damageType : "physical") as DamageType;
+    }
+    return "physical";
+  }
+
+  // No longer needed: toolType check replaced by baseType check
 }

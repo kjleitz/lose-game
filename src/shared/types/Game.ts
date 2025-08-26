@@ -11,17 +11,17 @@ export interface TransitionData {
 export interface Game {
   readonly name: string;
   readonly version: string;
-  
+
   // Lifecycle
   initialize(engine: GameEngine): void;
   update(dt: number): void;
   render(): void;
   cleanup(): void;
-  
+
   // State management
   saveState(): GameState;
   loadState(state: GameState): void;
-  
+
   // Mode transitions
   canTransitionTo(targetGame: string): boolean;
   prepareTransition(targetGame: string): TransitionData;
@@ -30,8 +30,8 @@ export interface Game {
 
 export interface GameEngine {
   readonly input: InputManager;
-  readonly renderer: any; // TODO: Will be RenderingEngine
-  readonly camera: any; // TODO: Will be CameraSystem
+  readonly renderer: RenderingEngine | null; // placeholder until system extraction completes
+  readonly camera: CameraSystem | null; // placeholder until system extraction completes
 }
 
 // These will be implemented as we extract the systems

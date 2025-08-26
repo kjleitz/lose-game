@@ -2,31 +2,15 @@ import type {
   DamageableEntity,
   DamageEvent,
   DamageResult,
-  DropEntry,
   DropModifier,
+  ToolBonusModifier,
+  DamageTypeBonusModifier,
+  DropCondition,
 } from "./DamageableEntity";
 
 export class DamageSystem {
   processDamage(target: DamageableEntity, damage: DamageEvent): DamageResult {
     return target.takeDamage(damage);
-  }
-
-  private calculateKnockback(
-    target: DamageableEntity,
-    damage: DamageEvent,
-  ): { x: number; y: number } {
-    // Calculate knockback based on damage amount and direction
-    const baseKnockback = damage.amount * 0.5;
-    return {
-      x: damage.direction.x * baseKnockback,
-      y: damage.direction.y * baseKnockback,
-    };
-  }
-
-  private getCriticalMultiplier(damageSource: any): number {
-    // Different sources have different critical multipliers
-    // This could be expanded based on weapon types, skills, etc.
-    return 1.5;
   }
 }
 
@@ -34,7 +18,7 @@ export interface ItemDrop {
   readonly itemType: string;
   readonly quantity: number;
   readonly position: { x: number; y: number };
-  readonly condition?: any; // item condition/quality
+  readonly condition?: unknown; // item condition/quality
 }
 
 export class DropService {
@@ -84,7 +68,7 @@ export class DropService {
     return this.applyDropModifiers(drops, entity.dropTable.modifiers, killingBlow);
   }
 
-  private meetsCondition(condition: any, killingBlow: DamageEvent): boolean {
+  private meetsCondition(condition: DropCondition | undefined, killingBlow: DamageEvent): boolean {
     if (!condition) return true;
 
     if (condition.damageType && condition.damageType !== killingBlow.type) {
@@ -109,31 +93,32 @@ export class DropService {
     modifiers: DropModifier[],
     killingBlow: DamageEvent,
   ): ItemDrop[] {
+    let adjusted = drops;
     for (const modifier of modifiers) {
-      switch (modifier.type) {
-        case "tool_bonus":
-          if (this.usedTool(killingBlow, modifier.condition)) {
-            drops.forEach(
-              (drop) => (drop.quantity = Math.floor(drop.quantity * modifier.multiplier)),
-            );
-          }
-          break;
-        case "skill_bonus":
-          // TODO: Implement skill bonus when skills system is ready
-          break;
-        case "damage_type_bonus":
-          if (killingBlow.type === modifier.condition.damageType) {
-            drops.forEach(
-              (drop) => (drop.quantity = Math.floor(drop.quantity * modifier.multiplier)),
-            );
-          }
-          break;
+      if (modifier.type === "tool_bonus") {
+        const cond = (modifier as ToolBonusModifier).condition;
+        if (this.usedTool(killingBlow, cond)) {
+          adjusted = adjusted.map((drop) => ({
+            ...drop,
+            quantity: Math.floor(drop.quantity * modifier.multiplier),
+          }));
+        }
+      } else if (modifier.type === "skill_bonus") {
+        // TODO: Implement skill bonus when skills system is ready
+      } else if (modifier.type === "damage_type_bonus") {
+        const cond = (modifier as DamageTypeBonusModifier).condition;
+        if (killingBlow.type === cond.damageType) {
+          adjusted = adjusted.map((drop) => ({
+            ...drop,
+            quantity: Math.floor(drop.quantity * modifier.multiplier),
+          }));
+        }
       }
     }
-    return drops;
+    return adjusted;
   }
 
-  private usedTool(killingBlow: DamageEvent, condition: any): boolean {
+  private usedTool(killingBlow: DamageEvent, condition: { tool: string }): boolean {
     return killingBlow.source.weaponType === condition.tool;
   }
 }

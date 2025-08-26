@@ -4,7 +4,8 @@ This project splits tests into fast unit/component tests (Vitest + JSDOM) and fu
 
 - Unit/Component: Vitest (`src/**/*.test.ts[x]`, `tests/**`).
   - Environment: JSDOM.
-  - Canvas: mocked per ADR-0004.
+  - Setup: `src/setupTests.ts` configures React Testing Library cleanup after each test.
+  - Canvas: mocked per ADR-0004 for deterministic rendering tests.
   - Run: `npm run test` or `npm run coverage`.
   - Config: `vitest.config.ts` excludes `e2e/**` and `tests-examples/**`.
 

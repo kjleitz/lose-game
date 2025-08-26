@@ -1,8 +1,18 @@
 import type { Planet } from "../../domain/game/planets";
 
+type Minimal2DContext = Pick<
+  CanvasRenderingContext2D,
+  "save" | "restore" | "translate" | "beginPath" | "arc" | "fill" | "stroke" | "ellipse"
+> & {
+  fillStyle: CanvasRenderingContext2D["fillStyle"];
+  strokeStyle: CanvasRenderingContext2D["strokeStyle"];
+  lineWidth: CanvasRenderingContext2D["lineWidth"];
+  globalAlpha: CanvasRenderingContext2D["globalAlpha"];
+};
+
 export interface PlanetCanvasProps {
   planet: Planet;
-  ctx: CanvasRenderingContext2D;
+  ctx: Minimal2DContext;
   x: number;
   y: number;
   r: number;

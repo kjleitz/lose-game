@@ -11,17 +11,18 @@ export interface Item {
   readonly metadata: ItemMetadata;
 }
 
-export enum BaseItemType {
-  TOOL = "tool",
-  WEAPON = "weapon", 
-  MATERIAL = "material",
-  CONSUMABLE = "consumable",
-  EQUIPMENT = "equipment",
-  CONTAINER = "container",
-  SEED = "seed",
-  BLUEPRINT = "blueprint",
-  ARTIFACT = "artifact",
-}
+export const BaseItemType = {
+  TOOL: "tool",
+  WEAPON: "weapon",
+  MATERIAL: "material",
+  CONSUMABLE: "consumable",
+  EQUIPMENT: "equipment",
+  CONTAINER: "container",
+  SEED: "seed",
+  BLUEPRINT: "blueprint",
+  ARTIFACT: "artifact",
+} as const;
+export type BaseItemType = (typeof BaseItemType)[keyof typeof BaseItemType];
 
 export interface ItemProperties {
   readonly weight: number;
@@ -34,27 +35,37 @@ export interface ItemProperties {
   readonly rarity: ItemRarity;
   readonly tradeable: boolean;
   readonly dropOnDeath: boolean;
+  // Optional tool/weapon fields for dynamic systems
+  readonly toolType?: string;
+  readonly damage?: number;
+  readonly damageType?: import("../damage/DamageableEntity").DamageType;
+  readonly range?: number;
+  readonly projectileSpeed?: number;
+  readonly fireRate?: number;
+  readonly energyCost?: number;
 }
 
-export enum ItemQuality {
-  CRUDE = "crude", // -20% effectiveness
-  POOR = "poor", // -10% effectiveness  
-  COMMON = "common", // baseline
-  GOOD = "good", // +10% effectiveness
-  EXCELLENT = "excellent", // +25% effectiveness
-  MASTERWORK = "masterwork", // +50% effectiveness
-  LEGENDARY = "legendary", // +100% effectiveness, special properties
-}
+export const ItemQuality = {
+  CRUDE: "crude", // -20% effectiveness
+  POOR: "poor", // -10% effectiveness
+  COMMON: "common", // baseline
+  GOOD: "good", // +10% effectiveness
+  EXCELLENT: "excellent", // +25% effectiveness
+  MASTERWORK: "masterwork", // +50% effectiveness
+  LEGENDARY: "legendary", // +100% effectiveness, special properties
+} as const;
+export type ItemQuality = (typeof ItemQuality)[keyof typeof ItemQuality];
 
-export enum ItemRarity {
-  ABUNDANT = "abundant", // found everywhere
-  COMMON = "common", // easily found
-  UNCOMMON = "uncommon", // somewhat rare
-  RARE = "rare", // hard to find
-  EPIC = "epic", // very rare
-  LEGENDARY = "legendary", // extremely rare
-  UNIQUE = "unique", // one-of-a-kind
-}
+export const ItemRarity = {
+  ABUNDANT: "abundant", // found everywhere
+  COMMON: "common", // easily found
+  UNCOMMON: "uncommon", // somewhat rare
+  RARE: "rare", // hard to find
+  EPIC: "epic", // very rare
+  LEGENDARY: "legendary", // extremely rare
+  UNIQUE: "unique", // one-of-a-kind
+} as const;
+export type ItemRarity = (typeof ItemRarity)[keyof typeof ItemRarity];
 
 export interface DurabilityProperties {
   readonly maxDurability: number;
@@ -77,13 +88,14 @@ export interface PerishableProperties {
   readonly preservationMethods: PreservationMethod[];
 }
 
-export enum PreservationMethod {
-  REFRIGERATION = "refrigeration",
-  SALT_CURED = "salt_cured", 
-  DRIED = "dried",
-  CANNED = "canned",
-  SMOKED = "smoked",
-}
+export const PreservationMethod = {
+  REFRIGERATION: "refrigeration",
+  SALT_CURED: "salt_cured",
+  DRIED: "dried",
+  CANNED: "canned",
+  SMOKED: "smoked",
+} as const;
+export type PreservationMethod = (typeof PreservationMethod)[keyof typeof PreservationMethod];
 
 export interface ItemStats {
   readonly effectiveness?: number;
@@ -106,20 +118,21 @@ export interface ItemEffect {
   readonly conditions?: EffectCondition[];
 }
 
-export enum EffectType {
-  RESTORE_HEALTH = "restore_health",
-  RESTORE_HUNGER = "restore_hunger",
-  RESTORE_THIRST = "restore_thirst",
-  RESTORE_ENERGY = "restore_energy",
-  BOOST_SPEED = "boost_speed",
-  BOOST_STRENGTH = "boost_strength",
-  RESIST_DAMAGE = "resist_damage",
-  CURE_POISON = "cure_poison",
-}
+export const EffectType = {
+  RESTORE_HEALTH: "restore_health",
+  RESTORE_HUNGER: "restore_hunger",
+  RESTORE_THIRST: "restore_thirst",
+  RESTORE_ENERGY: "restore_energy",
+  BOOST_SPEED: "boost_speed",
+  BOOST_STRENGTH: "boost_strength",
+  RESIST_DAMAGE: "resist_damage",
+  CURE_POISON: "cure_poison",
+} as const;
+export type EffectType = (typeof EffectType)[keyof typeof EffectType];
 
 export interface EffectCondition {
   readonly type: string;
-  readonly value: any;
+  readonly value: unknown;
 }
 
 export interface ItemMetadata {
@@ -136,15 +149,14 @@ export interface ItemModification {
   readonly appliedBy?: string;
 }
 
-export enum ItemCondition {
-  PRISTINE = "pristine", // 100-90% durability/freshness
-  GOOD = "good", // 90-70%
-  WORN = "worn", // 70-50%
-  DAMAGED = "damaged", // 50-25%
-  BROKEN = "broken", // 25-1%
-  DESTROYED = "destroyed", // 0%
-  SPOILED = "spoiled", // for food items
-}
+export type ItemCondition =
+  | "pristine" // 100-90% durability/freshness
+  | "good" // 90-70%
+  | "worn" // 70-50%
+  | "damaged" // 50-25%
+  | "broken" // 25-1%
+  | "destroyed" // 0%
+  | "spoiled"; // for food items
 
 // Specialized item types
 
@@ -156,24 +168,26 @@ export interface Tool extends Item {
   readonly specialAbilities: ToolAbility[];
 }
 
-export enum ToolType {
-  AXE = "axe",
-  PICKAXE = "pickaxe",
-  SHOVEL = "shovel",
-  KNIFE = "knife",
-  HAMMER = "hammer",
-  WRENCH = "wrench",
-  SCANNER = "scanner",
-  FISHING_ROD = "fishing_rod",
-  TRAP = "trap",
-}
+export const ToolType = {
+  AXE: "axe",
+  PICKAXE: "pickaxe",
+  SHOVEL: "shovel",
+  KNIFE: "knife",
+  HAMMER: "hammer",
+  WRENCH: "wrench",
+  SCANNER: "scanner",
+  FISHING_ROD: "fishing_rod",
+  TRAP: "trap",
+} as const;
+export type ToolType = (typeof ToolType)[keyof typeof ToolType];
 
-export enum ToolAbility {
-  TREE_FELLING = "tree_felling",
-  PRECISION_CUTTING = "precision_cutting",
-  HEAVY_IMPACT = "heavy_impact",
-  SCANNING = "scanning",
-}
+export const ToolAbility = {
+  TREE_FELLING: "tree_felling",
+  PRECISION_CUTTING: "precision_cutting",
+  HEAVY_IMPACT: "heavy_impact",
+  SCANNING: "scanning",
+} as const;
+export type ToolAbility = (typeof ToolAbility)[keyof typeof ToolAbility];
 
 export interface Weapon extends Tool {
   readonly weaponType: WeaponType;
@@ -184,16 +198,19 @@ export interface Weapon extends Tool {
   readonly statusEffects: StatusEffect[];
 }
 
-export enum WeaponType {
-  MELEE = "melee",
-  RANGED = "ranged", 
-  THROWN = "thrown",
-  EXPLOSIVE = "explosive",
-}
+export const WeaponType = {
+  MELEE: "melee",
+  RANGED: "ranged",
+  THROWN: "thrown",
+  EXPLOSIVE: "explosive",
+} as const;
+export type WeaponType = (typeof WeaponType)[keyof typeof WeaponType];
+
+import type { DamageType } from "../damage/DamageableEntity";
 
 export interface DamageProfile {
   readonly base: number;
-  readonly type: string; // matches DamageType from damage system
+  readonly type: DamageType; // matches DamageType from damage system
   readonly criticalMultiplier: number;
 }
 
@@ -210,24 +227,26 @@ export interface Material extends Item {
   readonly purityLevel: number; // affects crafting results
 }
 
-export enum MaterialType {
-  METAL_ORE = "metal_ore",
-  STONE = "stone",
-  WOOD = "wood", 
-  FIBER = "fiber",
-  CHEMICAL = "chemical",
-  BIOLOGICAL = "biological",
-  CRYSTAL = "crystal",
-  COMPOSITE = "composite",
-}
+export const MaterialType = {
+  METAL_ORE: "metal_ore",
+  STONE: "stone",
+  WOOD: "wood",
+  FIBER: "fiber",
+  CHEMICAL: "chemical",
+  BIOLOGICAL: "biological",
+  CRYSTAL: "crystal",
+  COMPOSITE: "composite",
+} as const;
+export type MaterialType = (typeof MaterialType)[keyof typeof MaterialType];
 
-export enum ProcessingMethod {
-  SMELTING = "smelting",
-  FORGING = "forging",
-  MACHINING = "machining",
-  WEAVING = "weaving",
-  DISTILLATION = "distillation",
-}
+export const ProcessingMethod = {
+  SMELTING: "smelting",
+  FORGING: "forging",
+  MACHINING: "machining",
+  WEAVING: "weaving",
+  DISTILLATION: "distillation",
+} as const;
+export type ProcessingMethod = (typeof ProcessingMethod)[keyof typeof ProcessingMethod];
 
 export interface Consumable extends Item {
   readonly consumableType: ConsumableType;
@@ -236,10 +255,11 @@ export interface Consumable extends Item {
   readonly cooldown: number; // time before can use again
 }
 
-export enum ConsumableType {
-  FOOD = "food",
-  MEDICINE = "medicine",
-  STIMULANT = "stimulant", 
-  POISON = "poison",
-  UTILITY = "utility", // explosives, flares, etc.
-}
+export const ConsumableType = {
+  FOOD: "food",
+  MEDICINE: "medicine",
+  STIMULANT: "stimulant",
+  POISON: "poison",
+  UTILITY: "utility", // explosives, flares, etc.
+} as const;
+export type ConsumableType = (typeof ConsumableType)[keyof typeof ConsumableType];

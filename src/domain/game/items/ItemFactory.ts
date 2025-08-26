@@ -6,6 +6,10 @@ import {
   type Weapon,
   type Material,
   type Consumable,
+  type ItemProperties,
+  type ItemStats,
+  type ItemRequirements,
+  type ItemEffect,
   BaseItemType,
   ToolType,
   WeaponType,
@@ -107,7 +111,17 @@ export class ItemFactory {
     const modifiedStats = { ...item.stats };
     for (const [stat, change] of modifier.statChanges) {
       if (stat in modifiedStats) {
-        (modifiedStats as any)[stat] = ((modifiedStats as any)[stat] || 0) + change;
+        if (stat === "effectiveness" && typeof modifiedStats.effectiveness === "number") {
+          modifiedStats.effectiveness += change;
+        } else if (stat === "durability" && typeof modifiedStats.durability === "number") {
+          modifiedStats.durability += change;
+        } else if (stat === "value" && typeof modifiedStats.value === "number") {
+          modifiedStats.value += change;
+        } else if (stat === "nutritionValue" && typeof modifiedStats.nutritionValue === "number") {
+          modifiedStats.nutritionValue += change;
+        } else if (stat === "repairValue" && typeof modifiedStats.repairValue === "number") {
+          modifiedStats.repairValue += change;
+        }
       }
     }
 
@@ -209,7 +223,7 @@ export class ItemFactory {
     };
   }
 
-  createMaterial(materialType: MaterialType, quantity: number = 1): Material {
+  createMaterial(materialType: MaterialType, _quantity: number = 1): Material {
     const template = this.templates.getMaterialTemplate(materialType);
     const baseItem = this.createItem(template.id) as Material;
 
@@ -250,10 +264,10 @@ export interface ItemTemplate {
   readonly baseType: BaseItemType;
   readonly name: string;
   readonly description: string;
-  readonly properties: any;
-  readonly stats: any;
-  readonly requirements?: any;
-  readonly effects?: any[];
+  readonly properties: ItemProperties;
+  readonly stats: ItemStats;
+  readonly requirements?: ItemRequirements;
+  readonly effects?: ItemEffect[];
 }
 
 export interface ItemModifier {

@@ -45,3 +45,11 @@ These guidelines apply to L.O.S.E.: Lots of Outer Space to Explore — a Vite + 
 
 - Do not commit secrets. Provide `.env.example` if env vars are needed.
 - `.gitignore` should include `node_modules/`, `dist/`, coverage artifacts, and editor files.
+
+## RULES YOU ABSOLUTELY MUST FOLLOW
+
+- DO NOT USE `any`. YOU DO NOT HAVE TO USE `any`. If you are using `any`, you are adding a bug. I'm serious.
+- If you are doing `as any`, you're doing it wrong. You should not need `as any`. Figure it out. Fix your types first. Your compiler is your best friend. I don't care what is happening in the browser if there are type errors in my code. Make it work. Do not resort to a band-aid like `any`. Use `unknown` if you have to, because that is what it's there for. Get an error with `unknown`? Good, that's what it's there for. When you fix that error, you will have solved a problem for yourself ahead of time. THIS IS YOUR GOSPEL.
+- Just as bad as `any` is `@ts-ignore` and `@ts-ignore-error`. Never use any of these.
+- IF YOU ARE CASTING, YOU ARE DOING IT WRONG. NO CASTING. You are very possibly hiding a bug. It's only a step up from `as any`. Doing `as X` is almost as bad. It is only necessary in rare cases. Consider it banned. **If it has to happen, you MUST make that argument to me and receive my confirmation that it be allowed in the codebase.**
+- Using `satisfies` is smelly. If you are doing this, consider why you are doing it. If you're doing it because it seems like the only way to fix some type issue, then you are probably doing it wrong. This is useful in only very rare cases, in my opinion. **If it has to happen, you MUST make that argument to me and receive my confirmation that it be allowed in the codebase.**

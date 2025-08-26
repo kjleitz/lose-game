@@ -5,6 +5,7 @@ import { PlanetGame } from "../games/planet/PlanetGame";
 import type { Player } from "../domain/game/player";
 import type { Planet } from "../domain/game/planets";
 import type { Enemy } from "../domain/game/enemies";
+import type { Action, ActionState } from "../engine/input/ActionTypes";
 
 export interface GameManagerConfig {
   canvas?: HTMLCanvasElement;
@@ -85,7 +86,7 @@ export class GameManager {
       // Handle specific transitions
       if (gameName === "planet" && transitionData.planetId) {
         const spaceGame = this.games.get("space") as SpaceGame;
-        const planet = spaceGame.planetsData.find(p => p.id === transitionData.planetId);
+        const planet = spaceGame.planetsData.find((p) => p.id === transitionData.planetId);
         if (planet) {
           this.currentGame.receiveTransition({ ...transitionData, planet });
         }
@@ -101,9 +102,10 @@ export class GameManager {
   update(dt: number, externalActions?: Set<string>): void {
     // Sync input actions from external system during transition
     if (externalActions) {
-      this.engine.updateInputActions(externalActions);
+      const actionState = this.convertToActionState(externalActions);
+      this.engine.updateInputActions(actionState);
     }
-    
+
     this.currentGame?.update(dt);
     this.updateCamera();
     this.updateNotifications();
@@ -115,7 +117,7 @@ export class GameManager {
 
   // Backward compatibility methods
   getCurrentModeType(): "space" | "planet" {
-    return this.currentGame?.name as "space" | "planet" || "space";
+    return (this.currentGame?.name as "space" | "planet") || "space";
   }
 
   get planets(): Planet[] {
@@ -196,5 +198,33 @@ export class GameManager {
     } else if (this.currentGame?.name === "planet" && this.currentPlanet) {
       this.notification = `Exploring ${this.currentPlanet.id} - Press T to takeoff`;
     }
+  }
+
+  private isValidAction(action: string): action is Action {
+    return (
+      action === "thrust" ||
+      action === "turnLeft" ||
+      action === "turnRight" ||
+      action === "fire" ||
+      action === "interact" ||
+      action === "boost" ||
+      action === "speedUp" ||
+      action === "speedDown" ||
+      action === "land" ||
+      action === "takeoff" ||
+      action === "inventory"
+    );
+  }
+
+  private convertToActionState(actions: Set<string>): ActionState {
+    const actionState = new Set<Action>();
+
+    for (const action of actions) {
+      if (this.isValidAction(action)) {
+        actionState.add(action);
+      }
+    }
+
+    return actionState;
   }
 }

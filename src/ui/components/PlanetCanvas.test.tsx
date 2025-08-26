@@ -31,7 +31,7 @@ describe("drawPlanetCanvas", () => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "solid" },
-      ctx: ctx as unknown as CanvasRenderingContext2D,
+      ctx,
       x: 0,
       y: 0,
       r: 10,
@@ -45,7 +45,7 @@ describe("drawPlanetCanvas", () => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "ringed" },
-      ctx: ctx as unknown as CanvasRenderingContext2D,
+      ctx,
       x: 0,
       y: 0,
       r: 10,
@@ -58,7 +58,7 @@ describe("drawPlanetCanvas", () => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "striped" },
-      ctx: ctx as unknown as CanvasRenderingContext2D,
+      ctx,
       x: 0,
       y: 0,
       r: 10,
@@ -71,7 +71,7 @@ describe("drawPlanetCanvas", () => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "spotted" },
-      ctx: ctx as unknown as CanvasRenderingContext2D,
+      ctx,
       x: 0,
       y: 0,
       r: 10,

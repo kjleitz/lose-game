@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { ItemFactory } from "./ItemFactory";
-import { ItemQuality, ToolType, BaseItemType } from "./Item";
+import { ItemQuality, ToolType, BaseItemType, MaterialType, ConsumableType } from "./Item";
 
 describe("ItemFactory", () => {
   let factory: ItemFactory;
@@ -33,12 +33,10 @@ describe("ItemFactory", () => {
 
       expect(excellentAxe.properties.quality).toBe(ItemQuality.EXCELLENT);
       expect(excellentAxe.name).toBe("Superior Iron Axe");
-      
+
       // Excellent quality should have 25% better stats
       if (commonAxe.stats.effectiveness && excellentAxe.stats.effectiveness) {
-        expect(excellentAxe.stats.effectiveness).toBeCloseTo(
-          commonAxe.stats.effectiveness * 1.25
-        );
+        expect(excellentAxe.stats.effectiveness).toBeCloseTo(commonAxe.stats.effectiveness * 1.25);
       }
 
       if (commonAxe.stats.value && excellentAxe.stats.value) {
@@ -79,7 +77,7 @@ describe("ItemFactory", () => {
     });
 
     it("should create materials with stacking properties", () => {
-      const wood = factory.createMaterial("wood", 10);
+      const wood = factory.createMaterial(MaterialType.WOOD, 10);
 
       expect(wood.properties.stackable).toBe(true);
       expect(wood.properties.maxStackSize).toBe(50);
@@ -89,12 +87,12 @@ describe("ItemFactory", () => {
     });
 
     it("should create consumables with effects", () => {
-      const meat = factory.createConsumable("food");
+      const meat = factory.createConsumable(ConsumableType.FOOD);
 
       expect(meat.consumableType).toBe("food");
       expect(meat.effects).toHaveLength(2);
-      
-      const healthEffect = meat.effects.find(e => e.type === "restore_health");
+
+      const healthEffect = meat.effects.find((e) => e.type === "restore_health");
       expect(healthEffect).toBeDefined();
       expect(healthEffect!.amount).toBe(25);
     });
@@ -106,7 +104,7 @@ describe("ItemFactory", () => {
 
       expect(modifiedAxe.metadata.modifications).toHaveLength(1);
       expect(modifiedAxe.metadata.modifications![0].type).toBe("Sharp");
-      
+
       // Should have increased effectiveness from sharp modifier
       expect(modifiedAxe.stats.effectiveness).toBeCloseTo(2.2); // 2.0 + 0.2
     });

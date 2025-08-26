@@ -1,5 +1,12 @@
-import type { DamageableEntity, HealthComponent, DropTable } from "../damage/DamageableEntity";
-import type { Item } from "../items/Item";
+import type {
+  DamageableEntity,
+  HealthComponent,
+  DropTable,
+  DamageVisualState,
+  DamageEvent,
+  DamageResult,
+  DestructionEffect,
+} from "../damage/DamageableEntity";
 
 export interface FloraSpecies {
   readonly id: string;
@@ -13,17 +20,18 @@ export interface FloraSpecies {
   readonly resilience: ResilienceProperties;
 }
 
-export enum FloraCategory {
-  TREE = "tree",
-  SHRUB = "shrub", 
-  GRASS = "grass",
-  FLOWER = "flower",
-  VINE = "vine",
-  MOSS = "moss",
-  FUNGUS = "fungus",
-  CROP = "crop", // cultivated plants
-  AQUATIC = "aquatic",
-}
+export const FloraCategory = {
+  TREE: "tree",
+  SHRUB: "shrub",
+  GRASS: "grass",
+  FLOWER: "flower",
+  VINE: "vine",
+  MOSS: "moss",
+  FUNGUS: "fungus",
+  CROP: "crop", // cultivated plants
+  AQUATIC: "aquatic",
+} as const;
+export type FloraCategory = (typeof FloraCategory)[keyof typeof FloraCategory];
 
 export interface HabitatRequirements {
   readonly biomes: string[]; // which biomes this species can grow in
@@ -39,23 +47,25 @@ export interface HabitatRequirements {
   readonly avoidSpecies?: string[]; // grows poorly near these species
 }
 
-export enum LightLevel {
-  FULL_SHADE = "full_shade", // dense forest floor
-  PARTIAL_SHADE = "partial_shade", // forest edges
-  DAPPLED_LIGHT = "dappled_light", // under canopy
-  PARTIAL_SUN = "partial_sun", // open areas with some shade
-  FULL_SUN = "full_sun", // completely open areas
-}
+export const LightLevel = {
+  FULL_SHADE: "full_shade", // dense forest floor
+  PARTIAL_SHADE: "partial_shade", // forest edges
+  DAPPLED_LIGHT: "dappled_light", // under canopy
+  PARTIAL_SUN: "partial_sun", // open areas with some shade
+  FULL_SUN: "full_sun", // completely open areas
+} as const;
+export type LightLevel = (typeof LightLevel)[keyof typeof LightLevel];
 
-export enum SoilType {
-  CLAY = "clay",
-  SAND = "sand",
-  LOAM = "loam",
-  ROCKY = "rocky",
-  ORGANIC = "organic", // rich humus
-  ACIDIC = "acidic",
-  ALKALINE = "alkaline",
-}
+export const SoilType = {
+  CLAY: "clay",
+  SAND: "sand",
+  LOAM: "loam",
+  ROCKY: "rocky",
+  ORGANIC: "organic", // rich humus
+  ACIDIC: "acidic",
+  ALKALINE: "alkaline",
+} as const;
+export type SoilType = (typeof SoilType)[keyof typeof SoilType];
 
 export interface GrowthProperties {
   readonly stages: GrowthStage[];
@@ -111,13 +121,14 @@ export interface PlantAnimation {
   readonly conditions: AnimationCondition[];
 }
 
-export enum AnimationType {
-  SWAY = "sway", // gentle movement in wind
-  RUSTLE = "rustle", // leaves rustling
-  BLOOM = "bloom", // flowering animation  
-  WITHER = "wither", // dying animation
-  GROWTH = "growth", // growing larger
-}
+export const AnimationType = {
+  SWAY: "sway", // gentle movement in wind
+  RUSTLE: "rustle", // leaves rustling
+  BLOOM: "bloom", // flowering animation
+  WITHER: "wither", // dying animation
+  GROWTH: "growth", // growing larger
+} as const;
+export type AnimationType = (typeof AnimationType)[keyof typeof AnimationType];
 
 export interface AnimationCondition {
   readonly type: string;
@@ -154,13 +165,14 @@ export interface QualityFactor {
   readonly weight: number; // importance of this factor
 }
 
-export enum RegenerationMode {
-  NONE = "none", // dies when harvested
-  PARTIAL = "partial", // regrows some resources over time
-  FULL = "full", // fully regenerates after harvest
-  SEASONAL = "seasonal", // regenerates seasonally
-  SPREADS = "spreads", // creates new plants when harvested
-}
+export const RegenerationMode = {
+  NONE: "none", // dies when harvested
+  PARTIAL: "partial", // regrows some resources over time
+  FULL: "full", // fully regenerates after harvest
+  SEASONAL: "seasonal", // regenerates seasonally
+  SPREADS: "spreads", // creates new plants when harvested
+} as const;
+export type RegenerationMode = (typeof RegenerationMode)[keyof typeof RegenerationMode];
 
 export interface ReproductionProperties {
   readonly method: ReproductionMethod;
@@ -170,14 +182,15 @@ export interface ReproductionProperties {
   readonly pollinators?: string[]; // required creature types for pollination
 }
 
-export enum ReproductionMethod {
-  SEEDS = "seeds", // produces seeds
-  SPORES = "spores", // fungal spores
-  RUNNERS = "runners", // underground runners
-  BULBS = "bulbs", // bulb division
-  CUTTINGS = "cuttings", // branch propagation
-  GRAFTING = "grafting", // requires another plant
-}
+export const ReproductionMethod = {
+  SEEDS: "seeds", // produces seeds
+  SPORES: "spores", // fungal spores
+  RUNNERS: "runners", // underground runners
+  BULBS: "bulbs", // bulb division
+  CUTTINGS: "cuttings", // branch propagation
+  GRAFTING: "grafting", // requires another plant
+} as const;
+export type ReproductionMethod = (typeof ReproductionMethod)[keyof typeof ReproductionMethod];
 
 export interface ReproductionRequirement {
   readonly type: string;
@@ -216,17 +229,17 @@ export interface FloraInstance extends DamageableEntity {
 }
 
 export interface GeneticTraits {
-  readonly growthRate: number; // genetic modifier for growth speed
-  readonly size: number; // genetic modifier for max size
-  readonly yieldBonus: number; // genetic modifier for harvest yield
-  readonly resilience: number; // genetic modifier for environmental resistance
-  readonly color: string; // genetic color variation
+  growthRate: number; // genetic modifier for growth speed
+  size: number; // genetic modifier for max size
+  yieldBonus: number; // genetic modifier for harvest yield
+  resilience: number; // genetic modifier for environmental resistance
+  color: string; // genetic color variation
 }
 
 export interface PlantDisease {
   readonly type: string;
-  readonly severity: number; // 0-1
-  readonly progression: number; // how fast it spreads
+  severity: number; // 0-1
+  progression: number; // how fast it spreads
   readonly effects: DiseaseEffect[];
 }
 
@@ -241,21 +254,22 @@ export interface SocialConnection {
   readonly strength: number; // connection strength
 }
 
-export enum ConnectionType {
-  MYCORRHIZAL = "mycorrhizal", // fungal network connection
-  ROOT_GRAFTING = "root_grafting", // root systems merged
-  CHEMICAL_COMMUNICATION = "chemical_communication", // chemical signals
-  POLLINATION = "pollination", // pollination relationship
-  COMPETITION = "competition", // competing for resources
-}
+export const ConnectionType = {
+  MYCORRHIZAL: "mycorrhizal", // fungal network connection
+  ROOT_GRAFTING: "root_grafting", // root systems merged
+  CHEMICAL_COMMUNICATION: "chemical_communication", // chemical signals
+  POLLINATION: "pollination", // pollination relationship
+  COMPETITION: "competition", // competing for resources
+} as const;
+export type ConnectionType = (typeof ConnectionType)[keyof typeof ConnectionType];
 
 export class FloraInstanceImpl implements FloraInstance {
   readonly id: string;
   readonly position: { x: number; y: number };
   health: HealthComponent;
   readonly dropTable: DropTable;
-  readonly destructionEffect?: any;
-  
+  readonly destructionEffect?: DestructionEffect;
+
   readonly species: FloraSpecies;
   age: number = 0;
   currentStage: string;
@@ -279,7 +293,7 @@ export class FloraInstanceImpl implements FloraInstance {
     this.currentStage = species.growth.stages[0].id;
     this.lastGrowthUpdate = Date.now();
     this.environmentalFactors = new Map();
-    
+
     // Generate genetic traits
     this.genetics = {
       growthRate: 0.8 + Math.random() * 0.4, // 0.8-1.2x multiplier
@@ -305,7 +319,7 @@ export class FloraInstanceImpl implements FloraInstance {
     this.dropTable = this.generateDropTable();
   }
 
-  takeDamage(damage: any): any {
+  takeDamage(damage: DamageEvent): DamageResult {
     // Basic damage implementation - could be enhanced
     const actualDamage = Math.max(1, damage.amount - this.genetics.resilience * 5);
     this.health.currentHealth = Math.max(0, this.health.currentHealth - actualDamage);
@@ -325,7 +339,7 @@ export class FloraInstanceImpl implements FloraInstance {
     console.log(`${this.species.name} at (${this.position.x}, ${this.position.y}) has died`);
   }
 
-  getVisualDamageState(): any {
+  getVisualDamageState(): DamageVisualState {
     const healthPercent = this.health.currentHealth / this.health.maxHealth;
     if (healthPercent >= 0.8) return "pristine";
     if (healthPercent >= 0.6) return "light";
@@ -345,8 +359,8 @@ export class FloraInstanceImpl implements FloraInstance {
 
   private generateDropTable(): DropTable {
     const guaranteed = this.species.harvestable.resources
-      .filter(resource => resource.probability >= 1.0)
-      .map(resource => ({
+      .filter((resource) => resource.probability >= 1.0)
+      .map((resource) => ({
         itemType: resource.itemType,
         minQuantity: Math.floor(resource.baseQuantity * this.genetics.yieldBonus),
         maxQuantity: Math.ceil(resource.baseQuantity * this.genetics.yieldBonus * 1.2),
@@ -354,8 +368,8 @@ export class FloraInstanceImpl implements FloraInstance {
       }));
 
     const possible = this.species.harvestable.resources
-      .filter(resource => resource.probability < 1.0 && resource.probability > 0.1)
-      .map(resource => ({
+      .filter((resource) => resource.probability < 1.0 && resource.probability > 0.1)
+      .map((resource) => ({
         itemType: resource.itemType,
         minQuantity: Math.floor(resource.baseQuantity * this.genetics.yieldBonus),
         maxQuantity: Math.ceil(resource.baseQuantity * this.genetics.yieldBonus * 1.2),
@@ -363,8 +377,8 @@ export class FloraInstanceImpl implements FloraInstance {
       }));
 
     const rare = this.species.harvestable.resources
-      .filter(resource => resource.probability <= 0.1)
-      .map(resource => ({
+      .filter((resource) => resource.probability <= 0.1)
+      .map((resource) => ({
         itemType: resource.itemType,
         minQuantity: Math.floor(resource.baseQuantity * this.genetics.yieldBonus),
         maxQuantity: Math.ceil(resource.baseQuantity * this.genetics.yieldBonus * 1.2),

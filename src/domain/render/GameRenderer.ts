@@ -4,6 +4,8 @@ import { ShipRenderer } from "./ShipRenderer";
 import { EnemyRenderer } from "./EnemyRenderer";
 import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
 import { CharacterRenderer } from "./CharacterRenderer";
+import { DroppedItemRenderer } from "./DroppedItemRenderer";
+import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import { CameraTransform } from "./CameraTransform";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
@@ -114,10 +116,7 @@ export class GameRenderer {
       planetMode?.type === "planet"
         ? (planetMode as { surfaceData?: PlanetSurface }).surfaceData
         : undefined;
-    const weaponSystem = 
-      planetMode?.type === "planet"
-        ? (planetMode as { weaponSystemData?: any }).weaponSystemData
-        : undefined;
+    const weaponSystem = this.getWeaponSystem(planetMode);
 
     // Planet surface background
     const planetSurfaceRenderer = new PlanetSurfaceRenderer();
@@ -129,6 +128,24 @@ export class GameRenderer {
     // Render planet surface
     planetSurfaceRenderer.render(ctx, surface);
 
+    // Draw death effects first (behind everything)
+    if (planetMode?.type === "planet") {
+      const deathRenderer = this.getDeathRenderer(planetMode);
+      if (deathRenderer) {
+        deathRenderer.render(ctx);
+      }
+    }
+
+    // Draw dropped items (behind characters but above death effects)
+    if (planetMode?.type === "planet") {
+      const droppedItemSystem = this.getDroppedItemSystem(planetMode);
+      if (droppedItemSystem) {
+        const droppedItemRenderer = new DroppedItemRenderer();
+        const droppedItems = droppedItemSystem.getAllDroppedItems();
+        droppedItemRenderer.render(ctx, droppedItems);
+      }
+    }
+
     // Draw character instead of ship
     const characterRenderer = new CharacterRenderer();
     characterRenderer.render(ctx, player, actions, 32);
@@ -139,13 +156,13 @@ export class GameRenderer {
       ctx.fillStyle = "#00ff88"; // Bright green for energy projectiles
       ctx.shadowBlur = 8;
       ctx.shadowColor = "#00ff88";
-      
+
       const projectiles = weaponSystem.getAllProjectiles();
       for (const p of projectiles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Add motion trail
         ctx.fillStyle = "rgba(0, 255, 136, 0.3)";
         ctx.beginPath();
@@ -155,5 +172,42 @@ export class GameRenderer {
       }
       ctx.restore();
     }
+  }
+
+  private getWeaponSystem(
+    planetMode: unknown,
+  ): { getAllProjectiles: () => Array<{ x: number; y: number; vx: number; vy: number }> } | null {
+    if (planetMode && typeof planetMode === "object" && "weaponSystemData" in planetMode) {
+      const data = (planetMode as { weaponSystemData?: unknown }).weaponSystemData;
+      if (data && typeof data === "object" && "getAllProjectiles" in data) {
+        const fn = (data as { getAllProjectiles?: unknown }).getAllProjectiles;
+        return typeof fn === "function"
+          ? (data as {
+              getAllProjectiles: () => Array<{ x: number; y: number; vx: number; vy: number }>;
+            })
+          : null;
+      }
+    }
+    return null;
+  }
+
+  private getDeathRenderer(
+    planetMode: unknown,
+  ): { render: (ctx: CanvasRenderingContext2D) => void } | null {
+    if (planetMode && typeof planetMode === "object" && "getDeathRenderer" in planetMode) {
+      const method = planetMode.getDeathRenderer;
+      return typeof method === "function" ? method.call(planetMode) : null;
+    }
+    return null;
+  }
+
+  private getDroppedItemSystem(
+    planetMode: unknown,
+  ): { getAllDroppedItems: () => DroppedItem[] } | null {
+    if (planetMode && typeof planetMode === "object" && "getDroppedItemSystem" in planetMode) {
+      const method = planetMode.getDroppedItemSystem;
+      return typeof method === "function" ? method.call(planetMode) : null;
+    }
+    return null;
   }
 }

@@ -1,13 +1,37 @@
+type CtxLike = Pick<
+  CanvasRenderingContext2D,
+  | "save"
+  | "restore"
+  | "translate"
+  | "rotate"
+  | "fillRect"
+  | "strokeRect"
+  | "beginPath"
+  | "ellipse"
+  | "fill"
+  | "stroke"
+  | "arc"
+  | "moveTo"
+  | "lineTo"
+  | "closePath"
+  | "globalAlpha"
+  | "lineWidth"
+  | "strokeStyle"
+  | "fillStyle"
+  | "shadowBlur"
+  | "shadowColor"
+> & { canvas: HTMLCanvasElement };
+
 export class CharacterRenderer {
   render(
-    ctx: CanvasRenderingContext2D,
+    ctx: CtxLike,
     player: { x: number; y: number; vx: number; vy: number; angle: number },
     actions: Set<string>,
     size = 24,
   ) {
     ctx.save();
     ctx.translate(player.x, player.y);
-    
+
     // Rotate to face the direction the player is looking/moving
     ctx.rotate(player.angle);
 
@@ -30,15 +54,15 @@ export class CharacterRenderer {
     ctx.fillStyle = "#666";
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 1;
-    
+
     // Gun barrel
     ctx.fillRect(size * 0.3, -2, size * 0.4, 4);
     ctx.strokeRect(size * 0.3, -2, size * 0.4, 4);
-    
+
     // Gun grip
     ctx.fillRect(size * 0.15, -3, size * 0.2, 6);
     ctx.strokeRect(size * 0.15, -3, size * 0.2, 6);
-    
+
     // Firing indicator when space is pressed
     if (actions.has("fire")) {
       ctx.fillStyle = "#00ff88";
@@ -52,7 +76,7 @@ export class CharacterRenderer {
 
     // Head/face direction indicator
     ctx.fillStyle = "#2C3E50";
-    
+
     // Front-facing indicator (nose/direction marker)
     ctx.beginPath();
     ctx.moveTo(size * 0.2, 0);
@@ -61,7 +85,7 @@ export class CharacterRenderer {
     ctx.closePath();
     ctx.fill();
 
-    // Eyes 
+    // Eyes
     ctx.beginPath();
     ctx.arc(size * 0.05, -size * 0.15, 2, 0, Math.PI * 2);
     ctx.fill();

@@ -1,4 +1,4 @@
-import type { Item, ItemCondition } from "../items/Item";
+import type { Item } from "../items/Item";
 
 export interface PlayerInventory {
   readonly slots: InventorySlot[];
@@ -8,6 +8,8 @@ export interface PlayerInventory {
   readonly quickslots: QuickSlot[];
   readonly currentWeight: number;
   readonly filters: InventoryFilter[];
+  addItem(item: Item, quantity?: number): AddItemResult;
+  sortInventory(mode: SortMode): void;
 }
 
 export interface InventorySlot {
@@ -31,16 +33,15 @@ export interface QuickSlot {
   readonly autoRefill: boolean; // auto-refill from inventory
 }
 
-export enum InventoryCategory {
-  TOOLS = "tools",
-  WEAPONS = "weapons",
-  MATERIALS = "materials",
-  FOOD = "food",
-  MEDICINE = "medicine",
-  SEEDS = "seeds",
-  ARTIFACTS = "artifacts",
-  MISC = "misc",
-}
+export type InventoryCategory =
+  | "tools"
+  | "weapons"
+  | "materials"
+  | "food"
+  | "medicine"
+  | "seeds"
+  | "artifacts"
+  | "misc";
 
 export interface InventoryFilter {
   readonly category?: InventoryCategory;
@@ -57,15 +58,7 @@ export interface InventoryOperation {
   readonly validation: ValidationResult;
 }
 
-export enum OperationType {
-  MOVE = "move",
-  SPLIT = "split",
-  COMBINE = "combine",
-  DROP = "drop",
-  USE = "use",
-  CRAFT = "craft",
-  SORT = "sort",
-}
+export type OperationType = "move" | "split" | "combine" | "drop" | "use" | "craft" | "sort";
 
 export interface ValidationResult {
   readonly valid: boolean;
@@ -93,12 +86,19 @@ export interface MoveItemResult {
 export class PlayerInventoryManager implements PlayerInventory {
   private _slots: Map<string, InventorySlot> = new Map();
   private _quickSlots: Map<string, QuickSlot> = new Map();
-  private _categoryFilters: Set<InventoryCategory> = new Set();
-  private _sortMode: SortMode = SortMode.CATEGORY;
 
   readonly maxSlots: number;
   readonly maxWeight: number;
-  readonly categories: InventoryCategory[] = Object.values(InventoryCategory);
+  readonly categories: InventoryCategory[] = [
+    "tools",
+    "weapons",
+    "materials",
+    "food",
+    "medicine",
+    "seeds",
+    "artifacts",
+    "misc",
+  ];
   readonly filters: InventoryFilter[] = [];
 
   constructor(maxSlots: number = 40, maxWeight: number = 100) {
@@ -234,21 +234,21 @@ export class PlayerInventoryManager implements PlayerInventory {
   }
 
   sortInventory(mode: SortMode): void {
-    const itemSlots = this.slots.filter(slot => slot.item !== null);
-    
+    const itemSlots = this.slots.filter((slot) => slot.item !== null);
+
     // Sort based on mode
     switch (mode) {
-      case SortMode.CATEGORY:
+      case "category":
         itemSlots.sort((a, b) => this.compareByCategory(a, b));
         break;
-      case SortMode.NAME:
-        itemSlots.sort((a, b) => (a.item!.name.localeCompare(b.item!.name)));
+      case "name":
+        itemSlots.sort((a, b) => a.item!.name.localeCompare(b.item!.name));
         break;
-      case SortMode.VALUE:
-        itemSlots.sort((a, b) => (b.item!.stats.value - a.item!.stats.value));
+      case "value":
+        itemSlots.sort((a, b) => b.item!.stats.value - a.item!.stats.value);
         break;
-      case SortMode.WEIGHT:
-        itemSlots.sort((a, b) => (a.item!.properties.weight - b.item!.properties.weight));
+      case "weight":
+        itemSlots.sort((a, b) => a.item!.properties.weight - b.item!.properties.weight);
         break;
     }
 
@@ -258,12 +258,11 @@ export class PlayerInventoryManager implements PlayerInventory {
 
   private initializeSlots(): void {
     const slotsPerRow = 8;
-    const rows = Math.ceil(this.maxSlots / slotsPerRow);
 
     for (let i = 0; i < this.maxSlots; i++) {
       const x = i % slotsPerRow;
       const y = Math.floor(i / slotsPerRow);
-      
+
       this._slots.set(`slot_${i}`, {
         id: `slot_${i}`,
         item: null,
@@ -312,8 +311,10 @@ export class PlayerInventoryManager implements PlayerInventory {
   private itemsHaveSameCondition(item1: Item, item2: Item): boolean {
     // Items must have the same durability percentage and condition to stack
     if (item1.properties.durability && item2.properties.durability) {
-      const durability1 = item1.properties.durability.currentDurability / item1.properties.durability.maxDurability;
-      const durability2 = item2.properties.durability.currentDurability / item2.properties.durability.maxDurability;
+      const durability1 =
+        item1.properties.durability.currentDurability / item1.properties.durability.maxDurability;
+      const durability2 =
+        item2.properties.durability.currentDurability / item2.properties.durability.maxDurability;
       return Math.abs(durability1 - durability2) < 0.05; // 5% tolerance
     }
     return true; // No durability requirements
@@ -409,16 +410,16 @@ export class PlayerInventoryManager implements PlayerInventory {
 
   private compareByCategory(a: InventorySlot, b: InventorySlot): number {
     if (!a.item || !b.item) return 0;
-    
+
     const categoryOrder = [
-      InventoryCategory.TOOLS,
-      InventoryCategory.WEAPONS,
-      InventoryCategory.MATERIALS,
-      InventoryCategory.FOOD,
-      InventoryCategory.MEDICINE,
-      InventoryCategory.SEEDS,
-      InventoryCategory.ARTIFACTS,
-      InventoryCategory.MISC,
+      "tools",
+      "weapons",
+      "materials",
+      "food",
+      "medicine",
+      "seeds",
+      "artifacts",
+      "misc",
     ];
 
     const categoryA = this.getItemCategory(a.item);
@@ -433,30 +434,30 @@ export class PlayerInventoryManager implements PlayerInventory {
   private getItemCategory(item: Item): InventoryCategory {
     switch (item.baseType) {
       case "tool":
-        return InventoryCategory.TOOLS;
+        return "tools";
       case "weapon":
-        return InventoryCategory.WEAPONS;
+        return "weapons";
       case "material":
-        return InventoryCategory.MATERIALS;
+        return "materials";
       case "consumable":
         if (item.type.includes("food")) {
-          return InventoryCategory.FOOD;
+          return "food";
         } else if (item.type.includes("medicine")) {
-          return InventoryCategory.MEDICINE;
+          return "medicine";
         }
-        return InventoryCategory.MISC;
+        return "misc";
       case "seed":
-        return InventoryCategory.SEEDS;
+        return "seeds";
       case "artifact":
-        return InventoryCategory.ARTIFACTS;
+        return "artifacts";
       default:
-        return InventoryCategory.MISC;
+        return "misc";
     }
   }
 
   private reassignSortedItems(sortedSlots: InventorySlot[]): void {
     // Store the items and quantities we need to reassign
-    const itemsToReassign = sortedSlots.map(slot => ({
+    const itemsToReassign = sortedSlots.map((slot) => ({
       item: slot.item,
       quantity: slot.quantity,
     }));
@@ -469,8 +470,8 @@ export class PlayerInventoryManager implements PlayerInventory {
 
     // Get slots in order by their ID (slot_0, slot_1, etc.)
     const orderedSlots = Array.from(this._slots.values()).sort((a, b) => {
-      const aNum = parseInt(a.id.split('_')[1]);
-      const bNum = parseInt(b.id.split('_')[1]);
+      const aNum = parseInt(a.id.split("_")[1]);
+      const bNum = parseInt(b.id.split("_")[1]);
       return aNum - bNum;
     });
 
@@ -482,9 +483,4 @@ export class PlayerInventoryManager implements PlayerInventory {
   }
 }
 
-export enum SortMode {
-  CATEGORY = "category",
-  NAME = "name",
-  VALUE = "value",
-  WEIGHT = "weight",
-}
+export type SortMode = "category" | "name" | "value" | "weight";

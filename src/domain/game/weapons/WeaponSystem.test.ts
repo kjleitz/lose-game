@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { WeaponSystem } from "./WeaponSystem";
 import { Player } from "../player";
 import { BaseDamageableEntity } from "../damage/DamageableEntity";
+class TestDamageableEntity extends BaseDamageableEntity {
+  onDestruction(): void {}
+}
 
 describe("WeaponSystem", () => {
   let weaponSystem: WeaponSystem;
@@ -43,10 +46,10 @@ describe("WeaponSystem", () => {
     it("should update projectile positions", () => {
       const weapon = weaponSystem.getEquippedWeapon(player)!;
       const result = weaponSystem.fireWeapon(player, weapon, 100, 0);
-      
+
       const initialX = result.projectile!.x;
       weaponSystem.update(0.1, []);
-      
+
       const projectiles = weaponSystem.getAllProjectiles();
       expect(projectiles[0].x).toBeGreaterThan(initialX);
     });
@@ -54,10 +57,10 @@ describe("WeaponSystem", () => {
     it("should remove projectiles after max range", () => {
       const weapon = weaponSystem.getEquippedWeapon(player)!;
       weaponSystem.fireWeapon(player, weapon, 100, 0);
-      
+
       // Simulate projectile traveling beyond max range
       weaponSystem.update(10, []); // Long time to exceed range
-      
+
       const projectiles = weaponSystem.getAllProjectiles();
       expect(projectiles).toHaveLength(0);
     });
@@ -66,7 +69,7 @@ describe("WeaponSystem", () => {
   describe("damage dealing", () => {
     it("should damage entities on hit", () => {
       // Create a test damageable entity close to player
-      const testEntity = new BaseDamageableEntity(
+      const testEntity = new TestDamageableEntity(
         "test",
         { x: 20, y: 0 },
         {
@@ -78,24 +81,24 @@ describe("WeaponSystem", () => {
           invulnerabilityPeriod: 0,
           lastDamageTime: 0,
         },
-        { guaranteed: [], possible: [], rare: [], modifiers: [] }
+        { guaranteed: [], possible: [], rare: [], modifiers: [] },
       );
 
       const weapon = weaponSystem.getEquippedWeapon(player)!;
       weaponSystem.fireWeapon(player, weapon, 20, 0); // Fire at close target
-      
+
       const initialHealth = testEntity.health.currentHealth;
-      
+
       // Run several update frames to ensure projectile hits
       for (let i = 0; i < 10; i++) {
         weaponSystem.update(0.01, [testEntity]);
       }
-      
+
       expect(testEntity.health.currentHealth).toBeLessThan(initialHealth);
     });
 
     it("should remove projectiles on hit", () => {
-      const testEntity = new BaseDamageableEntity(
+      const testEntity = new TestDamageableEntity(
         "test",
         { x: 20, y: 0 },
         {
@@ -107,20 +110,20 @@ describe("WeaponSystem", () => {
           invulnerabilityPeriod: 0,
           lastDamageTime: 0,
         },
-        { guaranteed: [], possible: [], rare: [], modifiers: [] }
+        { guaranteed: [], possible: [], rare: [], modifiers: [] },
       );
 
       const weapon = weaponSystem.getEquippedWeapon(player)!;
       weaponSystem.fireWeapon(player, weapon, 20, 0);
-      
+
       expect(weaponSystem.getAllProjectiles()).toHaveLength(1);
-      
+
       // Run several update frames to ensure projectile hits
       for (let i = 0; i < 10; i++) {
         weaponSystem.update(0.01, [testEntity]);
         if (weaponSystem.getAllProjectiles().length === 0) break;
       }
-      
+
       expect(weaponSystem.getAllProjectiles()).toHaveLength(0);
     });
   });

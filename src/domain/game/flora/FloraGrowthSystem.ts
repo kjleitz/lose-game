@@ -1,4 +1,10 @@
-import type { FloraInstance, FloraSpecies, GrowthStage } from "./FloraSpecies";
+import type {
+  FloraInstance,
+  GrowthStage,
+  ReproductionRequirement,
+  OffspringProperties,
+  GeneticTraits,
+} from "./FloraSpecies";
 
 export class FloraGrowthSystem {
   private instances: Map<string, FloraInstance> = new Map();
@@ -20,10 +26,8 @@ export class FloraGrowthSystem {
   }
 
   update(dt: number): void {
-    const now = Date.now();
-    
     for (const plant of this.instances.values()) {
-      this.updatePlantGrowth(plant, dt, now);
+      this.updatePlantGrowth(plant, dt);
       this.updatePlantHealth(plant, dt);
       this.updatePlantDisease(plant, dt);
     }
@@ -32,22 +36,24 @@ export class FloraGrowthSystem {
     this.handleReproduction(dt);
   }
 
-  private updatePlantGrowth(plant: FloraInstance, dt: number, now: number): void {
+  private updatePlantGrowth(plant: FloraInstance, dt: number): void {
     if (plant.health.currentHealth <= 0) {
       return; // Dead plants don't grow
     }
 
     const species = plant.species;
-    const timeSinceLastUpdate = (now - plant.lastGrowthUpdate) / (1000 * 60 * 60); // hours
+    const timeSinceLastUpdate = dt / 3600; // convert seconds -> hours
 
     // Calculate growth rate based on environmental factors
     const environmentalGrowthRate = this.calculateEnvironmentalGrowthRate(plant);
     const geneticGrowthRate = plant.genetics.growthRate;
-    const finalGrowthRate = species.growth.baseGrowthRate * environmentalGrowthRate * geneticGrowthRate;
+    const finalGrowthRate =
+      species.growth.baseGrowthRate * environmentalGrowthRate * geneticGrowthRate;
 
     // Update age
     plant.age += timeSinceLastUpdate * finalGrowthRate;
-    plant.lastGrowthUpdate = now;
+    // lastGrowthUpdate is retained for compatibility; simulated via dt
+    plant.lastGrowthUpdate = plant.lastGrowthUpdate + dt * 1000; // approx simulation timestamp
 
     // Check for stage progression
     const newStage = this.calculateGrowthStage(plant);
@@ -101,12 +107,18 @@ export class FloraGrowthSystem {
 
   private getLightLevelValue(lightLevel: string): number {
     switch (lightLevel) {
-      case "full_shade": return 0.1;
-      case "partial_shade": return 0.3;
-      case "dappled_light": return 0.5;
-      case "partial_sun": return 0.7;
-      case "full_sun": return 0.9;
-      default: return 0.5;
+      case "full_shade":
+        return 0.1;
+      case "partial_shade":
+        return 0.3;
+      case "dappled_light":
+        return 0.5;
+      case "partial_sun":
+        return 0.7;
+      case "full_sun":
+        return 0.9;
+      default:
+        return 0.5;
     }
   }
 
@@ -117,7 +129,7 @@ export class FloraGrowthSystem {
     for (const disease of plant.diseases) {
       totalSeverity += disease.severity;
     }
-    
+
     const averageSeverity = totalSeverity / plant.diseases.length;
     return Math.max(0.2, 1.0 - averageSeverity * 0.5);
   }
@@ -151,13 +163,13 @@ export class FloraGrowthSystem {
   }
 
   private updatePlantSize(plant: FloraInstance): void {
-    const stage = plant.species.growth.stages.find(s => s.id === plant.currentStage);
+    const stage = plant.species.growth.stages.find((s) => s.id === plant.currentStage);
     if (!stage) return;
 
     const baseSize = plant.species.growth.maxSize;
     const stageSize = stage.appearance.size;
     const geneticSize = plant.genetics.size;
-    
+
     // Calculate current size (stored in environmental factors for rendering)
     const currentSize = baseSize * stageSize * geneticSize;
     plant.environmentalFactors.set("size", currentSize);
@@ -169,7 +181,7 @@ export class FloraGrowthSystem {
       const regenAmount = plant.health.regeneration * dt * plant.genetics.resilience;
       plant.health.currentHealth = Math.min(
         plant.health.maxHealth,
-        plant.health.currentHealth + regenAmount
+        plant.health.currentHealth + regenAmount,
       );
     }
 
@@ -184,8 +196,8 @@ export class FloraGrowthSystem {
     // Temperature damage
     const temperature = plant.environmentalFactors.get("temperature") || 0.5;
     if (temperature < habitat.minTemperature || temperature > habitat.maxTemperature) {
-      const temperatureDamage = Math.abs(temperature - 
-        (habitat.minTemperature + habitat.maxTemperature) / 2) * 10 * dt;
+      const temperatureDamage =
+        Math.abs(temperature - (habitat.minTemperature + habitat.maxTemperature) / 2) * 10 * dt;
       const resistance = species.resilience.frostTolerance; // or heat tolerance
       plant.health.currentHealth -= temperatureDamage * (1 - resistance);
     }
@@ -212,14 +224,14 @@ export class FloraGrowthSystem {
     // Update existing diseases
     for (let i = plant.diseases.length - 1; i >= 0; i--) {
       const disease = plant.diseases[i];
-      
+
       // Disease progression
       disease.severity += disease.progression * dt;
-      
+
       // Disease recovery based on plant resilience
       const recovery = plant.genetics.resilience * 0.1 * dt;
       disease.severity = Math.max(0, disease.severity - recovery);
-      
+
       // Remove cured diseases
       if (disease.severity <= 0) {
         plant.diseases.splice(i, 1);
@@ -229,7 +241,7 @@ export class FloraGrowthSystem {
     // Chance for new diseases based on environmental stress
     const stressFactor = this.calculateStressFactor(plant);
     const diseaseChance = stressFactor * 0.001 * dt; // 0.1% per second when stressed
-    
+
     if (Math.random() < diseaseChance) {
       this.infectPlant(plant);
     }
@@ -241,7 +253,6 @@ export class FloraGrowthSystem {
 
     // Environmental stress
     const temperature = plant.environmentalFactors.get("temperature") || 0.5;
-    const tempRange = habitat.maxTemperature - habitat.minTemperature;
     if (temperature < habitat.minTemperature || temperature > habitat.maxTemperature) {
       stress += 1.0;
     }
@@ -268,7 +279,7 @@ export class FloraGrowthSystem {
   private infectPlant(plant: FloraInstance): void {
     const commonDiseases = [
       "fungal_blight",
-      "leaf_spot", 
+      "leaf_spot",
       "root_rot",
       "viral_mosaic",
       "bacterial_wilt",
@@ -276,7 +287,7 @@ export class FloraGrowthSystem {
 
     const diseaseType = commonDiseases[Math.floor(Math.random() * commonDiseases.length)];
     const severity = 0.1 + Math.random() * 0.2; // Start with low severity
-    
+
     plant.diseases.push({
       type: diseaseType,
       severity,
@@ -287,22 +298,22 @@ export class FloraGrowthSystem {
     console.log(`${plant.species.name} infected with ${diseaseType}`);
   }
 
-  private getDiseaseEffects(diseaseType: string): any[] {
+  private getDiseaseEffects(diseaseType: string): import("./FloraSpecies").DiseaseEffect[] {
     switch (diseaseType) {
       case "fungal_blight":
         return [
           { type: "growth_slow", intensity: 0.5 },
-          { type: "appearance_change", intensity: 0.3 }
+          { type: "appearance_change", intensity: 0.3 },
         ];
       case "leaf_spot":
         return [
           { type: "yield_reduce", intensity: 0.3 },
-          { type: "appearance_change", intensity: 0.4 }
+          { type: "appearance_change", intensity: 0.4 },
         ];
       case "root_rot":
         return [
           { type: "nutrient_absorption_reduce", intensity: 0.6 },
-          { type: "growth_slow", intensity: 0.4 }
+          { type: "growth_slow", intensity: 0.4 },
         ];
       default:
         return [{ type: "growth_slow", intensity: 0.3 }];
@@ -311,16 +322,16 @@ export class FloraGrowthSystem {
 
   private handleReproduction(dt: number): void {
     const reproductiveAge = 0.6; // 60% of max age to start reproducing
-    
+
     for (const plant of this.instances.values()) {
       if (plant.health.currentHealth <= 0) continue;
-      
+
       const species = plant.species;
       const ageRatio = plant.age / species.growth.maxAge;
-      
+
       if (ageRatio >= reproductiveAge) {
         const reproductionChance = species.reproduction.frequency * dt * 0.1; // Per hour
-        
+
         if (Math.random() < reproductionChance) {
           this.attemptReproduction(plant);
         }
@@ -345,8 +356,8 @@ export class FloraGrowthSystem {
 
     // Generate offspring
     const offspringCount = Math.floor(
-      reproduction.offspring.count[0] + 
-      Math.random() * (reproduction.offspring.count[1] - reproduction.offspring.count[0])
+      reproduction.offspring.count[0] +
+        Math.random() * (reproduction.offspring.count[1] - reproduction.offspring.count[0]),
     );
 
     for (let i = 0; i < offspringCount; i++) {
@@ -358,7 +369,10 @@ export class FloraGrowthSystem {
     console.log(`${species.name} reproduced, creating ${offspringCount} offspring`);
   }
 
-  private meetsReproductionRequirement(plant: FloraInstance, requirement: any): boolean {
+  private meetsReproductionRequirement(
+    plant: FloraInstance,
+    requirement: ReproductionRequirement,
+  ): boolean {
     switch (requirement.type) {
       case "health":
         return plant.health.currentHealth / plant.health.maxHealth >= requirement.value;
@@ -366,37 +380,33 @@ export class FloraGrowthSystem {
         return plant.nutrients >= requirement.value;
       case "water":
         return plant.waterLevel >= requirement.value;
-      case "companions":
+      case "companions": {
         const nearbyCompanions = this.findNearbyCompanions(plant);
         return nearbyCompanions.length >= requirement.value;
+      }
       default:
         return true;
     }
   }
 
-  private createOffspring(parent: FloraInstance, offspringProps: any): void {
+  private createOffspring(parent: FloraInstance, offspringProps: OffspringProperties): void {
     const dispersalDistance = offspringProps.dispersalDistance;
     const angle = Math.random() * Math.PI * 2;
     const distance = Math.random() * dispersalDistance;
-    
+
     const newPosition = {
       x: parent.position.x + Math.cos(angle) * distance,
       y: parent.position.y + Math.sin(angle) * distance,
     };
 
     // Genetic variation
-    let genetics = { ...parent.genetics };
+    let genetics: GeneticTraits = { ...parent.genetics };
     if (Math.random() < offspringProps.mutationChance) {
       genetics = this.applyGenericMutation(genetics);
     }
 
-    // Create new plant instance
-    const offspring = new (parent.constructor as any)(
-      `plant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      newPosition,
-      parent.species,
-      genetics
-    );
+    // Create new plant instance by cloning the parent and updating its properties
+    const offspring = this.cloneFloraInstance(parent, newPosition, genetics);
 
     // Offspring start young
     offspring.age = 0;
@@ -405,34 +415,34 @@ export class FloraGrowthSystem {
     this.addPlant(offspring);
   }
 
-  private applyGenericMutation(genetics: any): any {
-    const mutated = { ...genetics };
-    const traits = ['growthRate', 'size', 'yieldBonus', 'resilience'];
+  private applyGenericMutation(genetics: GeneticTraits): GeneticTraits {
+    const mutated: GeneticTraits = { ...genetics };
+    const traits: Array<keyof GeneticTraits> = ["growthRate", "size", "yieldBonus", "resilience"];
     const traitToMutate = traits[Math.floor(Math.random() * traits.length)];
-    
+
     // Apply small mutation
     const mutation = (Math.random() - 0.5) * 0.2; // ±10% change
-    (mutated as any)[traitToMutate] = Math.max(0.1, (mutated as any)[traitToMutate] + mutation);
-    
+    this.mutateGeneticTrait(mutated, traitToMutate, mutation);
+
     return mutated;
   }
 
   private findNearbyPlants(plant: FloraInstance, radius: number): FloraInstance[] {
     const nearby: FloraInstance[] = [];
-    
+
     for (const other of this.instances.values()) {
       if (other.id === plant.id) continue;
-      
+
       const distance = Math.hypot(
         plant.position.x - other.position.x,
-        plant.position.y - other.position.y
+        plant.position.y - other.position.y,
       );
-      
+
       if (distance <= radius) {
         nearby.push(other);
       }
     }
-    
+
     return nearby;
   }
 
@@ -441,7 +451,7 @@ export class FloraGrowthSystem {
     if (companions.length === 0) return [];
 
     const nearby = this.findNearbyPlants(plant, 10);
-    return nearby.filter(other => companions.includes(other.species.id));
+    return nearby.filter((other) => companions.includes(other.species.id));
   }
 
   // Environmental update methods
@@ -457,5 +467,48 @@ export class FloraGrowthSystem {
 
   updateWaterLevels(plant: FloraInstance, water: number): void {
     plant.waterLevel = Math.max(0, Math.min(1, water));
+  }
+
+  private cloneFloraInstance(
+    parent: FloraInstance,
+    newPosition: { x: number; y: number },
+    genetics: GeneticTraits,
+  ): FloraInstance {
+    // For now, we'll use Object.create to clone the instance without constructor casting
+    const offspring = Object.create(Object.getPrototypeOf(parent));
+
+    // Copy all properties from parent
+    Object.assign(offspring, parent);
+
+    // Update with new values
+    offspring.id = `plant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    offspring.position = newPosition;
+    offspring.genetics = genetics;
+
+    return offspring;
+  }
+
+  private mutateGeneticTrait(
+    genetics: GeneticTraits,
+    traitName: keyof GeneticTraits,
+    mutation: number,
+  ): void {
+    switch (traitName) {
+      case "growthRate":
+        genetics.growthRate = Math.max(0.1, genetics.growthRate + mutation);
+        break;
+      case "size":
+        genetics.size = Math.max(0.1, genetics.size + mutation);
+        break;
+      case "yieldBonus":
+        genetics.yieldBonus = Math.max(0.1, genetics.yieldBonus + mutation);
+        break;
+      case "resilience":
+        genetics.resilience = Math.max(0.1, genetics.resilience + mutation);
+        break;
+      case "color":
+        // no-op; color is not mutated numerically here
+        break;
+    }
   }
 }

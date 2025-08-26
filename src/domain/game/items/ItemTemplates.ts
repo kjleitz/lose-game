@@ -10,7 +10,40 @@ import {
   EffectType,
   ProcessingMethod,
 } from "./Item";
+import type { ItemEffect } from "./Item";
+import { DamageType } from "../damage/DamageableEntity";
 import type { ItemTemplate, ItemModifier } from "./ItemFactory";
+
+export type ToolTemplate = {
+  readonly id: string;
+  readonly effectiveness: Array<[string, number]>;
+  readonly energyCost: number;
+  readonly skillBonus?: Array<[string, number]>;
+  readonly specialAbilities?: (typeof ToolAbility)[keyof typeof ToolAbility][];
+};
+
+export type WeaponTemplate = {
+  readonly id: string;
+  readonly damage: { base: number; type: DamageType; criticalMultiplier: number };
+  readonly attackSpeed: number;
+  readonly range: number;
+  readonly criticalChance: number;
+  readonly statusEffects?: Array<{ type: string; duration: number; intensity: number }>;
+};
+
+export type MaterialTemplate = {
+  readonly id: string;
+  readonly processingMethods: (typeof ProcessingMethod)[keyof typeof ProcessingMethod][];
+  readonly derivatives: string[];
+  readonly purityLevel?: number;
+};
+
+export type ConsumableTemplate = {
+  readonly id: string;
+  readonly effects: ItemEffect[];
+  readonly duration: number;
+  readonly cooldown?: number;
+};
 
 export class ItemTemplates {
   private templates: Map<string, ItemTemplate> = new Map();
@@ -29,26 +62,35 @@ export class ItemTemplates {
     return this.modifiers.get(id);
   }
 
-  getToolTemplate(toolType: ToolType): any {
+  getToolTemplate(toolType: ToolType): ToolTemplate {
     switch (toolType) {
       case ToolType.AXE:
         return {
           id: "iron_axe",
-          effectiveness: [["chop_wood", 2.0], ["combat_melee", 1.5]],
+          effectiveness: [
+            ["chop_wood", 2.0],
+            ["combat_melee", 1.5],
+          ],
           energyCost: 10,
           specialAbilities: [ToolAbility.TREE_FELLING],
         };
       case ToolType.PICKAXE:
         return {
-          id: "iron_pickaxe", 
-          effectiveness: [["mine_stone", 2.0], ["mine_ore", 1.8]],
+          id: "iron_pickaxe",
+          effectiveness: [
+            ["mine_stone", 2.0],
+            ["mine_ore", 1.8],
+          ],
           energyCost: 12,
           specialAbilities: [ToolAbility.HEAVY_IMPACT],
         };
       case ToolType.KNIFE:
         return {
           id: "iron_knife",
-          effectiveness: [["cut_material", 1.5], ["combat_melee", 1.2]],
+          effectiveness: [
+            ["cut_material", 1.5],
+            ["combat_melee", 1.2],
+          ],
           energyCost: 5,
           specialAbilities: [ToolAbility.PRECISION_CUTTING],
         };
@@ -57,12 +99,12 @@ export class ItemTemplates {
     }
   }
 
-  getWeaponTemplate(weaponType: WeaponType): any {
+  getWeaponTemplate(weaponType: WeaponType): WeaponTemplate {
     switch (weaponType) {
       case WeaponType.MELEE:
         return {
           id: "iron_sword",
-          damage: { base: 45, type: "physical", criticalMultiplier: 1.5 },
+          damage: { base: 45, type: DamageType.PHYSICAL, criticalMultiplier: 1.5 },
           attackSpeed: 1.2,
           range: 1.5,
           criticalChance: 0.1,
@@ -72,7 +114,7 @@ export class ItemTemplates {
     }
   }
 
-  getMaterialTemplate(materialType: MaterialType): any {
+  getMaterialTemplate(materialType: MaterialType): MaterialTemplate {
     switch (materialType) {
       case MaterialType.WOOD:
         return {
@@ -93,7 +135,7 @@ export class ItemTemplates {
     }
   }
 
-  getConsumableTemplate(consumableType: ConsumableType): any {
+  getConsumableTemplate(consumableType: ConsumableType): ConsumableTemplate {
     switch (consumableType) {
       case ConsumableType.FOOD:
         return {
@@ -160,7 +202,7 @@ export class ItemTemplates {
           repairability: {
             canRepair: true,
             requiredMaterials: ["iron_ingot", "wood"],
-            skillRequired: "blacksmithing", 
+            skillRequired: "blacksmithing",
             repairCost: 12,
           },
           degradationRate: 1.2,
@@ -260,7 +302,7 @@ export class ItemTemplates {
     });
 
     this.modifiers.set("durable", {
-      name: "Durable", 
+      name: "Durable",
       description: "Increases item durability",
       statChanges: new Map([["durability", 50]]),
       rarity: ItemRarity.UNCOMMON,

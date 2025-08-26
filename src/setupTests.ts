@@ -1,8 +1,14 @@
 import "@testing-library/jest-dom/vitest";
+import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
 
-// JSDOM does not implement canvas; provide a minimal mock used by our renderer
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockCtx: any = {
+// Ensure React Testing Library cleans up between tests to avoid DOM leaks
+afterEach(() => {
+  cleanup();
+});
+
+// JSDOM does not implement canvas; provide a minimal, side-effect-free 2D context mock
+const mockCtx = {
   save: () => {},
   restore: () => {},
   setTransform: () => {},
@@ -12,9 +18,14 @@ const mockCtx: any = {
   lineTo: () => {},
   stroke: () => {},
   get canvas() {
-    return { width: 1024, height: 768 } as HTMLCanvasElement;
+    const el = document.createElement("canvas");
+    el.width = 1024;
+    el.height = 768;
+    return el;
   },
 };
 
-(HTMLCanvasElement.prototype as unknown as { getContext: () => typeof mockCtx }).getContext = () =>
-  mockCtx;
+Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+  configurable: true,
+  value: (type?: string) => (type === "2d" ? mockCtx : null),
+});
