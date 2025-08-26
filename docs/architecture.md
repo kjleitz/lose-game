@@ -2,31 +2,31 @@
 
 ## Overview
 
-L.O.S.E. is a browser-only, top‑down 2D space exploration game built with Vite, React, and TypeScript. The world renders to an HTML5 canvas; React powers HUD and menus. We use a modular systems approach (renderer, physics, collision, input), orchestrated by a single game loop.
+L.O.S.E. is a browser‑only, top‑down 2D space exploration game built with Vite, React, and TypeScript. The world renders to an HTML5 canvas; React powers HUD and menus. The core is organized with clear layers (UI, Application, Domain), with a fixed‑timestep loop and an internal ECS library for systems that benefit from data‑oriented design.
 
 ## Game Loop & Systems
 
-- Loop: `requestAnimationFrame` with a fixed/accumulated timestep (e.g., 60Hz physics) and decoupled rendering.
-- Systems: pure functions/modules operating on game state (physics, collision, renderer, input); composed in a stable order each tick.
-- State: React Context + hooks expose selected state to UI; core simulation state lives in `src/game`.
+- Loop: `requestAnimationFrame` with fixed/accumulated timestep (60Hz target) and decoupled rendering.
+- Systems: domain systems (movement, collision, rendering, AI) operate over state; composed in a stable order each tick.
+- State: UI reads snapshots via hooks; core simulation state lives under `src/domain/**`.
 
-## Modules
+## Modules (current)
 
-- `src/engine/loop` — RAF scheduler and timestep accumulator.
-- `src/engine/renderer` — canvas context, camera, layers.
-- `src/engine/physics` — integration, forces, simple constraints.
-- `src/engine/collision` — broadphase (grid) + narrowphase, resolutions.
-- `src/engine/input` — keyboard mapping and action queue (future: gamepad).
-- `src/game/` — domain models (ships, sectors), content, spawning.
-- `src/ui/` — HUD (status, minimap, inventory) and menus.
+- `src/application/game/loop.ts` — RAF scheduler and timestep accumulator.
+- `src/engine/core/` — extracted loop primitives and timing helpers.
+- `src/engine/input/` — keyboard mapping and action queue; mode‑aware actions.
+- `src/domain/game/` — game session, player, enemies, projectiles, modes.
+- `src/domain/render/` — canvas renderer, camera transforms, renderers.
+- `src/lib/ecs/` — internal ECS used by selected systems.
+- `src/ui/` — HUD (status, radar, inventory) and menus.
 
 ## Rendering
 
-- Canvas 2D API; batched draws per layer. Camera handles world→screen transforms. Consider OffscreenCanvas later for worker-based rendering if main-thread contention appears.
+- Canvas 2D API with camera transforms for world↔screen mapping. Renderers live in `src/domain/render/`. Consider OffscreenCanvas/Worker if main‑thread contention appears.
 
 ## Testing
 
-- Unit tests for systems (deterministic inputs/outputs); component tests for HUD via React Testing Library; smoke tests for Loop + Renderer integration.
+- Unit tests for systems; component tests for HUD via React Testing Library; integration smoke tests for loop + renderer.
 
 ## Future Directions
 

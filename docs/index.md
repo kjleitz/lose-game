@@ -51,11 +51,11 @@ L.O.S.E. features a unique dual-game system where players seamlessly switch betw
 
 We're evolving toward a true dual-game architecture where SpaceMode and PlanetMode operate as independent games sharing a common engine. See [ADR-0008](decisions/adr-0008-engine-extraction-plan.md) for the complete roadmap.
 
-Quick Start
+Quick Commands
 
-- Install: `npm ci`
+- Install: `npm install`
 - Develop: `npm run dev`
-- Test (unit): `npm run test`
-- Test (E2E): `npx playwright test`
+- Unit tests: `npm run test` / Coverage: `npm run coverage`
+- E2E tests: `npx playwright test`
 - Typecheck: `npm run typecheck`
 - Lint/Format: `npm run lint` / `npm run format`

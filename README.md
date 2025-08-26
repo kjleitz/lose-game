@@ -23,15 +23,21 @@ Documentation
 
 ## Project Structure
 
-- `src/ui` — HUD and canvas mount (`CanvasRoot`)
-- `src/engine` — loop, renderer, input (physics/collision TBD)
-- `src/game` — domain models/state
-- `docs` — overview, architecture, roadmap, ADRs
+- `src/ui/` — HUD and canvas mount (`CanvasRoot`), React components and hooks
+- `src/application/` — application layer (game loop, input orchestration)
+- `src/domain/` — core game logic (game state, rendering services, AI, services)
+- `src/engine/` — reusable engine pieces (`core/` loop, `input/`), extracted from application over time
+- `src/games/` — mode-specific games (`space/`, `planet/`) in the dual‑game architecture
+- `src/lib/ecs/` — internal ECS library package used by game systems
+- `src/shared/` — shared utilities, types, and constants
+- `src/infrastructure/` — project assets and technical adapters
+- `docs/` — overview, architecture, roadmap, ADRs
 
 ## Docs
 
 - Overview: `docs/overview.md`
 - Architecture: `docs/architecture.md`
+- Dual‑Game System: `docs/architecture/dual-game-system.md`
 - Roadmap: `docs/roadmap.md`
 - Decisions (ADRs): `docs/decisions/`
 - Contributor guide: `AGENTS.md`

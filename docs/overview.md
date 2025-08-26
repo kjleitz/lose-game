@@ -4,8 +4,8 @@
 
 - Stack: Vite + React + TypeScript (Node 24, npm)
 - Rendering: HTML5 Canvas for game world; React for HUD/menus
-- Architecture: Modular systems (loop, renderer, physics, collision, input); no ECS (yet)
-- Styling: Tailwind (utility-first) with HUD-flavored tokens
+- Architecture: DDD layers (application/domain/ui) with internal ECS library for systems; fixed‑timestep loop
+- Styling: Tailwind (utility‑first) with HUD‑flavored tokens
 - Testing: Vitest + React Testing Library; JSDOM with canvas mocked
 - CI: GitHub Actions (build, typecheck, lint, test)
 
@@ -18,11 +18,13 @@
 
 ## Layout
 
-- `src/app` — app bootstrap (in `main.tsx`)
-- `src/ui` — HUD/menus (`CanvasRoot` mounts canvas + HUD)
-- `src/engine` — `loop`, `renderer`, `input` (physics/collision TBD)
-- `src/game` — domain models/state (stubbed)
-- `docs` — architecture, roadmap, ADRs
+- `src/ui/` — HUD/menus (`CanvasRoot` mounts canvas + HUD)
+- `src/application/` — loop and input orchestration
+- `src/domain/` — game state, rendering services, AI, and systems
+- `src/engine/` — reusable engine primitives (core loop, input)
+- `src/games/` — space/planet mode implementations (dual‑game architecture)
+- `src/lib/ecs/` — internal ECS package used by systems
+- `docs/` — architecture, roadmap, ADRs
 
 ## Run & Dev
 

@@ -4,12 +4,15 @@ These guidelines apply to L.O.S.E.: Lots of Outer Space to Explore — a Vite + 
 
 ## Project Structure & Modules
 
-- `src/app/` — app bootstrap (Vite entry, providers)
-- `src/ui/` — HUD and menus (React/tailwind)
-- `src/game/` — game state, scenes, content
-- `src/engine/` — loop, renderer, physics, collision, input
-- `src/{assets,config,types,utils}/` — helpers and data
-- `tests/` — unit/integration tests; `public/` — static files
+- `src/ui/` — HUD and menus (React/Tailwind)
+- `src/application/` — app layer: loop orchestration and input
+- `src/domain/` — core game logic: game state, rendering services, AI, services
+- `src/engine/` — extracted engine primitives (core loop, input)
+- `src/games/` — mode‑specific games (space, planet)
+- `src/lib/ecs/` — internal ECS package used by systems
+- `src/shared/` — shared helpers and types
+- `src/infrastructure/` — assets and technical adapters
+- `public/` — static files; `e2e/` — Playwright tests
 
 ## Build, Test, and Dev Commands
 
