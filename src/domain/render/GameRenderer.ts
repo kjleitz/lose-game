@@ -23,6 +23,7 @@ import type { SpaceMode } from "../game/modes/SpaceMode";
 interface MinimalGameSession {
   getCurrentModeType?: (this: MinimalGameSession) => "space" | "planet";
   getCurrentMode?: () => GameMode | SpaceMode | PlanetMode;
+  getPlanetSurface?: () => PlanetSurface | undefined;
 }
 
 export class GameRenderer {
@@ -129,7 +130,13 @@ export class GameRenderer {
     // Get planet mode and related systems (guarded introspection)
     const planetMode =
       typeof gameSession?.getCurrentMode === "function" ? gameSession.getCurrentMode() : undefined;
-    const surface: PlanetSurface | undefined = undefined; // Renderers handle undefined surface
+    let surface: PlanetSurface | undefined =
+      planetMode instanceof PlanetMode ? planetMode.getSurfaceData() : undefined;
+    // Prefer session-provided surface if available (ECS path)
+    if (gameSession && typeof gameSession.getPlanetSurface === "function") {
+      const s = gameSession.getPlanetSurface();
+      if (s) surface = s;
+    }
     const weaponSystem = this.getWeaponSystem(planetMode);
 
     // Planet surface background
@@ -139,7 +146,7 @@ export class GameRenderer {
     const [a, b, c, d, e, f] = CameraTransform.getTransform(camera, size.width, size.height, dpr);
     ctx.setTransform(a, b, c, d, e, f);
 
-    // Render planet surface
+    // Render planet surface (must be provided by mode or session)
     planetSurfaceRenderer.render(ctx, surface);
 
     // Draw death effects first (behind everything)

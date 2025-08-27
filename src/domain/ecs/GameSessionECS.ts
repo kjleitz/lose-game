@@ -13,6 +13,7 @@ import { createEnemyAISystem } from "./systems/EnemyAISystem";
 import { createMovementSystem } from "./systems/MovementSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
+import type { PlanetSurface } from "../game/modes/PlanetMode";
 import { createWeaponSystem } from "./systems/WeaponSystem";
 
 export class GameSessionECS {
@@ -21,6 +22,7 @@ export class GameSessionECS {
   private mode: "space" | "planet" = "space";
   private returnPosition: { x: number; y: number } | null = null;
   private landedPlanetId: string | null = null;
+  private planetSurface: PlanetSurface | undefined;
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -110,6 +112,8 @@ export class GameSessionECS {
         if (p) this.returnPosition = { x: p.x, y: p.y };
         this.mode = "planet";
         this.landedPlanetId = near;
+        const planet = this.getPlanets().find((pl) => pl.id === near);
+        if (planet) this.planetSurface = this.generatePlanetSurface(planet);
       }
     } else if (this.mode === "planet") {
       if (actions.has("takeoff")) {
@@ -127,6 +131,7 @@ export class GameSessionECS {
         }
         this.mode = "space";
         this.landedPlanetId = null;
+        this.planetSurface = undefined;
       }
     }
 
@@ -332,5 +337,50 @@ export class GameSessionECS {
       if (dist < p.radius + 60) return p.id;
     }
     return null;
+  }
+
+  // Expose planet surface for renderer (ECS path)
+  getPlanetSurface(): PlanetSurface | undefined {
+    return this.planetSurface;
+  }
+
+  // Simple procedural surface generation inspired by PlanetMode
+  private generatePlanetSurface(planet: {
+    id: string;
+    x: number;
+    y: number;
+    radius: number;
+  }): PlanetSurface {
+    const landingSite = { x: 0, y: 0 };
+    const terrain: PlanetSurface["terrain"] = [];
+    const resources: PlanetSurface["resources"] = [];
+    const creatures: PlanetSurface["creatures"] = [];
+
+    const r = Math.random;
+    const features = Math.floor(r() * 10) + 5;
+    for (let i = 0; i < features; i++) {
+      const angle = r() * Math.PI * 2;
+      const distance = 100 + r() * 300;
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance;
+      const type: PlanetSurface["terrain"][number]["type"] = r() > 0.5 ? "rock" : "vegetation";
+      terrain.push({ id: `terrain-${i}`, x, y, type, size: 20 + r() * 30 });
+    }
+
+    const resCount = Math.floor(r() * 5) + 2;
+    const resTypes: PlanetSurface["resources"][number]["type"][] = ["mineral", "energy", "organic"];
+    for (let i = 0; i < resCount; i++) {
+      const angle = r() * Math.PI * 2;
+      const distance = 50 + r() * 200;
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance;
+      const type = resTypes[Math.floor(r() * resTypes.length)];
+      resources.push({ id: `resource-${i}`, x, y, type, amount: Math.floor(r() * 50) + 10 });
+    }
+
+    // Omit creatures in ECS surface for now to keep types simple
+    // PlanetSurfaceRenderer does not require complex creature data for background
+
+    return { planetId: planet.id, landingSite, terrain, resources, creatures };
   }
 }

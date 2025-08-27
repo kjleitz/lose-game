@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GameRenderer } from "./GameRenderer";
+import type { PlanetSurface } from "../game/modes/PlanetMode";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
 import type { Circle2D } from "../../shared/types/geometry";
@@ -23,8 +24,13 @@ describe("GameRenderer", () => {
       restore: () => {},
       beginPath: () => {},
       arc: () => {},
+      ellipse: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      closePath: () => {},
       fill: () => {},
       stroke: () => {},
+      strokeRect: () => {},
       canvas: { width: 800, height: 600 } as HTMLCanvasElement,
     };
     const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
@@ -89,5 +95,64 @@ describe("GameRenderer", () => {
         sessionLike,
       ),
     ).not.toThrow();
+  });
+
+  it("renders planet surface when session provides one", () => {
+    const renderer = new GameRenderer();
+    let drew = 0;
+    const ctx: Partial<CanvasRenderingContext2D> = {
+      setTransform: () => {},
+      clearRect: () => {},
+      fillRect: () => {
+        drew += 1;
+      },
+      fillStyle: "",
+      save: () => {},
+      restore: () => {},
+      beginPath: () => {},
+      arc: () => {},
+      ellipse: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      closePath: () => {},
+      fill: () => {},
+      stroke: () => {},
+      strokeRect: () => {},
+      translate: () => {},
+      rotate: () => {},
+      canvas: { width: 800, height: 600 } as HTMLCanvasElement,
+    };
+    const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
+    const camera = { x: 0, y: 0, zoom: 1 };
+    const size = { width: 800, height: 600 };
+    const sessionLike: {
+      getCurrentModeType: () => "planet";
+      getPlanetSurface: () => PlanetSurface;
+    } = {
+      getCurrentModeType: () => "planet",
+      getPlanetSurface: (): PlanetSurface => ({
+        planetId: "p1",
+        landingSite: { x: 0, y: 0 },
+        terrain: [{ id: "t1", x: 10, y: 10, type: "rock", size: 20 }],
+        resources: [],
+        creatures: [],
+      }),
+    };
+
+    expect(() =>
+      renderer.render(
+        ctx as CanvasRenderingContext2D,
+        player,
+        camera,
+        [],
+        [],
+        [],
+        new Set(),
+        size,
+        1,
+        sessionLike,
+      ),
+    ).not.toThrow();
+    expect(drew).toBeGreaterThan(0);
   });
 });
