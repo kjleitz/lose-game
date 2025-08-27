@@ -8,7 +8,7 @@ export interface PlanetSVGProps {
   r: number;
 }
 
-export default function PlanetSVG({ planet, x, y, r }: PlanetSVGProps) {
+export function PlanetSVG({ planet, x, y, r }: PlanetSVGProps): JSX.Element {
   // Render main body
   const overlays: JSX.Element[] = [];
   if (planet.design === "ringed") {

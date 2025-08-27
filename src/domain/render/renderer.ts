@@ -4,7 +4,7 @@ export interface Renderer {
 
 export function createRenderer(ctx: CanvasRenderingContext2D): Renderer {
   return {
-    clear() {
+    clear(): void {
       const { canvas } = ctx;
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);

@@ -18,7 +18,7 @@ export function createActionQueue(): ActionQueue {
   return [];
 }
 
-export function enqueueKeyEvent(queue: ActionQueue, code: string, pressed: boolean) {
+export function enqueueKeyEvent(queue: ActionQueue, code: string, pressed: boolean): void {
   const action = mapKeyToAction(code);
   if (!action) return;
   queue.push({ action, pressed });

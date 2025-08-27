@@ -1,21 +1,30 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CharacterRenderer } from "./CharacterRenderer";
+import type { Action } from "../../engine/input/ActionTypes";
 
-type MockCtx = {
-  save: (...args: unknown[]) => void;
-  restore: (...args: unknown[]) => void;
-  translate: (...args: unknown[]) => void;
-  rotate: (...args: unknown[]) => void;
-  fillRect: (...args: unknown[]) => void;
-  strokeRect: (...args: unknown[]) => void;
-  beginPath: (...args: unknown[]) => void;
-  arc: (...args: unknown[]) => void;
-  ellipse: (...args: unknown[]) => void;
-  moveTo: (...args: unknown[]) => void;
-  lineTo: (...args: unknown[]) => void;
-  closePath: (...args: unknown[]) => void;
-  fill: (...args: unknown[]) => void;
-  stroke: (...args: unknown[]) => void;
+interface MockCtx {
+  save: () => void;
+  restore: () => void;
+  translate: (x: number, y: number) => void;
+  rotate: (angle: number) => void;
+  fillRect: (x: number, y: number, w: number, h: number) => void;
+  strokeRect: (x: number, y: number, w: number, h: number) => void;
+  beginPath: () => void;
+  arc: (x: number, y: number, r: number, start: number, end: number) => void;
+  ellipse: (
+    x: number,
+    y: number,
+    radiusX: number,
+    radiusY: number,
+    rotation: number,
+    startAngle: number,
+    endAngle: number,
+  ) => void;
+  moveTo: (x: number, y: number) => void;
+  lineTo: (x: number, y: number) => void;
+  closePath: () => void;
+  fill: () => void;
+  stroke: () => void;
   fillStyle: string;
   strokeStyle: string;
   lineWidth: number;
@@ -31,7 +40,7 @@ type MockCtx = {
   _shadowBlur: number;
   _shadowColor: string;
   _globalAlpha: number;
-};
+}
 
 describe("CharacterRenderer", () => {
   let renderer: CharacterRenderer;
@@ -109,7 +118,7 @@ describe("CharacterRenderer", () => {
   describe("basic rendering", () => {
     it("should render character with rotation", () => {
       const player = { x: 100, y: 200, vx: 0, vy: 0, angle: Math.PI / 2 };
-      const actions = new Set<string>();
+      const actions = new Set<Action>();
 
       renderer.render(mockCtx, player, actions, 32);
 
@@ -121,7 +130,7 @@ describe("CharacterRenderer", () => {
 
     it("should render weapon", () => {
       const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
-      const actions = new Set<string>();
+      const actions = new Set<Action>();
 
       renderer.render(mockCtx, player, actions, 32);
 
@@ -132,7 +141,7 @@ describe("CharacterRenderer", () => {
 
     it("should show firing indicator when fire action is active", () => {
       const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
-      const actions = new Set(["fire"]);
+      const actions = new Set<Action>(["fire"]);
 
       renderer.render(mockCtx, player, actions, 32);
 
@@ -143,8 +152,8 @@ describe("CharacterRenderer", () => {
 
     it("should change color when running", () => {
       const player = { x: 0, y: 0, vx: 50, vy: 0, angle: 0 };
-      const actionsRunning = new Set(["boost"]);
-      const actionsWalking = new Set<string>();
+      const actionsRunning = new Set<Action>(["boost"]);
+      const actionsWalking = new Set<Action>();
 
       renderer.render(mockCtx, player, actionsRunning, 32);
       // Body fill should be set to red at some point during render
@@ -160,7 +169,7 @@ describe("CharacterRenderer", () => {
 
     it("should animate legs when moving", () => {
       const player = { x: 0, y: 0, vx: 50, vy: 0, angle: 0 };
-      const actions = new Set<string>();
+      const actions = new Set<Action>();
 
       renderer.render(mockCtx, player, actions, 32);
 
@@ -173,7 +182,7 @@ describe("CharacterRenderer", () => {
   describe("directional rendering", () => {
     it("should render directional indicator", () => {
       const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
-      const actions = new Set<string>();
+      const actions = new Set<Action>();
 
       renderer.render(mockCtx, player, actions, 32);
 
@@ -185,7 +194,7 @@ describe("CharacterRenderer", () => {
 
     it("should render eyes in correct position", () => {
       const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
-      const actions = new Set<string>();
+      const actions = new Set<Action>();
 
       renderer.render(mockCtx, player, actions, 32);
 

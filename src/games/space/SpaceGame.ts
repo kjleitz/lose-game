@@ -1,16 +1,21 @@
-import type { Game, GameState, TransitionData, GameEngine } from "../../shared/types/Game";
-import type { Player } from "../../domain/game/player";
-import type { Planet } from "../../domain/game/planets";
+import type { Node } from "../../domain/ai/bt";
+import type { EnemyBlackboard } from "../../domain/ai/enemy/EnemyBlackboard";
+import { buildPatrolSeekTree } from "../../domain/ai/enemy/trees";
 import type { Enemy } from "../../domain/game/enemies";
+import { createEnemy } from "../../domain/game/enemies";
+import type { GameModeType } from "../../domain/game/modes/GameMode";
+import type { Planet } from "../../domain/game/planets";
+import type { Player } from "../../domain/game/player";
 import type { Projectile } from "../../domain/game/projectiles";
 import { createProjectile, stepProjectile } from "../../domain/game/projectiles";
-import { createEnemy } from "../../domain/game/enemies";
-import type { Blackboard, Node } from "../../domain/ai/bt";
-import { buildPatrolSeekTree } from "../../domain/ai/enemy/trees";
+import type { Game, GameEngine, GameState, TransitionData } from "../../shared/types/Game";
+import type { Point2D, ViewSize } from "../../shared/types/geometry";
+
+// import type { Action } from "../../engine/input/ActionTypes";
 // import { setCameraPosition } from "../../domain/render/camera"; // TODO: Remove when camera system is extracted
 
-export interface SpaceGameState extends GameState {
-  playerPosition: { x: number; y: number };
+export interface SpaceGameState {
+  playerPosition: Point2D;
   visitedPlanets: Set<string>;
   enemies: Enemy[];
   projectiles: Projectile[];
@@ -19,7 +24,7 @@ export interface SpaceGameState extends GameState {
 export interface SpaceGameConfig {
   planets: Planet[];
   enemies?: Enemy[];
-  size: { width: number; height: number };
+  size: ViewSize;
   player: Player;
 }
 
@@ -32,15 +37,15 @@ export class SpaceGame implements Game {
   private enemies: Enemy[] = [];
   private fireCooldown = 0;
   private readonly FIRE_RATE = 8;
-  private aiTree: Node;
-  private enemyBlackboards: Map<string, Blackboard> = new Map();
+  private aiTree: Node<EnemyBlackboard>;
+  private enemyBlackboards: Map<string, EnemyBlackboard> = new Map();
 
-  private readonly size: { width: number; height: number };
+  private readonly size: ViewSize;
   private player: Player;
   private engine?: GameEngine;
 
   // Callback for requesting mode transitions (will be set by GameManager)
-  private onModeTransition?: (targetMode: string, data?: unknown) => void;
+  private onModeTransition?: (targetMode: GameModeType, data?: TransitionData) => void;
 
   constructor(config: SpaceGameConfig) {
     this.size = config.size;
@@ -122,32 +127,24 @@ export class SpaceGame implements Game {
   }
 
   loadState(state: GameState): void {
-    const spaceState = state as SpaceGameState;
-    if (spaceState.enemies) {
-      this.enemies = spaceState.enemies;
-    }
-    if (spaceState.projectiles) {
-      this.projectiles = spaceState.projectiles;
+    if (this.isSpaceState(state)) {
+      this.enemies = state.enemies;
+      this.projectiles = state.projectiles;
     }
   }
 
-  canTransitionTo(targetGame: string): boolean {
+  canTransitionTo(targetGame: GameModeType): boolean {
     return targetGame === "planet";
   }
 
-  prepareTransition(targetGame: string): TransitionData {
-    if (targetGame === "planet") {
-      return {
-        playerPosition: { x: this.player.state.x, y: this.player.state.y },
-      };
-    }
-    return {};
+  prepareTransition(_targetGame: GameModeType): TransitionData | null {
+    return null;
   }
 
   receiveTransition(data: TransitionData): void {
     // Handle return from planet mode
-    const position = data.returnPosition as { x: number; y: number } | undefined;
-    if (position) {
+    if ("returnPosition" in data) {
+      const position = data.returnPosition;
       this.player.state.x = position.x;
       this.player.state.y = position.y;
       this.player.state.vx = 0;
@@ -156,15 +153,15 @@ export class SpaceGame implements Game {
   }
 
   // Public API for backward compatibility
-  get planetsData(): Planet[] {
+  getPlanetsData(): Planet[] {
     return this.planets;
   }
 
-  get projectilesData(): Projectile[] {
+  getProjectilesData(): Projectile[] {
     return this.projectiles;
   }
 
-  get enemiesData(): Enemy[] {
+  getEnemiesData(): Enemy[] {
     return this.enemies;
   }
 
@@ -176,11 +173,13 @@ export class SpaceGame implements Game {
     this.planets = [...newPlanets];
   }
 
-  getWorldSize(): { width: number; height: number } {
+  getWorldSize(): ViewSize {
     return this.size;
   }
 
-  setModeTransitionCallback(callback: (targetMode: string, data?: unknown) => void): void {
+  setModeTransitionCallback(
+    callback: (targetMode: GameModeType, data?: TransitionData) => void,
+  ): void {
     this.onModeTransition = callback;
   }
 
@@ -233,7 +232,7 @@ export class SpaceGame implements Game {
       bb.enemy = enemy;
       bb.player = this.player;
       bb.planets = this.planets;
-      const currentTime = bb.time as number;
+      const currentTime = bb.time == null ? 0 : bb.time;
       bb.time = currentTime + dt;
 
       this.aiTree.tick(bb, dt);
@@ -248,9 +247,18 @@ export class SpaceGame implements Game {
         planets: this.planets,
         rng: Math.random,
         time: 0,
-        config: {},
-        scratch: {},
+        scratch: {
+          playerDetected: false,
+          waypoint: null,
+          waypointReached: false,
+          spawnX: enemy.x,
+          spawnY: enemy.y,
+        },
       });
     }
+  }
+
+  private isSpaceState(state: GameState): state is SpaceGameState {
+    return "enemies" in state && "projectiles" in state;
   }
 }

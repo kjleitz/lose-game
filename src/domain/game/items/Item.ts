@@ -1,3 +1,5 @@
+import type { DamageType } from "../damage/DamageableEntity";
+
 export interface Item {
   readonly id: string;
   readonly type: string;
@@ -38,7 +40,7 @@ export interface ItemProperties {
   // Optional tool/weapon fields for dynamic systems
   readonly toolType?: string;
   readonly damage?: number;
-  readonly damageType?: import("../damage/DamageableEntity").DamageType;
+  readonly damageType?: DamageType;
   readonly range?: number;
   readonly projectileSpeed?: number;
   readonly fireRate?: number;
@@ -132,7 +134,7 @@ export type EffectType = (typeof EffectType)[keyof typeof EffectType];
 
 export interface EffectCondition {
   readonly type: string;
-  readonly value: unknown;
+  readonly value: number | string | boolean;
 }
 
 export interface ItemMetadata {
@@ -205,8 +207,6 @@ export const WeaponType = {
   EXPLOSIVE: "explosive",
 } as const;
 export type WeaponType = (typeof WeaponType)[keyof typeof WeaponType];
-
-import type { DamageType } from "../damage/DamageableEntity";
 
 export interface DamageProfile {
   readonly base: number;

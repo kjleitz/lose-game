@@ -1,7 +1,9 @@
-import { defineComponent } from "../../../lib/ecs/dist";
+import { defineComponent } from "../../../lib/ecs";
+import type { Point2D } from "../../../shared/types/geometry";
+import type { Item } from "../../game/items/Item";
 
 // Transform components
-export const Position = defineComponent<{ x: number; y: number }>();
+export const Position = defineComponent<Point2D>();
 export const Velocity = defineComponent<{ dx: number; dy: number }>();
 export const Rotation = defineComponent<{ angle: number }>();
 
@@ -47,8 +49,11 @@ export const Sprite = defineComponent<{
   opacity?: number;
 }>();
 
+export interface TrailPoint extends Point2D {
+  age: number;
+}
 export const Trail = defineComponent<{
-  points: Array<{ x: number; y: number; age: number }>;
+  points: Array<TrailPoint>;
   maxLength: number;
   fadeTime: number;
 }>();
@@ -58,7 +63,7 @@ export const PlayerInventory = defineComponent<{
   slots: number;
   maxWeight: number;
   currentWeight: number;
-  items: unknown[];
+  items: Item[];
 }>();
 
 export const PlayerExperience = defineComponent<{
@@ -71,7 +76,7 @@ export const PlayerExperience = defineComponent<{
 export const SpaceMode = defineComponent<Record<string, never>>(() => ({}));
 export const PlanetMode = defineComponent<{
   planetId: string;
-  surfacePosition: { x: number; y: number };
+  surfacePosition: Point2D;
 }>();
 
 // Weapon system

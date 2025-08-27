@@ -6,11 +6,14 @@ import { GameMode } from "./modes/GameMode";
 import { SpaceMode } from "./modes/SpaceMode";
 import { PlanetMode } from "./modes/PlanetMode";
 import { ModeTransitionManager } from "./modes/ModeTransition";
+import type { Camera } from "../render/camera";
+import type { ViewSize, Point2D } from "../../shared/types/geometry";
+import type { Action } from "../../engine/input/ActionTypes";
 
 export class GameSession {
-  camera: { x: number; y: number; zoom: number };
+  camera: Camera;
   player: Player;
-  size: { width: number; height: number };
+  size: ViewSize;
   notification: string | null = null;
 
   private currentMode: GameMode;
@@ -25,10 +28,10 @@ export class GameSession {
     size,
     enemies,
   }: {
-    camera: { x: number; y: number; zoom: number };
+    camera: Camera;
     player: Player;
     planets: Planet[];
-    size: { width: number; height: number };
+    size: ViewSize;
     enemies?: Enemy[];
   }) {
     this.camera = camera;
@@ -44,11 +47,11 @@ export class GameSession {
   }
 
   update(
-    actions: Set<string>,
-    _updatePlayer: (dt: number, actions: Set<string>, visitedPlanet?: boolean) => void,
-    maybeGenerateRegion: (center: { x: number; y: number }, regionKey: string) => void,
+    actions: Set<Action>,
+    _updatePlayer: (dt: number, actions: Set<Action>, visitedPlanet?: boolean) => void,
+    maybeGenerateRegion: (center: Point2D, regionKey: string) => void,
     dt: number,
-  ) {
+  ): void {
     // Handle mode transitions first
     this.handleModeTransitions();
 
@@ -62,25 +65,28 @@ export class GameSession {
   }
 
   // Public API for modes to request transitions
-  requestModeTransition(targetMode: GameModeType, data?: unknown): void {
+  requestModeTransition(
+    targetMode: GameModeType,
+    data?: { planetId?: string; returnPosition?: Point2D },
+  ): void {
     this.transitionManager.requestTransition(targetMode, data);
   }
 
   // Getters for backward compatibility and mode access
-  get planets(): Planet[] {
-    return this.spaceMode.planetsData;
+  getPlanets(): Planet[] {
+    return this.spaceMode.getPlanetsData();
   }
 
   updatePlanets(newPlanets: Planet[]): void {
     this.spaceMode.updatePlanets(newPlanets);
   }
 
-  get projectiles() {
-    return this.currentMode.type === "space" ? this.spaceMode.projectilesData : [];
+  getProjectiles(): { x: number; y: number; radius: number }[] {
+    return this.currentMode.type === "space" ? this.spaceMode.getProjectilesData() : [];
   }
 
-  get enemies() {
-    return this.currentMode.type === "space" ? this.spaceMode.enemiesData : [];
+  getEnemies(): Enemy[] {
+    return this.currentMode.type === "space" ? this.spaceMode.getEnemiesData() : [];
   }
 
   getCurrentMode(): GameMode {
@@ -104,18 +110,18 @@ export class GameSession {
 
     if (transition.targetMode === "planet" && this.currentMode.type === "space") {
       // Landing transition
-      const data = transition.data as { planetId: string } | undefined;
-      const planet = this.spaceMode.planetsData.find((p) => p.id === data?.planetId);
+      const planetId = transition.data?.planetId;
+      const planet = this.spaceMode.getPlanetsData().find((p) => p.id === planetId);
       if (planet) {
         this.planetMode.landOnPlanet(planet, this.player);
         this.currentMode = this.planetMode;
       }
     } else if (transition.targetMode === "space" && this.currentMode.type === "planet") {
       // Takeoff transition
-      const data = transition.data as { returnPosition: { x: number; y: number } } | undefined;
-      if (data?.returnPosition) {
-        this.player.state.x = data.returnPosition.x;
-        this.player.state.y = data.returnPosition.y;
+      const pos = transition.data?.returnPosition;
+      if (pos) {
+        this.player.state.x = pos.x;
+        this.player.state.y = pos.y;
         this.player.state.vx = 0;
         this.player.state.vy = 0;
       }
@@ -124,7 +130,7 @@ export class GameSession {
   }
 
   private handleSpaceGeneration(
-    maybeGenerateRegion: (center: { x: number; y: number }, regionKey: string) => void,
+    maybeGenerateRegion: (center: Point2D, regionKey: string) => void,
   ): void {
     const gridStep = Math.max(this.size.width, this.size.height) / 3;
     const REGION_SIZE = gridStep;

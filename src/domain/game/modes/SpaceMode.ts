@@ -6,9 +6,12 @@ import type { Enemy } from "../enemies";
 import type { Projectile } from "../projectiles";
 import { createProjectile, stepProjectile } from "../projectiles";
 import { createEnemy } from "../enemies";
-import type { Blackboard, Node } from "../../ai/bt";
+import type { Node } from "../../ai/bt";
 import { buildPatrolSeekTree } from "../../ai/enemy/trees";
+import type { EnemyBlackboard } from "../../ai/enemy/EnemyBlackboard";
 import { setCameraPosition } from "../../render/camera";
+import type { ViewSize } from "../../../shared/types/geometry";
+import type { Action } from "../../../engine/input/ActionTypes";
 
 export class SpaceMode extends GameMode {
   readonly type = "space" as const;
@@ -18,17 +21,12 @@ export class SpaceMode extends GameMode {
   private enemies: Enemy[] = [];
   private fireCooldown = 0;
   private readonly FIRE_RATE = 8;
-  private aiTree: Node;
-  private enemyBlackboards: Map<string, Blackboard> = new Map();
+  private aiTree: Node<EnemyBlackboard>;
+  private enemyBlackboards: Map<string, EnemyBlackboard> = new Map();
 
-  private readonly size: { width: number; height: number };
+  private readonly size: ViewSize;
 
-  constructor(
-    planets: Planet[] = [],
-    enemies: Enemy[] = [],
-    size: { width: number; height: number },
-    player: Player,
-  ) {
+  constructor(planets: Planet[] = [], enemies: Enemy[] = [], size: ViewSize, player: Player) {
     super();
     this.size = size;
     this.planets = planets;
@@ -41,7 +39,7 @@ export class SpaceMode extends GameMode {
     this.initializeEnemyBlackboards(player);
   }
 
-  update(dt: number, actions: Set<string>, player: Player, session: GameSession): void {
+  update(dt: number, actions: Set<Action>, player: Player, session: GameSession): void {
     // Handle firing
     this.fireCooldown = Math.max(0, this.fireCooldown - dt);
     if (actions.has("fire") && this.fireCooldown <= 0) {
@@ -114,16 +112,16 @@ export class SpaceMode extends GameMode {
     return ["HealthBar", "ExperienceBar", "Radar", "ActionReadout"];
   }
 
-  // Public getters for GameSession integration
-  get planetsData(): Planet[] {
+  // Public methods for GameSession integration
+  getPlanetsData(): Planet[] {
     return this.planets;
   }
 
-  get projectilesData(): Projectile[] {
+  getProjectilesData(): Projectile[] {
     return this.projectiles;
   }
 
-  get enemiesData(): Enemy[] {
+  getEnemiesData(): Enemy[] {
     return this.enemies;
   }
 
@@ -135,7 +133,7 @@ export class SpaceMode extends GameMode {
     this.planets = [...newPlanets];
   }
 
-  getWorldSize(): { width: number; height: number } {
+  getWorldSize(): ViewSize {
     return this.size;
   }
 
@@ -188,7 +186,7 @@ export class SpaceMode extends GameMode {
       bb.enemy = enemy;
       bb.player = player;
       bb.planets = this.planets;
-      const currentTime = bb.time as number;
+      const currentTime = bb.time == null ? 0 : bb.time;
       bb.time = currentTime + dt;
 
       this.aiTree.tick(bb, dt);
@@ -203,8 +201,13 @@ export class SpaceMode extends GameMode {
         planets: this.planets,
         rng: Math.random,
         time: 0,
-        config: {},
-        scratch: {},
+        scratch: {
+          playerDetected: false,
+          waypoint: null,
+          waypointReached: false,
+          spawnX: enemy.x,
+          spawnY: enemy.y,
+        },
       });
     }
   }

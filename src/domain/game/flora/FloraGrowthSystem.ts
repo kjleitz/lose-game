@@ -1,10 +1,13 @@
+import type { Point2D } from "../../../shared/types/geometry";
 import type {
+  DiseaseEffect,
   FloraInstance,
-  GrowthStage,
-  ReproductionRequirement,
-  OffspringProperties,
   GeneticTraits,
+  GrowthStage,
+  OffspringProperties,
+  ReproductionRequirement,
 } from "./FloraSpecies";
+import { FloraInstanceImpl } from "./FloraSpecies";
 
 export class FloraGrowthSystem {
   private instances: Map<string, FloraInstance> = new Map();
@@ -298,7 +301,10 @@ export class FloraGrowthSystem {
     console.log(`${plant.species.name} infected with ${diseaseType}`);
   }
 
-  private getDiseaseEffects(diseaseType: string): import("./FloraSpecies").DiseaseEffect[] {
+  private getDiseaseEffects(
+    // TODO: string literal union
+    diseaseType: string,
+  ): DiseaseEffect[] {
     switch (diseaseType) {
       case "fungal_blight":
         return [
@@ -471,19 +477,26 @@ export class FloraGrowthSystem {
 
   private cloneFloraInstance(
     parent: FloraInstance,
-    newPosition: { x: number; y: number },
+    newPosition: Point2D,
     genetics: GeneticTraits,
   ): FloraInstance {
-    // For now, we'll use Object.create to clone the instance without constructor casting
-    const offspring = Object.create(Object.getPrototypeOf(parent));
+    // Create a new plant instance using the concrete implementation so we keep methods intact
+    const id = `plant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const offspring = new FloraInstanceImpl(id, newPosition, parent.species, genetics);
 
-    // Copy all properties from parent
-    Object.assign(offspring, parent);
+    // Carry over some dynamic state from the parent (environment/diseases can propagate)
+    offspring.environmentalFactors.set(
+      "temperature",
+      parent.environmentalFactors.get("temperature") ?? 0.5,
+    );
+    offspring.environmentalFactors.set(
+      "moisture",
+      parent.environmentalFactors.get("moisture") ?? 0.5,
+    );
+    offspring.environmentalFactors.set("light", parent.environmentalFactors.get("light") ?? 0.5);
 
-    // Update with new values
-    offspring.id = `plant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    offspring.position = newPosition;
-    offspring.genetics = genetics;
+    // Inherit social network loosely (start fresh by default)
+    offspring.diseases = parent.diseases.map((d) => ({ ...d }));
 
     return offspring;
   }

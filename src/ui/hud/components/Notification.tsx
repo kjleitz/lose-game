@@ -1,8 +1,10 @@
+import type { JSX } from "react";
+
 interface NotificationProps {
   message?: string | null;
 }
 
-export default function Notification({ message }: NotificationProps) {
+export function Notification({ message }: NotificationProps): JSX.Element | null {
   if (!message) return null;
   return (
     <div className="absolute left-1/2 top-8 -translate-x-1/2 z-20">

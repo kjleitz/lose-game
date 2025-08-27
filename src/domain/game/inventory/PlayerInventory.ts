@@ -1,12 +1,12 @@
 import type { Item } from "../items/Item";
 
 export interface PlayerInventory {
-  readonly slots: InventorySlot[];
+  getSlots(): InventorySlot[];
   readonly maxSlots: number;
   readonly maxWeight: number;
   readonly categories: InventoryCategory[];
-  readonly quickslots: QuickSlot[];
-  readonly currentWeight: number;
+  getQuickslots(): QuickSlot[];
+  getCurrentWeight(): number;
   readonly filters: InventoryFilter[];
   addItem(item: Item, quantity?: number): AddItemResult;
   sortInventory(mode: SortMode): void;
@@ -52,7 +52,7 @@ export interface InventoryFilter {
 
 export interface InventoryOperation {
   readonly type: OperationType;
-  readonly source: string | "external";
+  readonly source: string;
   readonly target: string;
   readonly quantity?: number;
   readonly validation: ValidationResult;
@@ -108,15 +108,15 @@ export class PlayerInventoryManager implements PlayerInventory {
     this.initializeQuickSlots();
   }
 
-  get slots(): InventorySlot[] {
+  getSlots(): InventorySlot[] {
     return Array.from(this._slots.values());
   }
 
-  get quickslots(): QuickSlot[] {
+  getQuickslots(): QuickSlot[] {
     return Array.from(this._quickSlots.values());
   }
 
-  get currentWeight(): number {
+  getCurrentWeight(): number {
     let totalWeight = 0;
     for (const slot of this._slots.values()) {
       if (slot.item) {
@@ -128,7 +128,7 @@ export class PlayerInventoryManager implements PlayerInventory {
 
   addItem(item: Item, quantity: number = 1): AddItemResult {
     // 1. Check weight limit first
-    const totalWeight = this.currentWeight + item.properties.weight * quantity;
+    const totalWeight = this.getCurrentWeight() + item.properties.weight * quantity;
     if (totalWeight > this.maxWeight) {
       return { success: false, reason: "Too heavy" };
     }
@@ -234,7 +234,7 @@ export class PlayerInventoryManager implements PlayerInventory {
   }
 
   sortInventory(mode: SortMode): void {
-    const itemSlots = this.slots.filter((slot) => slot.item !== null);
+    const itemSlots = this.getSlots().filter((slot) => slot.item !== null);
 
     // Sort based on mode
     switch (mode) {

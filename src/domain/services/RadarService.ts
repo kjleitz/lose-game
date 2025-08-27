@@ -1,3 +1,15 @@
+export interface RadarPointScale {
+  x: number;
+  y: number;
+  r: number;
+}
+
+export interface RadarArrow {
+  points: Array<[number, number]>;
+  cx: number;
+  cy: number;
+}
+
 export class RadarService {
   RADAR_SIZE: number;
   RADAR_RANGE: number;
@@ -7,7 +19,7 @@ export class RadarService {
     this.RADAR_RANGE = Math.max(screenW, screenH) * 1.2;
   }
 
-  toRadarCoordsAndScale(player: { x: number; y: number }, x: number, y: number, radius: number) {
+  toRadarCoordsAndScale(player: Point2D, x: number, y: number, radius: number): RadarPointScale {
     const dx = x - player.x;
     const dy = y - player.y;
     const scale = this.RADAR_SIZE / 2 / this.RADAR_RANGE;
@@ -18,7 +30,7 @@ export class RadarService {
     };
   }
 
-  getEdgeArrow(angle: number) {
+  getEdgeArrow(angle: number): RadarArrow {
     const r = this.RADAR_SIZE / 2 - 6;
     const cx = this.RADAR_SIZE / 2 + Math.cos(angle) * r;
     const cy = this.RADAR_SIZE / 2 + Math.sin(angle) * r;
@@ -40,3 +52,4 @@ export class RadarService {
     };
   }
 }
+import type { Point2D } from "../../shared/types/geometry";

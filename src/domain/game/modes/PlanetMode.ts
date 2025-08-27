@@ -3,17 +3,19 @@ import type { Player } from "../player";
 import type { GameSession } from "../GameSession";
 import type { Planet } from "../planets";
 import { setCameraPosition } from "../../render/camera";
+import type { Point2D } from "../../../shared/types/geometry";
+import type { Action } from "../../../engine/input/ActionTypes";
 import { WeaponSystem } from "../weapons/WeaponSystem";
 import { FloraInstanceImpl } from "../flora/FloraSpecies";
 import { FloraTemplates } from "../flora/FloraTemplates";
-import type { DamageableEntity } from "../damage/DamageableEntity";
+import type { DamageableEntity, DamageEvent, DamageResult } from "../damage/DamageableEntity";
 import { DamageType, DamageVisualState } from "../damage/DamageableEntity";
 import { DroppedItemSystem } from "../items/DroppedItemSystem";
 import { EntityDeathRenderer } from "../../render/EntityDeathRenderer";
 
 export interface PlanetSurface {
   planetId: string;
-  landingSite: { x: number; y: number };
+  landingSite: Point2D;
   terrain: TerrainFeature[];
   resources: Resource[];
   creatures: Creature[];
@@ -48,7 +50,7 @@ export class PlanetMode extends GameMode {
 
   private currentPlanet?: Planet;
   private surface?: PlanetSurface;
-  private landingSite = { x: 0, y: 0 };
+  private landingSite: Point2D = { x: 0, y: 0 };
   private weaponSystem = new WeaponSystem();
   private droppedItemSystem = new DroppedItemSystem();
   private deathRenderer = new EntityDeathRenderer();
@@ -59,7 +61,7 @@ export class PlanetMode extends GameMode {
     super();
   }
 
-  update(dt: number, actions: Set<string>, player: Player, session: GameSession): void {
+  update(dt: number, actions: Set<Action>, player: Player, session: GameSession): void {
     if (!this.currentPlanet || !this.surface) {
       console.warn("PlanetMode active but no planet loaded");
       return;
@@ -158,15 +160,15 @@ export class PlanetMode extends GameMode {
     player.state.vy = 0;
   }
 
-  get planetData(): Planet | undefined {
+  getPlanetData(): Planet | undefined {
     return this.currentPlanet;
   }
 
-  get surfaceData(): PlanetSurface | undefined {
+  getSurfaceData(): PlanetSurface | undefined {
     return this.surface;
   }
 
-  get weaponSystemData(): WeaponSystem {
+  getWeaponSystemData(): WeaponSystem {
     return this.weaponSystem;
   }
 
@@ -367,7 +369,7 @@ export class PlanetMode extends GameMode {
     }
   }
 
-  private calculateSpaceReturnPosition(): { x: number; y: number } {
+  private calculateSpaceReturnPosition(): Point2D {
     if (!this.currentPlanet) {
       return { x: 0, y: 0 };
     }
@@ -403,8 +405,8 @@ export class PlanetMode extends GameMode {
         maxHealth: health,
         currentHealth: health,
         resistances: new Map([
-          ["physical" as DamageType, type === "hostile" ? 0.2 : 0.1],
-          ["energy" as DamageType, type === "passive" ? 0.3 : 0.1],
+          [DamageType.PHYSICAL, type === "hostile" ? 0.2 : 0.1],
+          [DamageType.ENERGY, type === "passive" ? 0.3 : 0.1],
         ]),
         vulnerabilities: new Map(),
         regeneration: type === "passive" ? 2 : 0.5,
@@ -431,7 +433,7 @@ export class PlanetMode extends GameMode {
         sound: "creature_death",
         duration: 1000,
       },
-      takeDamage: function (damage) {
+      takeDamage: function (damage: DamageEvent): DamageResult {
         const now = Date.now();
 
         // Check invulnerability period
@@ -469,7 +471,7 @@ export class PlanetMode extends GameMode {
           knockback,
         };
       },
-      onDestruction: function () {
+      onDestruction: function (): void {
         console.log(`${this.type} creature ${this.id} has been defeated!`);
       },
       getVisualDamageState: function (): DamageVisualState {

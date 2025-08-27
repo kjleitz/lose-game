@@ -10,7 +10,7 @@ export class InventoryService {
 
   // Item condition management
   updateItemCondition(slotId: string, newCondition: ItemCondition): boolean {
-    const slot = this.inventory.slots.find((s) => s.id === slotId);
+    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
     if (!slot || !slot.item) {
       return false;
     }
@@ -27,7 +27,7 @@ export class InventoryService {
 
   // Perishable item management
   updatePerishableItems(dt: number): void {
-    for (const slot of this.inventory.slots) {
+    for (const slot of this.inventory.getSlots()) {
       if (slot.item?.properties.perishable) {
         this.updateItemFreshness(slot.item, dt);
       }
@@ -75,7 +75,7 @@ export class InventoryService {
 
   // Tool durability management
   damageItem(slotId: string, damage: number): boolean {
-    const slot = this.inventory.slots.find((s) => s.id === slotId);
+    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
     if (!slot?.item?.properties.durability) {
       return false;
     }
@@ -95,7 +95,7 @@ export class InventoryService {
   }
 
   repairItem(slotId: string, repairAmount: number): boolean {
-    const slot = this.inventory.slots.find((s) => s.id === slotId);
+    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
     if (!slot?.item?.properties.durability) {
       return false;
     }
@@ -191,11 +191,11 @@ export class InventoryService {
 
   // Weight and capacity management
   canAddWeight(additionalWeight: number): boolean {
-    return this.inventory.currentWeight + additionalWeight <= this.inventory.maxWeight;
+    return this.inventory.getCurrentWeight() + additionalWeight <= this.inventory.maxWeight;
   }
 
   getWeightCapacityInfo(): { current: number; max: number; percent: number } {
-    const current = this.inventory.currentWeight;
+    const current = this.inventory.getCurrentWeight();
     const max = this.inventory.maxWeight;
     const percent = (current / max) * 100;
 
@@ -203,7 +203,7 @@ export class InventoryService {
   }
 
   getSpaceInfo(): { used: number; max: number; available: number } {
-    const usedSlots = this.inventory.slots.filter((slot) => slot.item !== null).length;
+    const usedSlots = this.inventory.getSlots().filter((slot) => slot.item !== null).length;
     const maxSlots = this.inventory.maxSlots;
     const available = maxSlots - usedSlots;
 
@@ -212,8 +212,8 @@ export class InventoryService {
 
   // Quick slot management
   assignToQuickSlot(slotId: string, quickSlotId: string): boolean {
-    const slot = this.inventory.slots.find((s) => s.id === slotId);
-    const quickSlot = this.inventory.quickslots.find((qs) => qs.id === quickSlotId);
+    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
+    const quickSlot = this.inventory.getQuickslots().find((qs) => qs.id === quickSlotId);
 
     if (!slot?.item || !quickSlot) {
       return false;
@@ -224,7 +224,7 @@ export class InventoryService {
   }
 
   useQuickSlot(quickSlotId: string): { success: boolean; item?: Item; reason?: string } {
-    const quickSlot = this.inventory.quickslots.find((qs) => qs.id === quickSlotId);
+    const quickSlot = this.inventory.getQuickslots().find((qs) => qs.id === quickSlotId);
 
     if (!quickSlot?.item) {
       return { success: false, reason: "Quick slot is empty" };

@@ -1,25 +1,29 @@
 export type EntityId = number;
 
-export interface Component<T> {
+export interface ComponentBase {
   readonly __componentType: symbol;
+  readonly __data: object;
+}
+
+export interface Component<T extends object> extends ComponentBase {
   readonly __data: T;
 }
 
-export type ComponentData<C extends Component<unknown>> = C extends Component<infer T> ? T : never;
+export type ComponentData<C> = C extends Component<infer T> ? T : never;
 
 // Constructor/descriptor used to create components and identify their type
-export type ComponentConstructor<T> = {
+export type ComponentConstructor<T extends object> = {
   readonly __componentType: symbol;
   create(data: T): Component<T>;
-  defaultFactory?: () => T;
+  getDefaultFactory(): (() => T) | undefined;
 };
 
 export interface EntityComponents {
-  [key: symbol]: Component<unknown>;
+  [key: symbol]: ComponentBase;
 }
 
-// Named-object query typing
-export type ComponentMap = Record<string, ComponentConstructor<unknown>>;
+// Named-object query typing (component data must be objects)
+export type ComponentMap = Record<string, ComponentConstructor<object>>;
 
 export type ComponentDataMap<M extends ComponentMap> = {
   [K in keyof M]: M[K] extends ComponentConstructor<infer U> ? U : never;
@@ -53,8 +57,11 @@ export interface System<
 
 export interface EntityBuilder {
   readonly id: EntityId;
-  addComponent<T>(componentConstructor: ComponentConstructor<T>, data?: T): EntityBuilder;
-  hasComponent<T>(componentConstructor: ComponentConstructor<T>): boolean;
-  getComponent<T>(componentConstructor: ComponentConstructor<T>): T | undefined;
-  removeComponent<T>(componentConstructor: ComponentConstructor<T>): EntityBuilder;
+  addComponent<T extends object>(
+    componentConstructor: ComponentConstructor<T>,
+    data?: T,
+  ): EntityBuilder;
+  hasComponent<T extends object>(componentConstructor: ComponentConstructor<T>): boolean;
+  getComponent<T extends object>(componentConstructor: ComponentConstructor<T>): T | undefined;
+  removeComponent<T extends object>(componentConstructor: ComponentConstructor<T>): EntityBuilder;
 }

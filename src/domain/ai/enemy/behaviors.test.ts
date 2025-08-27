@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import type { Blackboard } from "../bt";
+import type { EnemyBlackboard } from "./EnemyBlackboard";
 import {
   isAlive,
   playerDetected,
@@ -10,14 +10,14 @@ import {
   moveToPosition,
 } from "./behaviors";
 import type { Enemy } from "../../game/enemies";
-import type { Player } from "../../game/player";
+import { Player } from "../../game/player";
 
 describe("Enemy AI Behaviors", () => {
   let enemy: Enemy;
   let player: Player;
-  let blackboard: Blackboard;
+  let blackboard: EnemyBlackboard;
 
-  beforeEach(() => {
+  beforeEach((): void => {
     enemy = {
       id: "test-enemy",
       x: 0,
@@ -34,36 +34,31 @@ describe("Enemy AI Behaviors", () => {
       maxSpeed: 300,
     };
 
-    player = {
-      state: {
-        x: 100,
-        y: 100,
-        angle: 0,
-        vx: 0,
-        vy: 0,
-        health: 100,
-        experience: 0,
-      },
-    } as Player;
+    player = new Player({ x: 100, y: 100, angle: 0, vx: 0, vy: 0, health: 100, experience: 0 });
 
     blackboard = {
       enemy,
       player,
       planets: [],
-      rng: () => 0.5,
+      rng: (): number => 0.5,
       time: 0,
-      config: {},
-      scratch: {},
+      scratch: {
+        playerDetected: false,
+        waypoint: null,
+        waypointReached: false,
+        spawnX: 0,
+        spawnY: 0,
+      },
     };
   });
 
   describe("isAlive condition", () => {
-    it("returns Success when enemy has health > 0", () => {
+    it("returns Success when enemy has health > 0", (): void => {
       const node = isAlive();
       expect(node.tick(blackboard, 0.016)).toBe("Success");
     });
 
-    it("returns Failure when enemy health <= 0", () => {
+    it("returns Failure when enemy health <= 0", (): void => {
       enemy.health = 0;
       const node = isAlive();
       expect(node.tick(blackboard, 0.016)).toBe("Failure");
@@ -71,7 +66,7 @@ describe("Enemy AI Behaviors", () => {
   });
 
   describe("playerDetected condition", () => {
-    it("detects player within vision radius", () => {
+    it("detects player within vision radius", (): void => {
       // Place player within vision radius
       player.state.x = 500;
       player.state.y = 0;
@@ -81,7 +76,7 @@ describe("Enemy AI Behaviors", () => {
       expect(blackboard.scratch.playerDetected).toBe(true);
     });
 
-    it("does not detect player outside vision radius", () => {
+    it("does not detect player outside vision radius", (): void => {
       // Place player outside vision radius
       player.state.x = 800;
       player.state.y = 0;
@@ -91,7 +86,7 @@ describe("Enemy AI Behaviors", () => {
       expect(blackboard.scratch.playerDetected).toBe(false);
     });
 
-    it("uses hysteresis when player was previously detected", () => {
+    it("uses hysteresis when player was previously detected", (): void => {
       const node = playerDetected();
 
       // First detect player
@@ -110,7 +105,7 @@ describe("Enemy AI Behaviors", () => {
   });
 
   describe("ensureWaypoint action", () => {
-    it("creates waypoint when none exists", () => {
+    it("creates waypoint when none exists", (): void => {
       const node = ensureWaypoint();
       expect(node.tick(blackboard, 0.016)).toBe("Success");
       expect(blackboard.scratch.waypoint).toBeDefined();
@@ -118,7 +113,7 @@ describe("Enemy AI Behaviors", () => {
       expect(blackboard.scratch.spawnY).toBe(0);
     });
 
-    it("preserves existing waypoint when not reached", () => {
+    it("preserves existing waypoint when not reached", (): void => {
       const existingWaypoint = { x: 100, y: 100 };
       blackboard.scratch.waypoint = existingWaypoint;
       blackboard.scratch.waypointReached = false;
@@ -128,7 +123,7 @@ describe("Enemy AI Behaviors", () => {
       expect(blackboard.scratch.waypoint).toBe(existingWaypoint);
     });
 
-    it("creates new waypoint when current one is reached", () => {
+    it("creates new waypoint when current one is reached", (): void => {
       const oldWaypoint = { x: 100, y: 100 };
       blackboard.scratch.waypoint = oldWaypoint;
       blackboard.scratch.waypointReached = true;
@@ -140,7 +135,7 @@ describe("Enemy AI Behaviors", () => {
   });
 
   describe("faceTarget action", () => {
-    it("turns towards player target", () => {
+    it("turns towards player target", (): void => {
       // Place player to the right (angle should approach 0)
       player.state.x = 100;
       player.state.y = 0;
@@ -155,7 +150,7 @@ describe("Enemy AI Behaviors", () => {
       expect(status).toBe("Running"); // Still turning
     });
 
-    it("returns Success when facing target within tolerance", () => {
+    it("returns Success when facing target within tolerance", (): void => {
       // Already facing player
       player.state.x = 100;
       player.state.y = 0;
@@ -165,7 +160,7 @@ describe("Enemy AI Behaviors", () => {
       expect(node.tick(blackboard, 0.016)).toBe("Success");
     });
 
-    it("turns towards waypoint target", () => {
+    it("turns towards waypoint target", (): void => {
       blackboard.scratch.waypoint = { x: 0, y: 100 };
       enemy.angle = 0; // Facing right, should turn to face up (π/2)
 
@@ -179,7 +174,7 @@ describe("Enemy AI Behaviors", () => {
   });
 
   describe("thrustForward action", () => {
-    it("accelerates enemy in facing direction", () => {
+    it("accelerates enemy in facing direction", (): void => {
       enemy.angle = 0; // Facing right
       enemy.vx = 0;
       enemy.vy = 0;
@@ -191,7 +186,7 @@ describe("Enemy AI Behaviors", () => {
       expect(enemy.vy).toBeCloseTo(0, 2);
     });
 
-    it("clamps velocity to max speed", () => {
+    it("clamps velocity to max speed", (): void => {
       enemy.vx = 250;
       enemy.vy = 250; // Speed > maxSpeed (300)
 
@@ -204,7 +199,7 @@ describe("Enemy AI Behaviors", () => {
   });
 
   describe("moveToPosition action", () => {
-    it("updates enemy position based on velocity", () => {
+    it("updates enemy position based on velocity", (): void => {
       enemy.x = 0;
       enemy.y = 0;
       enemy.vx = 100;
@@ -217,7 +212,7 @@ describe("Enemy AI Behaviors", () => {
       expect(enemy.y).toBeCloseTo(5, 1);
     });
 
-    it("applies drag to velocity", () => {
+    it("applies drag to velocity", (): void => {
       enemy.vx = 100;
       enemy.vy = 100;
 
@@ -230,7 +225,7 @@ describe("Enemy AI Behaviors", () => {
   });
 
   describe("arrivedAtWaypoint condition", () => {
-    it("returns Success when close to waypoint", () => {
+    it("returns Success when close to waypoint", (): void => {
       blackboard.scratch.waypoint = { x: 30, y: 40 }; // Distance = 50, exactly at tolerance
       enemy.x = 0;
       enemy.y = 0;
@@ -239,7 +234,7 @@ describe("Enemy AI Behaviors", () => {
       expect(node.tick(blackboard, 0.016)).toBe("Success");
     });
 
-    it("returns Failure when far from waypoint", () => {
+    it("returns Failure when far from waypoint", (): void => {
       blackboard.scratch.waypoint = { x: 100, y: 100 };
       enemy.x = 0;
       enemy.y = 0;
@@ -248,7 +243,7 @@ describe("Enemy AI Behaviors", () => {
       expect(node.tick(blackboard, 0.016)).toBe("Failure");
     });
 
-    it("returns Failure when no waypoint exists", () => {
+    it("returns Failure when no waypoint exists", (): void => {
       const node = arrivedAtWaypoint();
       expect(node.tick(blackboard, 0.016)).toBe("Failure");
     });

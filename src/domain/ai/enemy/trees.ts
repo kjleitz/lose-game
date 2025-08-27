@@ -1,7 +1,6 @@
 import { Selector, Sequence, Action } from "../bt";
 import type { Node } from "../bt";
-import type { Enemy } from "../../game/enemies";
-import type { Player } from "../../game/player";
+import type { EnemyBlackboard } from "./EnemyBlackboard";
 import {
   isAlive,
   playerDetected,
@@ -13,22 +12,18 @@ import {
   doNothing,
 } from "./behaviors";
 
-export interface EnemyAIConfig {
-  // Future: could add per-enemy behavior customization
-  [key: string]: unknown;
-}
-
-export function buildPatrolSeekTree(): Node {
+export function buildPatrolSeekTree(): Node<EnemyBlackboard> {
   // Root: Selector tries seek first, then patrol, then do nothing
-  return Selector("root", [
+  return Selector<EnemyBlackboard>("root", [
     // Seek behavior: chase player when detected
-    Sequence("seek", [
+    Sequence<EnemyBlackboard>("seek", [
       isAlive(),
       playerDetected(),
-      Action("seekMovement", (bb, dt) => {
+      Action<EnemyBlackboard>("seekMovement", (bb, dt) => {
         // Combined face and move action for seek behavior
-        const enemy = bb.enemy as Enemy;
-        const player = bb.player as Player;
+        const enemy = bb.enemy;
+        const player = bb.player;
+        if (!enemy || !player) return "Failure";
 
         // Face the player
         const targetAngle = Math.atan2(player.state.y - enemy.y, player.state.x - enemy.x);
@@ -65,7 +60,7 @@ export function buildPatrolSeekTree(): Node {
     ]),
 
     // Patrol behavior: wander via waypoints
-    Sequence("patrol", [
+    Sequence<EnemyBlackboard>("patrol", [
       isAlive(),
       ensureWaypoint(),
       faceTarget("waypoint"),

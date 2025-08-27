@@ -18,8 +18,8 @@ describe("GameSession projectiles", () => {
       () => {},
       0.016,
     );
-    expect(session.projectiles.length).toBe(1);
-    const x0 = session.projectiles[0].x;
+    expect(session.getProjectiles().length).toBe(1);
+    const x0 = session.getProjectiles()[0].x;
     // Step without firing moves projectile
     session.update(
       new Set(),
@@ -27,6 +27,6 @@ describe("GameSession projectiles", () => {
       () => {},
       0.5,
     );
-    expect(session.projectiles[0].x).toBeGreaterThan(x0);
+    expect(session.getProjectiles()[0].x).toBeGreaterThan(x0);
   });
 });

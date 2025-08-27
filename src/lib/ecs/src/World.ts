@@ -2,6 +2,7 @@ import type {
   EntityId,
   ComponentConstructor,
   Component,
+  ComponentBase,
   System,
   ComponentMap,
   QueryResultNamed,
@@ -12,7 +13,7 @@ import { Entity } from "./Entity.js";
 export class World {
   private nextEntityId: EntityId = 1;
   private entities = new Set<EntityId>();
-  private components = new Map<EntityId, Map<symbol, Component<unknown>>>();
+  private components = new Map<EntityId, Map<symbol, ComponentBase>>();
   private systems: System[] = [];
   // Named-object API removes the need for an untyped global query cache
 
@@ -38,7 +39,7 @@ export class World {
     return this.entities.has(entityId);
   }
 
-  addComponentToEntity<T>(
+  addComponentToEntity<T extends object>(
     entityId: EntityId,
     componentConstructor: ComponentConstructor<T>,
     component: Component<T>,
@@ -52,7 +53,7 @@ export class World {
     // Components changed; cached queries would be invalid
   }
 
-  removeComponentFromEntity<T>(
+  removeComponentFromEntity<T extends object>(
     entityId: EntityId,
     componentConstructor: ComponentConstructor<T>,
   ): void {
@@ -63,12 +64,15 @@ export class World {
     }
   }
 
-  hasComponent<T>(entityId: EntityId, componentConstructor: ComponentConstructor<T>): boolean {
+  hasComponent<T extends object>(
+    entityId: EntityId,
+    componentConstructor: ComponentConstructor<T>,
+  ): boolean {
     const entityComponents = this.components.get(entityId);
     return entityComponents?.has(componentConstructor.__componentType) ?? false;
   }
 
-  getComponent<T>(
+  getComponent<T extends object>(
     entityId: EntityId,
     componentConstructor: ComponentConstructor<T>,
   ): Component<T> | undefined {
@@ -93,7 +97,7 @@ export class World {
       }
       if (!hasAll) continue;
 
-      const comps: Record<string, unknown> = {};
+      const comps: Record<string, object> = {};
       for (const key in components) {
         const ctor = components[key];
         const comp = entityComponents.get(ctor.__componentType)!;
@@ -142,7 +146,7 @@ export class World {
       }
       if (!hasAll) continue;
 
-      const comps: Record<string, unknown> = {};
+      const comps: Record<string, object> = {};
 
       for (const key in required) {
         const ctor = required[key];

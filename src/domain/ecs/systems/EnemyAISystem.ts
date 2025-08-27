@@ -1,17 +1,17 @@
-import { defineSystem } from "../../../lib/ecs/dist";
-import type { World } from "../../../lib/ecs/dist";
+import type { System, World } from "../../../lib/ecs";
+import { defineSystem } from "../../../lib/ecs";
 import {
-  Position,
-  Velocity,
-  Rotation,
-  AIVision,
   AIMovement,
   AIState,
+  AIVision,
   Enemy,
   Player,
+  Position,
+  Rotation,
+  Velocity,
 } from "../components";
 
-export function createEnemyAISystem(world: World, dt: number) {
+export function createEnemyAISystem(world: World, dt: number): System {
   return defineSystem(world)
     .withComponents({
       position: Position,
@@ -22,7 +22,7 @@ export function createEnemyAISystem(world: World, dt: number) {
       aiState: AIState,
       enemy: Enemy,
     })
-    .execute((entities) => {
+    .execute((entities): void => {
       // Get player position
       const playerEntities = world.query({ position: Position, player: Player });
       if (playerEntities.length === 0) return;

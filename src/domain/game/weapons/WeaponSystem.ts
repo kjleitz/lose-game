@@ -1,9 +1,14 @@
-import type { DamageableEntity, DamageEvent, DamageType } from "../damage/DamageableEntity";
+import { DamageType } from "../damage/DamageableEntity";
+import type {
+  DamageableEntity,
+  DamageEvent,
+  DamageType as DamageTypeT,
+} from "../damage/DamageableEntity";
 import type { Item } from "../items/Item";
 import { BaseItemType, ItemQuality, ItemRarity } from "../items/Item";
 import type { Player } from "../player";
 
-// Weapon properties are read dynamically from item.properties (unknown) with runtime guards
+// Weapon properties are read from item.properties with runtime fallbacks
 
 export interface Projectile {
   id: string;
@@ -36,7 +41,7 @@ export class WeaponSystem {
       return { success: false, reason: "Not a weapon" };
     }
 
-    const weaponProps = weapon.properties as unknown;
+    const weaponProps = weapon.properties;
 
     // Check durability
     if (weapon.properties.durability && weapon.properties.durability.currentDurability <= 0) {
@@ -196,36 +201,21 @@ export class WeaponSystem {
     };
   }
 
-  private getWeaponDamage(props: unknown): number {
-    if (props && typeof props === "object" && "damage" in props) {
-      const damage = props.damage;
-      return typeof damage === "number" ? damage : 20;
-    }
-    return 20;
+  private getWeaponDamage(props: Item["properties"]): number {
+    return typeof props.damage === "number" ? props.damage : 20;
   }
 
-  private getWeaponRange(props: unknown): number {
-    if (props && typeof props === "object" && "range" in props) {
-      const range = props.range;
-      return typeof range === "number" ? range : 500;
-    }
-    return 500;
+  private getWeaponRange(props: Item["properties"]): number {
+    return typeof props.range === "number" ? props.range : 500;
   }
 
-  private getWeaponProjectileSpeed(props: unknown): number {
-    if (props && typeof props === "object" && "projectileSpeed" in props) {
-      const speed = props.projectileSpeed;
-      return typeof speed === "number" ? speed : 600;
-    }
-    return 600;
+  private getWeaponProjectileSpeed(props: Item["properties"]): number {
+    return typeof props.projectileSpeed === "number" ? props.projectileSpeed : 600;
   }
 
-  private getWeaponDamageType(props: unknown): DamageType {
-    if (props && typeof props === "object" && "damageType" in props) {
-      const damageType = props.damageType;
-      return (typeof damageType === "string" ? damageType : "physical") as DamageType;
-    }
-    return "physical";
+  private getWeaponDamageType(props: Item["properties"]): DamageTypeT {
+    const dt = props.damageType;
+    return dt ?? DamageType.PHYSICAL;
   }
 
   // No longer needed: toolType check replaced by baseType check

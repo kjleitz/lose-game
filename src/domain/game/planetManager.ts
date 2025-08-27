@@ -1,11 +1,12 @@
 import { generatePlanets } from "./planets";
 import type { Planet } from "./planets";
+import type { ViewSize, Point2D } from "../../shared/types/geometry";
 
 export class PlanetManager {
   private planets: Planet[] = [];
   private generatedRegions: Set<string> = new Set();
 
-  constructor(size: { width: number; height: number }, initialCenter = { x: 0, y: 0 }) {
+  constructor(size: ViewSize, initialCenter: Point2D = { x: 0, y: 0 }) {
     this.planets = generatePlanets({
       count: 16,
       screenW: size.width,
@@ -14,16 +15,11 @@ export class PlanetManager {
     });
   }
 
-  getPlanets() {
+  getPlanets(): Planet[] {
     return this.planets;
   }
 
-  maybeGenerateRegion(
-    center: { x: number; y: number },
-    regionKey: string,
-    count = 4,
-    size: { width: number; height: number },
-  ) {
+  maybeGenerateRegion(center: Point2D, regionKey: string, count = 4, size: ViewSize): void {
     if (!this.generatedRegions.has(regionKey)) {
       const newPlanets = generatePlanets({
         count,

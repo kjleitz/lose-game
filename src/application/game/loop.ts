@@ -35,19 +35,20 @@ export class GameLoop {
     this.render = options.render;
     this.fixedDelta = options.fixedDelta ?? 1 / 60;
     this.maxUpdatesPerFrame = options.maxUpdatesPerFrame ?? 5;
-    this.now = options.now ?? (() => performance.now());
-    this.schedule = options.schedule ?? ((cb) => window.requestAnimationFrame(cb));
-    this.cancel = options.cancel ?? ((id) => window.cancelAnimationFrame(id));
+    this.now = options.now ?? ((): number => performance.now());
+    this.schedule =
+      options.schedule ?? ((cb: FrameRequestCallback): number => window.requestAnimationFrame(cb));
+    this.cancel = options.cancel ?? ((id: number): void => window.cancelAnimationFrame(id));
   }
 
-  start() {
+  start(): void {
     if (this.running) return;
     this.running = true;
     this.paused = false;
     this.accumulator = 0;
     this.lastTime = this.now();
 
-    const tick = () => {
+    const tick = (_ts?: number): void => {
       if (!this.running || this.paused) return;
       const current = this.now();
       let delta = (current - this.lastTime) / 1000;
@@ -65,12 +66,12 @@ export class GameLoop {
       }
 
       this.render();
-      this.rafId = this.schedule(() => tick());
+      this.rafId = this.schedule(tick);
     };
-    this.rafId = this.schedule(() => tick());
+    this.rafId = this.schedule(tick);
   }
 
-  stop() {
+  stop(): void {
     if (!this.running) return;
     this.running = false;
     if (this.rafId !== null) {
@@ -79,7 +80,7 @@ export class GameLoop {
     }
   }
 
-  pause() {
+  pause(): void {
     if (!this.running || this.paused) return;
     this.paused = true;
     if (this.rafId !== null) {
@@ -88,11 +89,11 @@ export class GameLoop {
     }
   }
 
-  resume() {
+  resume(): void {
     if (!this.running || !this.paused) return;
     this.paused = false;
     this.lastTime = this.now();
-    const tick = () => {
+    const tick = (_ts?: number): void => {
       if (!this.running || this.paused) return;
       const current = this.now();
       let delta = (current - this.lastTime) / 1000;
@@ -106,22 +107,22 @@ export class GameLoop {
         updates++;
       }
       this.render();
-      this.rafId = this.schedule(() => tick());
+      this.rafId = this.schedule(tick);
     };
-    this.rafId = this.schedule(() => tick());
+    this.rafId = this.schedule(tick);
   }
 
-  step() {
+  step(): void {
     // Single deterministic step without scheduling
     this.update(this.fixedDelta);
     this.render();
   }
 
-  isRunning() {
+  isRunning(): boolean {
     return this.running;
   }
 
-  isPaused() {
+  isPaused(): boolean {
     return this.paused;
   }
 }

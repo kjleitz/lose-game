@@ -18,7 +18,7 @@ export interface PlanetCanvasProps {
   r: number;
 }
 
-export function drawPlanetCanvas({ planet, ctx, x, y, r }: PlanetCanvasProps) {
+export function drawPlanetCanvas({ planet, ctx, x, y, r }: PlanetCanvasProps): void {
   ctx.save();
   ctx.translate(x, y);
   ctx.beginPath();

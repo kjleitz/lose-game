@@ -1,11 +1,11 @@
-import type { World } from "../../../lib/ecs/dist";
-import type { Player as OldPlayer } from "../../game/player";
+import type { EntityBuilder, World } from "../../../lib/ecs";
 import type { Enemy as OldEnemy } from "../../game/enemies";
 import type { Planet as OldPlanet } from "../../game/planets";
+import type { Player as OldPlayer } from "../../game/player";
 import type { Projectile as OldProjectile } from "../../game/projectiles";
 import * as Components from "../components";
 
-export function createPlayerEntity(world: World, player: OldPlayer) {
+export function createPlayerEntity(world: World, player: OldPlayer): EntityBuilder {
   return world
     .createEntity()
     .addComponent(Components.Position, { x: player.state.x, y: player.state.y })
@@ -33,7 +33,7 @@ export function createPlayerEntity(world: World, player: OldPlayer) {
     .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 });
 }
 
-export function createEnemyEntity(world: World, enemy: OldEnemy) {
+export function createEnemyEntity(world: World, enemy: OldEnemy): EntityBuilder {
   return world
     .createEntity()
     .addComponent(Components.Position, { x: enemy.x, y: enemy.y })
@@ -52,7 +52,7 @@ export function createEnemyEntity(world: World, enemy: OldEnemy) {
       maxSpeed: enemy.maxSpeed,
     })
     .addComponent(Components.AIState, {
-      currentState: "idle" as const,
+      currentState: "idle",
       stateTime: 0,
     })
     .addComponent(Components.Collider, { radius: enemy.radius })
@@ -60,7 +60,7 @@ export function createEnemyEntity(world: World, enemy: OldEnemy) {
     .addComponent(Components.SpaceMode);
 }
 
-export function createPlanetEntity(world: World, planet: OldPlanet) {
+export function createPlanetEntity(world: World, planet: OldPlanet): EntityBuilder {
   return world
     .createEntity()
     .addComponent(Components.Position, { x: planet.x, y: planet.y })
@@ -74,7 +74,11 @@ export function createPlanetEntity(world: World, planet: OldPlanet) {
     .addComponent(Components.SpaceMode);
 }
 
-export function createProjectileEntity(world: World, projectile: OldProjectile, damage = 25) {
+export function createProjectileEntity(
+  world: World,
+  projectile: OldProjectile,
+  damage = 25,
+): EntityBuilder {
   return world
     .createEntity()
     .addComponent(Components.Position, { x: projectile.x, y: projectile.y })
@@ -91,7 +95,7 @@ export function createProjectileEntity(world: World, projectile: OldProjectile, 
 }
 
 // Quick entity creation for new game setup
-export function createBasicPlayer(world: World, x = 0, y = 0) {
+export function createBasicPlayer(world: World, x = 0, y = 0): EntityBuilder {
   return world
     .createEntity()
     .addComponent(Components.Position, { x, y })
@@ -116,7 +120,7 @@ export function createBasicPlayer(world: World, x = 0, y = 0) {
     .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 });
 }
 
-export function createBasicEnemy(world: World, id: string, x: number, y: number) {
+export function createBasicEnemy(world: World, id: string, x: number, y: number): EntityBuilder {
   return world
     .createEntity()
     .addComponent(Components.Position, { x, y })
@@ -135,7 +139,7 @@ export function createBasicEnemy(world: World, id: string, x: number, y: number)
       maxSpeed: 80,
     })
     .addComponent(Components.AIState, {
-      currentState: "idle" as const,
+      currentState: "idle",
       stateTime: 0,
     })
     .addComponent(Components.Collider, { radius: 14 })
@@ -143,7 +147,13 @@ export function createBasicEnemy(world: World, id: string, x: number, y: number)
     .addComponent(Components.SpaceMode);
 }
 
-export function createBasicPlanet(world: World, id: string, x: number, y: number, radius = 60) {
+export function createBasicPlanet(
+  world: World,
+  id: string,
+  x: number,
+  y: number,
+  radius = 60,
+): EntityBuilder {
   const colors = ["#4a90e2", "#e2a04a", "#4ae264", "#e24a90", "#9c4ae2"];
   const designs: Array<"solid" | "ringed" | "striped" | "spotted"> = [
     "solid",

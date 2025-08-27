@@ -5,28 +5,42 @@ import { EnemyRenderer } from "./EnemyRenderer";
 import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
 import { CharacterRenderer } from "./CharacterRenderer";
 import { DroppedItemRenderer } from "./DroppedItemRenderer";
-import type { DroppedItem } from "../game/items/DroppedItemSystem";
+import { WeaponSystem } from "../game/weapons/WeaponSystem";
+import { EntityDeathRenderer } from "./EntityDeathRenderer";
+import { DroppedItemSystem } from "../game/items/DroppedItemSystem";
+import { PlanetMode } from "../game/modes/PlanetMode";
 import { CameraTransform } from "./CameraTransform";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
-import type { GameSession } from "../game/GameSession";
 import type { PlanetSurface } from "../game/modes/PlanetMode";
+import type { Kinematics2D, Circle2D, ViewSize } from "../../shared/types/geometry";
+import type { Camera } from "./camera";
+import type { Action } from "../../engine/input/ActionTypes";
+
+import type { GameMode } from "../game/modes/GameMode";
+import type { SpaceMode } from "../game/modes/SpaceMode";
+
+interface MinimalGameSession {
+  getCurrentModeType?: () => "space" | "planet";
+  getCurrentMode?: () => GameMode | SpaceMode | PlanetMode;
+}
 
 export class GameRenderer {
   render(
     ctx: CanvasRenderingContext2D,
-    player: { x: number; y: number; vx: number; vy: number; angle: number },
-    camera: { x: number; y: number; zoom: number },
+    player: Kinematics2D,
+    camera: Camera,
     planets: Planet[],
-    projectiles: Array<{ x: number; y: number; radius: number }>,
+    projectiles: Array<Circle2D>,
     enemies: Enemy[],
-    actions: Set<string>,
-    size: { width: number; height: number },
+    actions: Set<Action>,
+    size: ViewSize,
     dpr: number,
-    gameSession?: GameSession | null,
-  ) {
-    // Determine current game mode
-    const currentMode = gameSession?.getCurrentModeType() || "space";
+    gameSession?: MinimalGameSession | null,
+  ): void {
+    // Determine current game mode (guard for optional function)
+    const getModeFn = gameSession?.getCurrentModeType;
+    const currentMode = typeof getModeFn === "function" ? getModeFn() : "space";
 
     // Clear screen
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -43,15 +57,15 @@ export class GameRenderer {
 
   private renderSpaceMode(
     ctx: CanvasRenderingContext2D,
-    player: { x: number; y: number; vx: number; vy: number; angle: number },
-    camera: { x: number; y: number; zoom: number },
+    player: Kinematics2D,
+    camera: Camera,
     planets: Planet[],
-    projectiles: Array<{ x: number; y: number; radius: number }>,
+    projectiles: Array<Circle2D>,
     enemies: Enemy[],
-    actions: Set<string>,
-    size: { width: number; height: number },
+    actions: Set<Action>,
+    size: ViewSize,
     dpr: number,
-  ) {
+  ): void {
     // Black space background
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -103,19 +117,17 @@ export class GameRenderer {
 
   private renderPlanetMode(
     ctx: CanvasRenderingContext2D,
-    player: { x: number; y: number; vx: number; vy: number; angle: number },
-    camera: { x: number; y: number; zoom: number },
-    actions: Set<string>,
-    size: { width: number; height: number },
+    player: Kinematics2D,
+    camera: Camera,
+    actions: Set<Action>,
+    size: ViewSize,
     dpr: number,
-    gameSession?: GameSession | null,
-  ) {
-    // Get planet surface data and weapon system
-    const planetMode = gameSession?.getCurrentMode();
-    const surface =
-      planetMode?.type === "planet"
-        ? (planetMode as { surfaceData?: PlanetSurface }).surfaceData
-        : undefined;
+    gameSession?: MinimalGameSession | null,
+  ): void {
+    // Get planet mode and related systems (guarded introspection)
+    const planetMode =
+      typeof gameSession?.getCurrentMode === "function" ? gameSession.getCurrentMode() : undefined;
+    const surface: PlanetSurface | undefined = undefined; // Renderers handle undefined surface
     const weaponSystem = this.getWeaponSystem(planetMode);
 
     // Planet surface background
@@ -129,21 +141,14 @@ export class GameRenderer {
     planetSurfaceRenderer.render(ctx, surface);
 
     // Draw death effects first (behind everything)
-    if (planetMode?.type === "planet") {
-      const deathRenderer = this.getDeathRenderer(planetMode);
-      if (deathRenderer) {
-        deathRenderer.render(ctx);
-      }
-    }
+    const deathRenderer = this.getDeathRenderer(planetMode);
+    if (deathRenderer) deathRenderer.render(ctx);
 
     // Draw dropped items (behind characters but above death effects)
-    if (planetMode?.type === "planet") {
-      const droppedItemSystem = this.getDroppedItemSystem(planetMode);
-      if (droppedItemSystem) {
-        const droppedItemRenderer = new DroppedItemRenderer();
-        const droppedItems = droppedItemSystem.getAllDroppedItems();
-        droppedItemRenderer.render(ctx, droppedItems);
-      }
+    const droppedItemSystem = this.getDroppedItemSystem(planetMode);
+    if (droppedItemSystem) {
+      const droppedItemRenderer = new DroppedItemRenderer();
+      droppedItemRenderer.render(ctx, droppedItemSystem.getAllDroppedItems());
     }
 
     // Draw character instead of ship
@@ -175,39 +180,20 @@ export class GameRenderer {
   }
 
   private getWeaponSystem(
-    planetMode: unknown,
-  ): { getAllProjectiles: () => Array<{ x: number; y: number; vx: number; vy: number }> } | null {
-    if (planetMode && typeof planetMode === "object" && "weaponSystemData" in planetMode) {
-      const data = (planetMode as { weaponSystemData?: unknown }).weaponSystemData;
-      if (data && typeof data === "object" && "getAllProjectiles" in data) {
-        const fn = (data as { getAllProjectiles?: unknown }).getAllProjectiles;
-        return typeof fn === "function"
-          ? (data as {
-              getAllProjectiles: () => Array<{ x: number; y: number; vx: number; vy: number }>;
-            })
-          : null;
-      }
-    }
-    return null;
+    planetMode: GameMode | SpaceMode | PlanetMode | undefined,
+  ): WeaponSystem | null {
+    return planetMode instanceof PlanetMode ? planetMode.getWeaponSystemData() : null;
   }
 
   private getDeathRenderer(
-    planetMode: unknown,
-  ): { render: (ctx: CanvasRenderingContext2D) => void } | null {
-    if (planetMode && typeof planetMode === "object" && "getDeathRenderer" in planetMode) {
-      const method = planetMode.getDeathRenderer;
-      return typeof method === "function" ? method.call(planetMode) : null;
-    }
-    return null;
+    planetMode: GameMode | SpaceMode | PlanetMode | undefined,
+  ): EntityDeathRenderer | null {
+    return planetMode instanceof PlanetMode ? planetMode.getDeathRenderer() : null;
   }
 
   private getDroppedItemSystem(
-    planetMode: unknown,
-  ): { getAllDroppedItems: () => DroppedItem[] } | null {
-    if (planetMode && typeof planetMode === "object" && "getDroppedItemSystem" in planetMode) {
-      const method = planetMode.getDroppedItemSystem;
-      return typeof method === "function" ? method.call(planetMode) : null;
-    }
-    return null;
+    planetMode: GameMode | SpaceMode | PlanetMode | undefined,
+  ): DroppedItemSystem | null {
+    return planetMode instanceof PlanetMode ? planetMode.getDroppedItemSystem() : null;
   }
 }

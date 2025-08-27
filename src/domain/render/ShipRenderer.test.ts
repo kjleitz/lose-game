@@ -36,9 +36,10 @@ describe("ShipRenderer", () => {
       canvas: { width: 800, height: 600 } as HTMLCanvasElement,
     };
     const player = { x: 100, y: 100, vx: 10, vy: 5, angle: Math.PI / 4 };
-    const actions = new Set<string>(["thrust"]);
+    const actions = new Set<Action>(["thrust"]);
     expect(() =>
       renderer.render(ctx as CanvasRenderingContext2D, player, actions, 48),
     ).not.toThrow();
   });
 });
+import type { Action } from "../../engine/input/ActionTypes";

@@ -23,12 +23,7 @@ type CtxLike = Pick<
 > & { canvas: HTMLCanvasElement };
 
 export class CharacterRenderer {
-  render(
-    ctx: CtxLike,
-    player: { x: number; y: number; vx: number; vy: number; angle: number },
-    actions: Set<string>,
-    size = 24,
-  ) {
+  render(ctx: CtxLike, player: Kinematics2D, actions: Set<Action>, size = 24): void {
     ctx.save();
     ctx.translate(player.x, player.y);
 
@@ -147,3 +142,5 @@ export class CharacterRenderer {
     ctx.restore();
   }
 }
+import type { Kinematics2D } from "../../shared/types/geometry";
+import type { Action } from "../../engine/input/ActionTypes";

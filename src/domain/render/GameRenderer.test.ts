@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { GameRenderer } from "./GameRenderer";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
+import type { Circle2D } from "../../shared/types/geometry";
+import type { Action } from "../../engine/input/ActionTypes";
 
 describe("GameRenderer", () => {
   it("can be instantiated", () => {
@@ -28,8 +30,8 @@ describe("GameRenderer", () => {
     const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
     const camera = { x: 0, y: 0, zoom: 1 };
     const planets: Planet[] = [];
-    const actions = new Set<string>();
-    const projectiles: Array<{ x: number; y: number; radius: number }> = [];
+    const actions = new Set<Action>();
+    const projectiles: Circle2D[] = [];
     const enemies: Enemy[] = [];
     const size = { width: 800, height: 600 };
     const dpr = 1;

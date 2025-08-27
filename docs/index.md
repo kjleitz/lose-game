@@ -5,6 +5,7 @@ Welcome to the L.O.S.E. (Lots of Outer Space to Explore) documentation hub.
 ## 🚀 Quick Start
 
 - **New to L.O.S.E.?** → [Newcomer's Guide](newcomer-guide.md) - Essential reading for new contributors
+- 🔒 Fundamental Rules → [Team Rules and Coding Preferences](rules.md)
 - [Code Map](code-map.md) - Overview of the codebase structure
 - [Development Playbook](dev-playbook.md) - How to develop and contribute
 - [Testing Guide](testing.md) - Testing strategies and tools
@@ -45,6 +46,7 @@ L.O.S.E. features a unique dual-game system where players seamlessly switch betw
 - Domain Structure (proposed DDD): docs/proposed-ddd-structure.md
 - Active Tasks: docs/tasks.md
 - Repository Guidelines: AGENTS.md
+- Core Repository Rules: docs/rules.md
 - Contributing Guide: CONTRIBUTING.md
 
 ## 🎯 Current Focus

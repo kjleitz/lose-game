@@ -14,36 +14,36 @@ import type { ItemEffect } from "./Item";
 import { DamageType } from "../damage/DamageableEntity";
 import type { ItemTemplate, ItemModifier } from "./ItemFactory";
 
-export type ToolTemplate = {
+export interface ToolTemplate {
   readonly id: string;
   readonly effectiveness: Array<[string, number]>;
   readonly energyCost: number;
   readonly skillBonus?: Array<[string, number]>;
   readonly specialAbilities?: (typeof ToolAbility)[keyof typeof ToolAbility][];
-};
+}
 
-export type WeaponTemplate = {
+export interface WeaponTemplate {
   readonly id: string;
   readonly damage: { base: number; type: DamageType; criticalMultiplier: number };
   readonly attackSpeed: number;
   readonly range: number;
   readonly criticalChance: number;
   readonly statusEffects?: Array<{ type: string; duration: number; intensity: number }>;
-};
+}
 
-export type MaterialTemplate = {
+export interface MaterialTemplate {
   readonly id: string;
   readonly processingMethods: (typeof ProcessingMethod)[keyof typeof ProcessingMethod][];
   readonly derivatives: string[];
   readonly purityLevel?: number;
-};
+}
 
-export type ConsumableTemplate = {
+export interface ConsumableTemplate {
   readonly id: string;
   readonly effects: ItemEffect[];
   readonly duration: number;
   readonly cooldown?: number;
-};
+}
 
 export class ItemTemplates {
   private templates: Map<string, ItemTemplate> = new Map();

@@ -1,4 +1,6 @@
-export function SettingsButton({ onClick }: { onClick?: () => void }) {
+import type { JSX } from "react";
+
+export function SettingsButton({ onClick }: { onClick?: () => void }): JSX.Element {
   return (
     <button
       type="button"

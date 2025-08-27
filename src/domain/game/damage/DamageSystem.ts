@@ -1,11 +1,10 @@
+import type { Point2D } from "../../../shared/types/geometry";
 import type {
   DamageableEntity,
   DamageEvent,
   DamageResult,
-  DropModifier,
-  ToolBonusModifier,
-  DamageTypeBonusModifier,
   DropCondition,
+  DropModifier,
 } from "./DamageableEntity";
 
 export class DamageSystem {
@@ -15,10 +14,10 @@ export class DamageSystem {
 }
 
 export interface ItemDrop {
-  readonly itemType: string;
+  readonly itemType: string; // TODO: string literal union
   readonly quantity: number;
-  readonly position: { x: number; y: number };
-  readonly condition?: unknown; // item condition/quality
+  readonly position: Point2D;
+  readonly condition?: import("../items/Item").ItemCondition; // item condition/quality
 }
 
 export class DropService {
@@ -96,7 +95,7 @@ export class DropService {
     let adjusted = drops;
     for (const modifier of modifiers) {
       if (modifier.type === "tool_bonus") {
-        const cond = (modifier as ToolBonusModifier).condition;
+        const cond = modifier.condition;
         if (this.usedTool(killingBlow, cond)) {
           adjusted = adjusted.map((drop) => ({
             ...drop,
@@ -106,7 +105,7 @@ export class DropService {
       } else if (modifier.type === "skill_bonus") {
         // TODO: Implement skill bonus when skills system is ready
       } else if (modifier.type === "damage_type_bonus") {
-        const cond = (modifier as DamageTypeBonusModifier).condition;
+        const cond = modifier.condition;
         if (killingBlow.type === cond.damageType) {
           adjusted = adjusted.map((drop) => ({
             ...drop,

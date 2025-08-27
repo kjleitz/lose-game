@@ -9,7 +9,7 @@ export class StarfieldRenderer {
     viewportWidth: number,
     viewportHeight: number,
     opts: StarfieldOptions = {},
-  ) {
+  ): void {
     drawStarfield(ctx, cam, viewportWidth, viewportHeight, opts);
   }
 }

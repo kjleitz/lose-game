@@ -1,14 +1,15 @@
 // Planet generation and data
 import { generatePlanet } from "./planetGenerator";
+import type { Point2D } from "../../shared/types/geometry";
 
-export type Planet = {
+export interface Planet {
   id: string;
   x: number;
   y: number;
   radius: number;
   color: string;
   design: "solid" | "ringed" | "striped" | "spotted";
-};
+}
 
 const DESIGNS: Planet["design"][] = ["solid", "ringed", "striped", "spotted"];
 
@@ -16,15 +17,11 @@ export interface GeneratePlanetsOptions {
   count: number;
   screenW: number;
   screenH: number;
-  center?: { x: number; y: number };
+  center?: Point2D;
 }
 
-export function generatePlanets({
-  count,
-  screenW,
-  screenH,
-  center = { x: 0, y: 0 },
-}: GeneratePlanetsOptions): Planet[] {
+export function generatePlanets(options: GeneratePlanetsOptions): Planet[] {
+  const { count, screenW, screenH, center = { x: 0, y: 0 } } = options;
   // Even grid distribution near the requested center.
   // Aim for roughly 5–10 planets visible by spacing ~1/3 of the larger screen axis.
   const gridStep = Math.max(screenW, screenH) / 3;

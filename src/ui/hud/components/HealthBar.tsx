@@ -1,8 +1,10 @@
+import type { JSX } from "react";
+
 interface HealthBarProps {
   value: number; // 0-100
 }
 
-export function HealthBar({ value }: HealthBarProps) {
+export function HealthBar({ value }: HealthBarProps): JSX.Element {
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div className="flex items-center space-x-2">

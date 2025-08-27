@@ -1,7 +1,8 @@
-import type { World } from "../../../lib/ecs/dist";
-import { Position, Collider, Health, Damage, Projectile, Player, Enemy } from "../components";
+import type { System, World } from "../../../lib/ecs";
+import { defineSystem } from "../../../lib/ecs";
+import { Collider, Damage, Enemy, Health, Player, Position, Projectile } from "../components";
 
-export function createCollisionSystem(world: World) {
+export function createCollisionSystem(world: World): System {
   // Create separate systems for different collision types
   const projectileEntities = world.query({
     position: Position,
@@ -55,9 +56,8 @@ export function createCollisionSystem(world: World) {
     });
   });
 
-  // Return a dummy system since we executed directly
-  return {
-    run: () => {}, // Already executed above
-    getEntities: () => [],
-  };
+  // Return a no-op system since we executed immediately
+  return defineSystem(world)
+    .withComponents({})
+    .execute((): void => {});
 }

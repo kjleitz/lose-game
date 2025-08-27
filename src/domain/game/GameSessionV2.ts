@@ -2,11 +2,15 @@ import type { Player } from "./player";
 import type { Planet } from "./planets";
 import type { Enemy } from "./enemies";
 import type { GameModeType } from "./modes/GameMode";
+import type { SpaceToPlanetTransition, PlanetToSpaceTransition } from "../../shared/types/Game";
 import { GameManager, type GameManagerConfig } from "../../application/GameManager";
+import type { Camera } from "../render/camera";
+import type { ViewSize, Point2D } from "../../shared/types/geometry";
+import type { Action } from "../../engine/input/ActionTypes";
 
 export class GameSessionV2 {
   private gameManager: GameManager;
-  
+
   constructor({
     camera,
     player,
@@ -14,10 +18,10 @@ export class GameSessionV2 {
     size,
     enemies,
   }: {
-    camera: { x: number; y: number; zoom: number };
+    camera: Camera;
     player: Player;
     planets: Planet[];
-    size: { width: number; height: number };
+    size: ViewSize;
     enemies?: Enemy[];
   }) {
     const config: GameManagerConfig = {
@@ -26,19 +30,19 @@ export class GameSessionV2 {
       enemies,
       size,
     };
-    
+
     this.gameManager = new GameManager(config);
-    
+
     // Set initial camera from constructor
     this.gameManager.camera = camera;
   }
 
   update(
-    actions: Set<string>,
-    _updatePlayer: (dt: number, actions: Set<string>, visitedPlanet?: boolean) => void,
-    maybeGenerateRegion: (center: { x: number; y: number }, regionKey: string) => void,
+    actions: Set<Action>,
+    _updatePlayer: (dt: number, actions: Set<Action>, visitedPlanet?: boolean) => void,
+    maybeGenerateRegion: (center: Point2D, regionKey: string) => void,
     dt: number,
-  ) {
+  ): void {
     // Update game manager with external actions
     this.gameManager.update(dt, actions);
 
@@ -49,40 +53,40 @@ export class GameSessionV2 {
   }
 
   // Forward all API calls to GameManager
-  get camera(): { x: number; y: number; zoom: number } {
+  getCamera(): Camera {
     return this.gameManager.camera;
   }
 
-  get player(): Player {
-    return this.gameManager.player;
+  getPlayer(): Player {
+    return this.gameManager.getPlayer();
   }
 
-  get size(): { width: number; height: number } {
-    return this.gameManager.size;
+  getSize(): ViewSize {
+    return this.gameManager.getSize();
   }
 
-  get notification(): string | null {
+  getNotification(): string | null {
     return this.gameManager.notification;
   }
 
-  set notification(value: string | null) {
+  setNotification(value: string | null): void {
     this.gameManager.notification = value;
   }
 
-  get planets(): Planet[] {
-    return this.gameManager.planets;
+  getPlanets(): Planet[] {
+    return this.gameManager.getPlanets();
   }
 
   updatePlanets(newPlanets: Planet[]): void {
     this.gameManager.updatePlanets(newPlanets);
   }
 
-  get projectiles() {
-    return this.gameManager.projectiles;
+  getProjectiles(): { x: number; y: number; radius: number }[] {
+    return this.gameManager.getProjectiles();
   }
 
-  get enemies() {
-    return this.gameManager.enemies;
+  getEnemies(): Enemy[] {
+    return this.gameManager.getEnemies();
   }
 
   getCurrentModeType(): GameModeType {
@@ -91,16 +95,19 @@ export class GameSessionV2 {
 
   // This method was used by modes to request transitions
   // Now it's handled internally by the GameManager
-  requestModeTransition(targetMode: GameModeType, data?: unknown): void {
-    this.gameManager.switchToGame(targetMode, data as { [key: string]: unknown });
+  requestModeTransition(
+    targetMode: GameModeType,
+    data?: SpaceToPlanetTransition | PlanetToSpaceTransition,
+  ): void {
+    this.gameManager.switchToGame(targetMode, data);
   }
 
   private handleSpaceGeneration(
-    maybeGenerateRegion: (center: { x: number; y: number }, regionKey: string) => void,
+    maybeGenerateRegion: (center: Point2D, regionKey: string) => void,
   ): void {
-    const size = this.gameManager.size;
-    const player = this.gameManager.player;
-    
+    const size = this.gameManager.getSize();
+    const player = this.gameManager.getPlayer();
+
     const gridStep = Math.max(size.width, size.height) / 3;
     const REGION_SIZE = gridStep;
     const regionX = Math.floor(player.state.x / REGION_SIZE);

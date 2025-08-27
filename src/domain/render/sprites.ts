@@ -8,11 +8,11 @@ export function drawShipTriangle(
   y: number,
   angle: number,
   size = 24,
-) {
+): void {
   if (!shipImg) {
     shipImg = new window.Image();
     shipImg.src = "/src/assets/svg/ship.svg";
-    shipImg.onload = () => {
+    shipImg.onload = (): void => {
       shipImgLoaded = true;
     };
   }
@@ -30,15 +30,21 @@ export function drawShipTriangle(
 let thrusterImg: HTMLImageElement | null = null;
 
 // Trail history for thruster effects
-type PlayerTrailPoint = {
+interface PlayerTrailPoint {
   x: number;
   y: number;
   angle: number;
   timestamp: number;
   power: number;
   scale: number;
-};
-type EnemyTrailPoint = { x: number; y: number; angle: number; timestamp: number; power: number };
+}
+interface EnemyTrailPoint {
+  x: number;
+  y: number;
+  angle: number;
+  timestamp: number;
+  power: number;
+}
 const playerThrusterTrail: PlayerTrailPoint[] = [];
 const enemyThrusterTrails = new Map<string, EnemyTrailPoint[]>();
 const TRAIL_LIFETIME = 400; // milliseconds
@@ -51,7 +57,7 @@ export function drawThruster(
   angle: number,
   size = 24,
   power = 1,
-) {
+): void {
   if (!thrusterImg) {
     thrusterImg = new window.Image();
     thrusterImg.src = "/src/assets/svg/thruster.svg";
@@ -96,8 +102,7 @@ export function drawThruster(
   if (playerThrusterTrail.length > 1) {
     ctx.save();
     // Additive blend for glow overlap
-    const prevComposite =
-      ctx.globalCompositeOperation as CanvasRenderingContext2D["globalCompositeOperation"];
+    const prevComposite = ctx.globalCompositeOperation;
     ctx.globalCompositeOperation = "lighter";
 
     for (let i = playerThrusterTrail.length - 1; i >= 0; i--) {
@@ -152,11 +157,11 @@ export function drawEnemyShip(
   y: number,
   angle: number,
   size = 24,
-) {
+): void {
   if (!enemyShipImg) {
     enemyShipImg = new window.Image();
     enemyShipImg.src = "/src/assets/svg/enemy-ship.svg";
-    enemyShipImg.onload = () => {
+    enemyShipImg.onload = (): void => {
       enemyShipImgLoaded = true;
     };
   }
@@ -181,7 +186,7 @@ export function drawEnemyThruster(
   size = 24,
   power = 1,
   enemyId = "default",
-) {
+): void {
   if (!enemyThrusterImg) {
     enemyThrusterImg = new window.Image();
     enemyThrusterImg.src = "/src/assets/svg/enemy-thruster.svg";

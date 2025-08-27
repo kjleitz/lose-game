@@ -1,6 +1,8 @@
+import type { Point2D } from "../../../shared/types/geometry";
+
 export interface DamageableEntity {
   readonly id: string;
-  readonly position: { x: number; y: number };
+  readonly position: Point2D;
   health: HealthComponent;
   readonly dropTable: DropTable;
   readonly destructionEffect?: DestructionEffect;
@@ -35,8 +37,8 @@ export interface DamageEvent {
   readonly amount: number;
   readonly type: DamageType;
   readonly source: DamageSource;
-  readonly position: { x: number; y: number }; // impact location
-  readonly direction: { x: number; y: number }; // knockback direction
+  readonly position: Point2D; // impact location
+  readonly direction: Point2D; // knockback direction
   readonly critical: boolean; // critical hit
 }
 
@@ -51,11 +53,11 @@ export interface DamageResult {
   readonly blocked: number;
   readonly killed: boolean;
   readonly effects: StatusEffect[];
-  readonly knockback: { x: number; y: number };
+  readonly knockback: Point2D;
 }
 
 export interface StatusEffect {
-  readonly type: string;
+  readonly type: string; // TODO: string literal union
   readonly duration: number;
   readonly intensity: number;
 }
@@ -68,7 +70,7 @@ export interface DropTable {
 }
 
 export interface DropEntry {
-  readonly itemType: string;
+  readonly itemType: string; // TODO: string literal union
   readonly minQuantity: number;
   readonly maxQuantity: number;
   readonly probability: number; // 0-1
@@ -77,41 +79,44 @@ export interface DropEntry {
 
 export interface DropCondition {
   readonly damageType?: DamageType; // must be killed with specific damage
-  readonly tool?: string; // must use specific tool
+  readonly tool?: string; // must use specific tool; TODO: string literal union
   readonly skill?: number; // minimum skill level required
 }
 
-export type ToolBonusModifier = {
+export interface ToolBonusModifier {
   readonly type: "tool_bonus";
-  readonly condition: { tool: string };
+  readonly condition: { tool: string }; // TODO: string literal union
   readonly multiplier: number;
-};
+}
 
-export type SkillBonusModifier = {
+export interface SkillBonusModifier {
   readonly type: "skill_bonus";
-  readonly condition?: unknown;
+  readonly condition?: {
+    skill: string; // TODO: string literal union
+    minLevel?: number;
+  };
   readonly multiplier: number;
-};
+}
 
-export type DamageTypeBonusModifier = {
+export interface DamageTypeBonusModifier {
   readonly type: "damage_type_bonus";
   readonly condition: { damageType: DamageType };
   readonly multiplier: number;
-};
+}
 
 export type DropModifier = ToolBonusModifier | SkillBonusModifier | DamageTypeBonusModifier;
 
 export interface DestructionEffect {
   readonly particles: ParticleEffect[];
-  readonly sound: string;
+  readonly sound: string; // TODO: string literal union
   readonly duration: number;
 }
 
 export interface ParticleEffect {
-  readonly type: string;
+  readonly type: string; // TODO: string literal union
   readonly count: number;
-  readonly velocity: { x: number; y: number };
-  readonly color: string;
+  readonly velocity: Point2D;
+  readonly color: string; // TODO: named color type, maybe template literal
 }
 
 export const DamageVisualState = {
@@ -126,14 +131,14 @@ export type DamageVisualState = (typeof DamageVisualState)[keyof typeof DamageVi
 
 export abstract class BaseDamageableEntity implements DamageableEntity {
   readonly id: string;
-  readonly position: { x: number; y: number };
+  readonly position: Point2D;
   health: HealthComponent;
   readonly dropTable: DropTable;
   readonly destructionEffect?: DestructionEffect;
 
   constructor(
     id: string,
-    position: { x: number; y: number },
+    position: Point2D,
     health: HealthComponent,
     dropTable: DropTable,
     destructionEffect?: DestructionEffect,

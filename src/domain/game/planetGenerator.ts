@@ -10,7 +10,14 @@ export function shouldPlacePlanet(x: number, y: number, radius: number): boolean
   return value > 0.2;
 }
 
-export function generatePlanet(x: number, y: number) {
+export interface PlanetSeed {
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}
+
+export function generatePlanet(x: number, y: number): PlanetSeed {
   // Larger, more varied planet sizes
   return {
     x: x,

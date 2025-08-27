@@ -26,7 +26,7 @@ describe("PlanetRenderer", () => {
     const planets: Planet[] = [
       { id: "p1", x: 100, y: 100, radius: 50, color: "#fff", design: "solid" },
     ];
-    const getRadius = (planet: Planet) => planet.radius;
+    const getRadius = (planet: Planet): number => planet.radius;
     expect(() =>
       renderer.render(ctx as CanvasRenderingContext2D, planets, getRadius),
     ).not.toThrow();

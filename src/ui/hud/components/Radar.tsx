@@ -1,15 +1,17 @@
+import type { JSX } from "react";
 import type { Planet } from "../../../domain/game/planets";
-import PlanetSVG from "../../components/PlanetSvg";
+import { PlanetSVG } from "../../components/PlanetSvg";
 import { RadarService } from "../../../domain/services/RadarService";
+import type { Point2D } from "../../../shared/types/geometry";
 
 interface RadarProps {
-  player: { x: number; y: number };
+  player: Point2D;
   planets: Planet[];
   screenW: number;
   screenH: number;
 }
 
-export default function Radar({ player, planets, screenW, screenH }: RadarProps) {
+export function Radar({ player, planets, screenW, screenH }: RadarProps): JSX.Element {
   const radarService = new RadarService(screenW, screenH);
   const RADAR_SIZE = radarService.RADAR_SIZE;
   return (

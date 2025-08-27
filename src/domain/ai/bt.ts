@@ -1,47 +1,42 @@
 export type Status = "Success" | "Failure" | "Running";
 
-export interface Blackboard {
-  // Arbitrary state bag used by behaviors
-  [key: string]: unknown;
-  // Shared scratch space for nodes (per-entity)
-  scratch: Record<string, unknown>;
-}
-
-export interface Node {
+// Behavior tree primitives are generic over the blackboard type (BB),
+// so trees can be strongly typed per domain without casts or index signatures.
+export interface Node<BB> {
   id: string;
-  tick(bb: Blackboard, dt: number): Status;
+  tick(bb: BB, dt: number): Status;
 }
 
 let nextId = 0;
-function uid(prefix: string) {
+function uid(prefix: string): string {
   return `${prefix}-${++nextId}`;
 }
 
-export function Condition(name: string, fn: (bb: Blackboard) => boolean): Node {
+export function Condition<BB>(name: string, fn: (bb: BB) => boolean): Node<BB> {
   const id = uid(`cond:${name}`);
   return {
     id,
-    tick(bb) {
+    tick(bb: BB, _dt: number): Status {
       return fn(bb) ? "Success" : "Failure";
     },
   };
 }
 
-export function Action(name: string, fn: (bb: Blackboard, dt: number) => Status): Node {
+export function Action<BB>(name: string, fn: (bb: BB, dt: number) => Status): Node<BB> {
   const id = uid(`act:${name}`);
   return {
     id,
-    tick(bb, dt) {
+    tick(bb: BB, dt: number): Status {
       return fn(bb, dt);
     },
   };
 }
 
-export function Sequence(name: string, children: Node[]): Node {
+export function Sequence<BB>(name: string, children: Node<BB>[]): Node<BB> {
   const id = uid(`seq:${name}`);
   return {
     id,
-    tick(bb, dt) {
+    tick(bb: BB, dt: number): Status {
       for (const child of children) {
         const s = child.tick(bb, dt);
         if (s !== "Success") return s;
@@ -51,11 +46,11 @@ export function Sequence(name: string, children: Node[]): Node {
   };
 }
 
-export function Selector(name: string, children: Node[]): Node {
+export function Selector<BB>(name: string, children: Node<BB>[]): Node<BB> {
   const id = uid(`sel:${name}`);
   return {
     id,
-    tick(bb, dt) {
+    tick(bb: BB, dt: number): Status {
       for (const child of children) {
         const s = child.tick(bb, dt);
         if (s !== "Failure") return s;
@@ -66,11 +61,11 @@ export function Selector(name: string, children: Node[]): Node {
 }
 
 // Decorators
-export function Inverter(name: string, child: Node): Node {
+export function Inverter<BB>(name: string, child: Node<BB>): Node<BB> {
   const id = uid(`inv:${name}`);
   return {
     id,
-    tick(bb, dt) {
+    tick(bb: BB, dt: number): Status {
       const s = child.tick(bb, dt);
       if (s === "Success") return "Failure";
       if (s === "Failure") return "Success";

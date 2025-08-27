@@ -3,10 +3,10 @@ import { drawShipTriangle, drawThruster } from "./sprites";
 export class ShipRenderer {
   render(
     ctx: CanvasRenderingContext2D,
-    player: { x: number; y: number; vx: number; vy: number; angle: number },
-    actions: Set<string>,
+    player: Kinematics2D,
+    actions: Set<Action>,
     size: number = 48,
-  ) {
+  ): void {
     const thrusting = actions.has("thrust");
     if (thrusting) {
       const speed = Math.hypot(player.vx, player.vy);
@@ -16,3 +16,5 @@ export class ShipRenderer {
     drawShipTriangle(ctx, player.x, player.y, player.angle, size);
   }
 }
+import type { Kinematics2D } from "../../shared/types/geometry";
+import type { Action } from "../../engine/input/ActionTypes";

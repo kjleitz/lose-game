@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { drawPlanetCanvas } from "./PlanetCanvas";
 
-describe("drawPlanetCanvas", () => {
+describe("drawPlanetCanvas", (): void => {
   const basePlanet = {
     id: "p1",
     x: 0,
@@ -10,7 +10,30 @@ describe("drawPlanetCanvas", () => {
     color: "#123456",
     design: "solid",
   };
-  function getMockCtx() {
+  interface MockCtx {
+    save: () => void;
+    restore: () => void;
+    translate: (x: number, y: number) => void;
+    beginPath: () => void;
+    arc: (x: number, y: number, r: number, start: number, end: number) => void;
+    fill: () => void;
+    stroke: () => void;
+    ellipse: (
+      x: number,
+      y: number,
+      radiusX: number,
+      radiusY: number,
+      rotation: number,
+      startAngle: number,
+      endAngle: number,
+    ) => void;
+    fillStyle: string;
+    strokeStyle: string;
+    lineWidth: number;
+    globalAlpha: number;
+  }
+
+  function getMockCtx(): MockCtx {
     return {
       save: vi.fn(),
       restore: vi.fn(),
@@ -27,7 +50,7 @@ describe("drawPlanetCanvas", () => {
     };
   }
 
-  it("draws a solid planet", () => {
+  it("draws a solid planet", (): void => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "solid" },
@@ -41,7 +64,7 @@ describe("drawPlanetCanvas", () => {
     expect(ctx.restore).toHaveBeenCalled();
   });
 
-  it("draws a ringed planet", () => {
+  it("draws a ringed planet", (): void => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "ringed" },
@@ -54,7 +77,7 @@ describe("drawPlanetCanvas", () => {
     expect(ctx.stroke).toHaveBeenCalled();
   });
 
-  it("draws a striped planet", () => {
+  it("draws a striped planet", (): void => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "striped" },
@@ -67,7 +90,7 @@ describe("drawPlanetCanvas", () => {
     expect(ctx.fill).toHaveBeenCalled();
   });
 
-  it("draws a spotted planet", () => {
+  it("draws a spotted planet", (): void => {
     const ctx = getMockCtx();
     drawPlanetCanvas({
       planet: { ...basePlanet, design: "spotted" },

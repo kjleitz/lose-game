@@ -5,6 +5,7 @@ Top‑down 2D open‑world space exploration game. Canvas for the world; React f
 Documentation
 
 - Docs index: docs/index.md
+- Fundamental Rules: docs/rules.md
 - Architecture: docs/architecture.md
 - Testing: docs/testing.md
 - CI: docs/ci.md
@@ -41,6 +42,7 @@ Documentation
 - Roadmap: `docs/roadmap.md`
 - Decisions (ADRs): `docs/decisions/`
 - Contributor guide: `AGENTS.md`
+- Core Rules: `docs/rules.md`
 
 ## Notes
 

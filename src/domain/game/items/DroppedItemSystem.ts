@@ -3,6 +3,7 @@ import { BaseItemType, ItemQuality, ItemRarity } from "./Item";
 import { TIME } from "../../../config/time";
 import type { DamageableEntity, DropTable } from "../damage/DamageableEntity";
 import type { Player } from "../player";
+import type { Point2D } from "../../../shared/types/geometry";
 
 export interface DroppedItem {
   id: string;
@@ -27,7 +28,7 @@ export class DroppedItemSystem {
   private readonly PICKUP_RANGE = 40; // pixels
   private readonly ITEM_DESPAWN_SEC = TIME.DROPPED_ITEM_DESPAWN_SEC;
 
-  dropItemsFromEntity(entity: DamageableEntity, position: { x: number; y: number }): DroppedItem[] {
+  dropItemsFromEntity(entity: DamageableEntity, position: Point2D): DroppedItem[] {
     const droppedItems: DroppedItem[] = [];
 
     // Roll for drops based on entity's drop table
@@ -49,11 +50,7 @@ export class DroppedItemSystem {
     return droppedItems;
   }
 
-  dropItemFromPlayer(
-    item: Item,
-    quantity: number,
-    position: { x: number; y: number },
-  ): DroppedItem {
+  dropItemFromPlayer(item: Item, quantity: number, position: Point2D): DroppedItem {
     const droppedItem = this.createDroppedItem(
       item,
       quantity,

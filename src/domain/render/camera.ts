@@ -8,12 +8,12 @@ export function createCamera(x = 0, y = 0, zoom = 1): Camera {
   return { x, y, zoom };
 }
 
-export function setCameraPosition(cam: Camera, x: number, y: number) {
+export function setCameraPosition(cam: Camera, x: number, y: number): void {
   cam.x = x;
   cam.y = y;
 }
 
-export function setCameraZoom(cam: Camera, zoom: number) {
+export function setCameraZoom(cam: Camera, zoom: number): void {
   cam.zoom = zoom;
 }
 

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import type { Action } from "../../application/game/input";
+import type { JSX } from "react";
+import type { Action } from "../../engine/input/ActionTypes";
 import {
   getBindingsForAction,
   loadKeyBindingsFromStorage,
   resetKeyBindings,
   setKeyBinding,
-} from "../../application/game/input";
+} from "../../engine/input/KeyBindings";
 
 interface SettingsModalProps {
   open: boolean;
@@ -25,25 +26,45 @@ const ACTION_LABELS: Record<Action, string> = {
   speedDown: "Speed Down",
   land: "Land on Planet",
   takeoff: "Take Off",
+  inventory: "Toggle Inventory",
 };
 
-export default function SettingsModal({ open, onClose, speed, onChangeSpeed }: SettingsModalProps) {
+const ACTION_LIST: Action[] = [
+  "thrust",
+  "turnLeft",
+  "turnRight",
+  "fire",
+  "interact",
+  "boost",
+  "speedUp",
+  "speedDown",
+  "land",
+  "takeoff",
+  "inventory",
+];
+
+export function SettingsModal({
+  open,
+  onClose,
+  speed,
+  onChangeSpeed,
+}: SettingsModalProps): JSX.Element | null {
   const [listeningAction, setListeningAction] = useState<Action | null>(null);
 
-  useEffect(() => {
+  useEffect((): void => {
     loadKeyBindingsFromStorage();
   }, []);
 
   useEffect(() => {
     if (!open || !listeningAction) return;
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent): void => {
       e.preventDefault();
       e.stopPropagation();
       setKeyBinding(listeningAction, e.code);
       setListeningAction(null);
     };
     window.addEventListener("keydown", onKey, { once: true });
-    return () => window.removeEventListener("keydown", onKey);
+    return (): void => window.removeEventListener("keydown", onKey);
   }, [open, listeningAction]);
 
   if (!open) return null;
@@ -71,7 +92,9 @@ export default function SettingsModal({ open, onClose, speed, onChangeSpeed }: S
               max={5}
               step={0.25}
               value={speed}
-              onChange={(e) => onChangeSpeed(parseFloat(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                onChangeSpeed(parseFloat(e.target.value))
+              }
               className="w-full"
             />
             <div className="hud-text text-xs w-12 text-right">{speed.toFixed(2)}x</div>
@@ -84,7 +107,7 @@ export default function SettingsModal({ open, onClose, speed, onChangeSpeed }: S
             <button
               type="button"
               className="px-2 py-1 text-[10px] bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-              onClick={() => {
+              onClick={(): void => {
                 resetKeyBindings();
               }}
             >
@@ -92,8 +115,7 @@ export default function SettingsModal({ open, onClose, speed, onChangeSpeed }: S
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {Object.keys(ACTION_LABELS).map((a) => {
-              const action = a as Action;
+            {ACTION_LIST.map((action): JSX.Element => {
               const codes = getBindingsForAction(action);
               const label = ACTION_LABELS[action];
               const listening = listeningAction === action;
@@ -110,7 +132,7 @@ export default function SettingsModal({ open, onClose, speed, onChangeSpeed }: S
                     <button
                       type="button"
                       className="px-2 py-1 text-[10px] bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-                      onClick={() => setListeningAction(action)}
+                      onClick={(): void => setListeningAction(action)}
                     >
                       Rebind
                     </button>

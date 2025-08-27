@@ -1,16 +1,15 @@
-export type Projectile = {
+export interface Projectile {
   x: number;
   y: number;
   vx: number;
   vy: number;
   ttl: number; // seconds remaining
   radius: number;
-};
+}
 
-export function createProjectile(
-  origin: { x: number; y: number; angle: number },
-  speed = 600,
-): Projectile {
+import type { Pose2D } from "../../shared/types/geometry";
+
+export function createProjectile(origin: Pose2D, speed = 600): Projectile {
   const dirX = Math.cos(origin.angle);
   const dirY = Math.sin(origin.angle);
   return {
@@ -23,7 +22,7 @@ export function createProjectile(
   };
 }
 
-export function stepProjectile(p: Projectile, dt: number) {
+export function stepProjectile(p: Projectile, dt: number): void {
   p.x += p.vx * dt;
   p.y += p.vy * dt;
   p.ttl -= dt;

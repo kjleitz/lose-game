@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import Radar from "../hud/components/Radar";
+import { Radar } from "../hud/components/Radar";
 
 describe("Radar", () => {
   const basePlanet = {

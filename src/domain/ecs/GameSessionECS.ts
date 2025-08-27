@@ -1,14 +1,18 @@
-import { World, type EntityBuilder } from "../../lib/ecs/dist";
-import type { Player } from "../game/player";
-import type { Planet } from "../game/planets";
+import type { Action } from "../../engine";
+import { type EntityBuilder, World } from "../../lib/ecs";
+import type { Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { Enemy } from "../game/enemies";
+import type { Planet } from "../game/planets";
+import type { Player } from "../game/player";
+import type { EntityCounts, PlayerView } from "../game/views";
+import type { Camera } from "../render/camera";
 import * as Components from "./components";
 import * as EntityFactories from "./entities/EntityFactories";
+import { createCollisionSystem } from "./systems/CollisionSystem";
+import { createEnemyAISystem } from "./systems/EnemyAISystem";
 import { createMovementSystem } from "./systems/MovementSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
-import { createEnemyAISystem } from "./systems/EnemyAISystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
-import { createCollisionSystem } from "./systems/CollisionSystem";
 import { createWeaponSystem } from "./systems/WeaponSystem";
 
 export class GameSessionECS {
@@ -16,15 +20,15 @@ export class GameSessionECS {
   private playerEntityId: number | null = null;
 
   // Camera (keep as is for now)
-  camera: { x: number; y: number; zoom: number };
-  size: { width: number; height: number };
+  camera: Camera;
+  size: ViewSize;
   notification: string | null = null;
 
   constructor(config?: {
-    camera?: { x: number; y: number; zoom: number };
+    camera?: Camera;
     player?: Player;
     planets?: Planet[];
-    size?: { width: number; height: number };
+    size?: ViewSize;
     enemies?: Enemy[];
   }) {
     this.camera = config?.camera || { x: 0, y: 0, zoom: 1 };
@@ -37,7 +41,7 @@ export class GameSessionECS {
     }
   }
 
-  private createDefaultGame() {
+  private createDefaultGame(): void {
     // Create a basic game setup for testing
     const playerEntity = EntityFactories.createBasicPlayer(this.world, 0, 0);
     this.playerEntityId = this.getEntityId(playerEntity);
@@ -58,7 +62,7 @@ export class GameSessionECS {
     player?: Player;
     planets?: Planet[];
     enemies?: Enemy[];
-  }) {
+  }): void {
     // Create player
     if (config.player) {
       const playerEntity = EntityFactories.createPlayerEntity(this.world, config.player);
@@ -68,22 +72,32 @@ export class GameSessionECS {
       this.playerEntityId = this.getEntityId(playerEntity);
     }
 
-    // Create planets
-    if (config.planets) {
+    // Create planets (fall back to defaults when none provided)
+    if (config.planets && config.planets.length > 0) {
       config.planets.forEach((planet) => {
         EntityFactories.createPlanetEntity(this.world, planet);
       });
+    } else {
+      // Default selection of planets around origin
+      EntityFactories.createBasicPlanet(this.world, "planet_1", 400, 300, 80);
+      EntityFactories.createBasicPlanet(this.world, "planet_2", -300, -200, 60);
+      EntityFactories.createBasicPlanet(this.world, "planet_3", -100, 400, 70);
+      EntityFactories.createBasicPlanet(this.world, "planet_4", 500, -300, 90);
     }
 
-    // Create enemies
-    if (config.enemies) {
+    // Create enemies (fall back to defaults when none provided)
+    if (config.enemies && config.enemies.length > 0) {
       config.enemies.forEach((enemy) => {
         EntityFactories.createEnemyEntity(this.world, enemy);
       });
+    } else {
+      EntityFactories.createBasicEnemy(this.world, "enemy_1", 200, 100);
+      EntityFactories.createBasicEnemy(this.world, "enemy_2", -150, 200);
+      EntityFactories.createBasicEnemy(this.world, "enemy_3", 100, -150);
     }
   }
 
-  update(actions: Set<string>, dt: number) {
+  update(actions: Set<Action>, dt: number): void {
     // Create and run systems in order
     const playerControlSystem = createPlayerControlSystem(this.world, actions, dt);
     const weaponSystem = createWeaponSystem(this.world, actions);
@@ -102,9 +116,12 @@ export class GameSessionECS {
 
     // Update camera to follow player
     this.updateCameraFollowPlayer();
+
+    // Update proximity notification for planets
+    this.updateNotifications();
   }
 
-  private updateCameraFollowPlayer() {
+  private updateCameraFollowPlayer(): void {
     if (!this.playerEntityId) return;
 
     const playerEntities = this.world.query({
@@ -119,7 +136,7 @@ export class GameSessionECS {
   }
 
   // Public query methods for UI/rendering - compatible with existing GameRenderer
-  getPlayer() {
+  getPlayer(): PlayerView | null {
     const players = this.world.query({
       position: Components.Position,
       velocity: Components.Velocity,
@@ -141,7 +158,7 @@ export class GameSessionECS {
     };
   }
 
-  getEnemies() {
+  getEnemies(): Enemy[] {
     return this.world
       .query({
         position: Components.Position,
@@ -179,7 +196,7 @@ export class GameSessionECS {
       });
   }
 
-  getPlanets() {
+  getPlanets(): Planet[] {
     return this.world
       .query({
         position: Components.Position,
@@ -189,18 +206,19 @@ export class GameSessionECS {
       })
       .map((planet) => {
         const { position, collider, sprite, planet: planetData } = planet.components;
+        const design: Planet["design"] = sprite.design ?? "solid";
         return {
           id: planetData.id,
           x: position.x,
           y: position.y,
           radius: collider.radius,
           color: sprite.color,
-          design: sprite.design || ("solid" as const),
+          design,
         };
       });
   }
 
-  getProjectiles() {
+  getProjectiles(): Circle2D[] {
     return this.world
       .query({
         position: Components.Position,
@@ -223,24 +241,24 @@ export class GameSessionECS {
   }
 
   // Additional methods to match GameSession interface
-  getCamera() {
+  getCamera(): Camera {
     return this.camera;
   }
 
-  getSize() {
+  getSize(): ViewSize {
     return this.size;
   }
 
-  getNotification() {
+  getNotification(): string | null {
     return this.notification;
   }
 
-  setNotification(message: string | null) {
+  setNotification(message: string | null): void {
     this.notification = message;
   }
 
   // Debug methods
-  getEntityCount() {
+  getEntityCount(): EntityCounts {
     const players = this.world.query({ player: Components.Player }).length;
     const enemies = this.world.query({ enemy: Components.Enemy }).length;
     const planets = this.world.query({ planet: Components.Planet }).length;
@@ -250,12 +268,30 @@ export class GameSessionECS {
   }
 
   // Expose world for debugging
-  getWorld() {
+  getWorld(): World {
     return this.world;
   }
 
   // Helper method to safely get entity ID
   private getEntityId(entity: EntityBuilder): number {
     return entity.id;
+  }
+
+  private updateNotifications(): void {
+    const player = this.getPlayer();
+    if (!player) {
+      this.notification = null;
+      return;
+    }
+    const planets = this.getPlanets();
+    let near: { id: string } | null = null;
+    for (const p of planets) {
+      const dist = Math.hypot(player.x - p.x, player.y - p.y);
+      if (dist < p.radius + 60) {
+        near = p;
+        break;
+      }
+    }
+    this.notification = near ? `Press L to land on ${near.id}` : null;
   }
 }

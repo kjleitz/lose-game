@@ -1,11 +1,12 @@
+import type { Point2D } from "../../../shared/types/geometry";
 import type {
   DamageableEntity,
-  HealthComponent,
-  DropTable,
-  DamageVisualState,
   DamageEvent,
   DamageResult,
+  DamageVisualState,
   DestructionEffect,
+  DropTable,
+  HealthComponent,
 } from "../damage/DamageableEntity";
 
 export interface FloraSpecies {
@@ -34,7 +35,7 @@ export const FloraCategory = {
 export type FloraCategory = (typeof FloraCategory)[keyof typeof FloraCategory];
 
 export interface HabitatRequirements {
-  readonly biomes: string[]; // which biomes this species can grow in
+  readonly biomes: string[]; // which biomes this species can grow in // TODO: string literal union
   readonly minTemperature: number; // 0-1 normalized
   readonly maxTemperature: number;
   readonly minMoisture: number; // 0-1 normalized
@@ -102,7 +103,7 @@ export interface StageAppearance {
 }
 
 export interface VisualEffect {
-  readonly type: string;
+  readonly type: string; // TODO: string literal union
   readonly intensity: number;
   readonly duration?: number;
 }
@@ -265,7 +266,7 @@ export type ConnectionType = (typeof ConnectionType)[keyof typeof ConnectionType
 
 export class FloraInstanceImpl implements FloraInstance {
   readonly id: string;
-  readonly position: { x: number; y: number };
+  readonly position: Point2D;
   health: HealthComponent;
   readonly dropTable: DropTable;
   readonly destructionEffect?: DestructionEffect;
@@ -283,7 +284,7 @@ export class FloraInstanceImpl implements FloraInstance {
 
   constructor(
     id: string,
-    position: { x: number; y: number },
+    position: Point2D,
     species: FloraSpecies,
     genetics?: Partial<GeneticTraits>,
   ) {

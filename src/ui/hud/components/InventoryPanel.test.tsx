@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import InventoryPanel from "./InventoryPanel";
+import { InventoryPanel } from "./InventoryPanel";
 import { PlayerInventoryManager } from "../../../domain/game/inventory/PlayerInventory";
 import { ItemQuality, BaseItemType, ItemRarity, type Item } from "../../../domain/game/items/Item";
 
-describe("InventoryPanel", () => {
-  const createTestInventory = () => {
+describe("InventoryPanel", (): void => {
+  const createTestInventory = (): PlayerInventoryManager => {
     const inventory = new PlayerInventoryManager(12, 50);
 
     // Create mock items manually
@@ -76,12 +76,12 @@ describe("InventoryPanel", () => {
     return inventory;
   };
 
-  it("should not render when no inventory provided", () => {
+  it("should not render when no inventory provided", (): void => {
     render(<InventoryPanel />);
     expect(screen.queryByText("Inventory")).not.toBeInTheDocument();
   });
 
-  it("should render inventory stats", () => {
+  it("should render inventory stats", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
 
@@ -90,7 +90,7 @@ describe("InventoryPanel", () => {
     expect(screen.getByText(/Slots:/)).toBeInTheDocument();
   });
 
-  it("should render inventory grid with items", () => {
+  it("should render inventory grid with items", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
 
@@ -101,7 +101,7 @@ describe("InventoryPanel", () => {
     expect(screen.getAllByTestId(/inventory-slot-/).length).toBeGreaterThan(0);
   });
 
-  it("should show item quantities for stackable items", () => {
+  it("should show item quantities for stackable items", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
 
@@ -109,7 +109,7 @@ describe("InventoryPanel", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 
-  it("should call onToggle when close button clicked", () => {
+  it("should call onToggle when close button clicked", (): void => {
     const inventory = createTestInventory();
     const onToggle = vi.fn();
 
@@ -119,7 +119,7 @@ describe("InventoryPanel", () => {
     expect(onToggle).toHaveBeenCalled();
   });
 
-  it("should call onItemUse when use button clicked", async () => {
+  it("should call onItemUse when use button clicked", (): void => {
     const inventory = createTestInventory();
     const onItemUse = vi.fn();
 
@@ -142,7 +142,7 @@ describe("InventoryPanel", () => {
     }
   });
 
-  it("should call onItemDrop when drop button clicked", async () => {
+  it("should call onItemDrop when drop button clicked", (): void => {
     const inventory = createTestInventory();
     const onItemDrop = vi.fn();
 
@@ -165,7 +165,7 @@ describe("InventoryPanel", () => {
     }
   });
 
-  it("should call sort when sort button clicked", () => {
+  it("should call sort when sort button clicked", (): void => {
     const inventory = createTestInventory();
     const sortSpy = vi.spyOn(inventory, "sortInventory");
 
@@ -175,7 +175,7 @@ describe("InventoryPanel", () => {
     expect(sortSpy).toHaveBeenCalled();
   });
 
-  it("should be hidden when visible is false", () => {
+  it("should be hidden when visible is false", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={false} />);
 
@@ -183,7 +183,7 @@ describe("InventoryPanel", () => {
     expect(panel).toHaveClass("opacity-0", "pointer-events-none");
   });
 
-  it("should show durability information for tools", async () => {
+  it("should show durability information for tools", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
 

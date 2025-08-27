@@ -1,10 +1,13 @@
-import SpeedControl from "../../components/SpeedControl";
-import { SettingsButton } from "../components/SettingsButton";
+import type { JSX } from "react";
+
+import type { Action } from "../../../engine/input/ActionTypes";
+import { SpeedControl } from "../../components/SpeedControl";
 import { ActionReadout } from "../components/ActionReadout";
 import { PauseIndicator } from "../components/PauseIndicator";
+import { SettingsButton } from "../components/SettingsButton";
 
 interface ControlsPanelProps {
-  actions: Set<string>;
+  actions: Set<Action>;
   paused: boolean;
   speedMultiplier?: number;
   onChangeSpeed?: (n: number) => void;
@@ -17,7 +20,7 @@ export function ControlsPanel({
   speedMultiplier,
   onChangeSpeed,
   onOpenSettings,
-}: ControlsPanelProps) {
+}: ControlsPanelProps): JSX.Element {
   return (
     <div className="hud-panel px-3 py-2 space-y-2 pointer-events-auto" data-testid="hud-root">
       <div className="flex items-center justify-end">

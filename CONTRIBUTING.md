@@ -23,6 +23,7 @@ Conventions
 - Filenames: `kebab-case.ts[x]`; components use `PascalCase`; hooks `useX`.
 - Imports: relative ES module imports (no path aliases).
 - Commits: Conventional Commits (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `build`).
+- Core rules: see `docs/rules.md` (types first; no `any`/casts/ts-ignore; named return types).
 
 Testing Strategy
 

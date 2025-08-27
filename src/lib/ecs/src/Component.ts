@@ -1,6 +1,8 @@
 import type { Component, ComponentConstructor } from "./types.js";
 
-export function defineComponent<T = {}>(defaultFactory?: () => T): ComponentConstructor<T> {
+export function defineComponent<T extends object = {}>(
+  defaultFactory?: () => T,
+): ComponentConstructor<T> {
   const componentType = Symbol("component");
 
   class ComponentClass implements Component<T> {
@@ -17,7 +19,7 @@ export function defineComponent<T = {}>(defaultFactory?: () => T): ComponentCons
       return new ComponentClass(data);
     }
 
-    static get defaultFactory() {
+    static getDefaultFactory(): (() => T) | undefined {
       return defaultFactory;
     }
   }
@@ -25,15 +27,15 @@ export function defineComponent<T = {}>(defaultFactory?: () => T): ComponentCons
   return ComponentClass;
 }
 
-export function isComponent<T>(
-  value: unknown,
+function hasComponentMarker(value: object): value is { __componentType: symbol } {
+  return "__componentType" in value;
+}
+
+export function isComponent<T extends object>(
+  value: object | null | undefined,
   componentConstructor: ComponentConstructor<T>,
 ): value is Component<T> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "__componentType" in (value as Record<string, unknown>) &&
-    (value as { __componentType?: unknown }).__componentType ===
-      componentConstructor.__componentType
-  );
+  if (typeof value !== "object" || value === null) return false;
+  if (!hasComponentMarker(value)) return false;
+  return value.__componentType === componentConstructor.__componentType;
 }

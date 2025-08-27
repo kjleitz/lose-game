@@ -1,21 +1,25 @@
-import Radar from "./components/Radar";
-import Notification from "./components/Notification";
-import InventoryPanel from "./components/InventoryPanel";
-import type { Planet } from "../../domain/game/planets";
+import type { JSX } from "react";
+
 import type { PlayerInventory } from "../../domain/game/inventory/PlayerInventory";
 import type { Item } from "../../domain/game/items/Item";
-import { StatusPanel } from "./panels/StatusPanel";
+import type { Planet } from "../../domain/game/planets";
+import type { Action } from "../../engine/input/ActionTypes";
+import type { Point2D } from "../../shared/types/geometry";
+import { InventoryPanel } from "./components/InventoryPanel";
+import { Notification } from "./components/Notification";
+import { Radar } from "./components/Radar";
 import { ControlsPanel } from "./panels/ControlsPanel";
+import { StatusPanel } from "./panels/StatusPanel";
 
 interface HudProps {
-  player: { x: number; y: number };
+  player: Point2D;
   experience?: number;
   health?: number;
   planets: Planet[];
   screenW: number;
   screenH: number;
   notification?: string | null;
-  actions: Set<string>;
+  actions: Set<Action>;
   paused: boolean;
   speedMultiplier?: number;
   inventory?: PlayerInventory;
@@ -27,7 +31,7 @@ interface HudProps {
   onItemDrop?: (item: Item, quantity: number) => void;
 }
 
-export default function Hud({
+export function Hud({
   player,
   experience = 0,
   health = 100,
@@ -45,7 +49,7 @@ export default function Hud({
   onToggleInventory,
   onItemUse,
   onItemDrop,
-}: HudProps) {
+}: HudProps): JSX.Element {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
       <Radar player={player} planets={planets} screenW={screenW} screenH={screenH} />

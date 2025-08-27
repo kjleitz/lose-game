@@ -1,130 +1,139 @@
-import { useRef, useState, useEffect } from "react";
-import { useInput } from "../hooks/useInput";
-import { GameLoopProvider } from "./GameLoopProvider";
-import { CanvasRenderer } from "./CanvasRenderer";
-import Hud from "../hud/Hud";
-import { GameSessionECS } from "../../domain/ecs/GameSessionECS";
-import SettingsModal from "./SettingsModal";
-import type { Item } from "../../domain/game/items/Item";
+import type { JSX } from "react";
+import { useEffect, useRef, useState } from "react";
 
-function useCanvasSize() {
-  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+import type { GameController } from "../../application/GameAPI";
+import { GameApp } from "../../application/GameApp";
+import type { Item } from "../../domain/game/items/Item";
+import type { Planet } from "../../domain/game/planets";
+import type { Action } from "../../engine/input/ActionTypes";
+import type { Point2D, ViewSize } from "../../shared/types/geometry";
+import { Hud } from "../hud/Hud";
+import { SettingsModal } from "./SettingsModal";
+
+function useCanvasSize(): ViewSize {
+  const [size, setSize] = useState<ViewSize>({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
   useEffect(() => {
-    const onResize = () => setSize({ width: window.innerWidth, height: window.innerHeight });
+    const onResize = (): void => setSize({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return (): void => window.removeEventListener("resize", onResize);
   }, []);
+
   return size;
 }
 
-export default function CanvasRoot() {
+export function CanvasRoot(): JSX.Element {
   const size = useCanvasSize();
-  const { actions, updateActions } = useInput();
+  const { width, height } = size;
   const [paused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [inventoryVisible, setInventoryVisible] = useState(false);
+  const controllerRef = useRef<GameController | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [hudState, setHudState] = useState<{
+    player: Point2D;
+    experience: number;
+    health: number;
+    planets: Planet[];
+  }>(() => ({
+    player: { x: 0, y: 0 },
+    experience: 0,
+    health: 100,
+    planets: [],
+  }));
+  // HUD actions readout and speed mirror
+  const [hudActions, setHudActions] = useState<Set<Action>>(() => new Set());
+  const [speed, setSpeed] = useState<number>(1);
 
-  // Create ECS GameSession instance
-  const gameSessionRef = useRef<GameSessionECS | null>(null);
   useEffect(() => {
-    if (!gameSessionRef.current) {
-      gameSessionRef.current = new GameSessionECS({
-        camera: { x: 0, y: 0, zoom: 1 },
-        size,
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let disposed = false;
+    let unsub: (() => void) | null = null;
+    let unsubNotif: (() => void) | null = null;
+    let unsubInput: (() => void) | null = null;
+    let unsubSpeed: (() => void) | null = null;
+
+    void (async (): Promise<void> => {
+      const ctrl = await GameApp.create(canvas, { size: { width, height } });
+      if (disposed) return;
+      controllerRef.current = ctrl;
+      setSpeed(ctrl.getSpeed());
+      unsub = ctrl.bus.subscribe("tick", (e): void => {
+        const s = e.snapshot;
+        setHudState({
+          player: { x: s.player.x, y: s.player.y },
+          experience: s.player.experience,
+          health: s.player.health,
+          planets: s.planets,
+        });
       });
-    }
-  }, [size]);
+      unsubNotif = ctrl.bus.subscribe("notification", (e): void => {
+        setNotification(e.message);
+      });
+      unsubInput = ctrl.bus.subscribe("inputChanged", (e): void => {
+        setHudActions(new Set(e.actions));
+      });
+      unsubSpeed = ctrl.bus.subscribe("speedChanged", (e): void => {
+        setSpeed(e.value);
+      });
+      ctrl.start();
+    })();
 
-  function update(dt: number) {
-    const previousActions = new Set(actions);
-    updateActions();
+    return (): void => {
+      disposed = true;
+      if (unsub) unsub();
+      if (unsubNotif) unsubNotif();
+      if (unsubInput) unsubInput();
+      if (unsubSpeed) unsubSpeed();
+      controllerRef.current?.dispose();
+      controllerRef.current = null;
+    };
+  }, [width, height]);
 
-    // Handle inventory toggle (only on key press, not hold)
-    if (actions.has("inventory") && !previousActions.has("inventory")) {
-      setInventoryVisible((prev) => !prev);
-    }
-
-    if (!paused && gameSessionRef.current) {
-      gameSessionRef.current.update(actions, dt);
-      setNotification(gameSessionRef.current.getNotification());
-    }
-  }
-
-  // No longer need to update planets - they're created in ECS constructor
-
-  function render() {
-    // CanvasRenderer handles all drawing
-    // No-op here, handled by CanvasRenderer
-  }
-
-  function handleItemUse(item: Item) {
+  function handleItemUse(item: Item): void {
     console.log("Using item:", item.name);
     // TODO: Implement item use logic based on item type
   }
 
-  function handleItemDrop(item: Item, quantity: number) {
+  function handleItemDrop(item: Item, quantity: number): void {
     console.log("Dropping item:", item.name, "quantity:", quantity);
     // TODO: Implement item dropping logic
   }
 
-  // Get current game state from ECS
-  const player = gameSessionRef.current?.getPlayer() || {
-    x: 0,
-    y: 0,
-    vx: 0,
-    vy: 0,
-    angle: 0,
-    health: 100,
-  };
-  const enemies = gameSessionRef.current?.getEnemies() || [];
-  const planets = gameSessionRef.current?.getPlanets() || [];
-  const projectiles = gameSessionRef.current?.getProjectiles() || [];
-  const camera = gameSessionRef.current?.getCamera() || { x: 0, y: 0, zoom: 1 };
-
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
-      <GameLoopProvider update={update} render={render}>
-        <CanvasRenderer
-          player={player}
-          camera={camera}
-          planets={planets}
-          projectiles={projectiles}
-          enemies={enemies}
-          actions={actions}
-          size={size}
-          gameSession={null}
-        />
-        <Hud
-          player={player}
-          experience={0} // TODO: Get from ECS
-          health={player.health}
-          planets={planets}
-          screenW={size.width}
-          screenH={size.height}
-          notification={notification}
-          actions={actions}
-          paused={paused}
-          speedMultiplier={1} // TODO: Implement speed multiplier in ECS
-          inventory={undefined}
-          inventoryVisible={inventoryVisible}
-          onChangeSpeed={(_n) => {
-            // TODO: Implement speed control in ECS
-          }}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onToggleInventory={() => setInventoryVisible((prev) => !prev)}
-          onItemUse={handleItemUse}
-          onItemDrop={handleItemDrop}
-        />
-        <SettingsModal
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          speed={1} // TODO: Get from ECS
-          onChangeSpeed={(_n) => {
-            // TODO: Implement speed control in ECS
-          }}
-        />
-      </GameLoopProvider>
+    <div className="relative w-screen h-screen overflow-hidden" data-testid="game-root">
+      <canvas ref={canvasRef} className="block w-full h-full" />
+      <Hud
+        player={hudState.player}
+        experience={hudState.experience}
+        health={hudState.health}
+        planets={hudState.planets}
+        screenW={size.width}
+        screenH={size.height}
+        notification={notification}
+        actions={hudActions}
+        paused={paused}
+        speedMultiplier={speed}
+        inventory={undefined}
+        inventoryVisible={inventoryVisible}
+        onChangeSpeed={(n: number): void => controllerRef.current?.setSpeed(n)}
+        onOpenSettings={(): void => setSettingsOpen(true)}
+        onToggleInventory={(): void => setInventoryVisible((prev) => !prev)}
+        onItemUse={handleItemUse}
+        onItemDrop={handleItemDrop}
+      />
+      <SettingsModal
+        open={settingsOpen}
+        onClose={(): void => setSettingsOpen(false)}
+        speed={speed}
+        onChangeSpeed={(n: number): void => controllerRef.current?.setSpeed(n)}
+      />
     </div>
   );
 }

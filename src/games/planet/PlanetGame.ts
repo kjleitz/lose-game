@@ -1,11 +1,15 @@
-import type { Game, GameState, TransitionData, GameEngine } from "../../shared/types/Game";
-import type { Player } from "../../domain/game/player";
+import type { GameModeType } from "../../domain/game/modes/GameMode";
 import type { Planet } from "../../domain/game/planets";
+import type { Player } from "../../domain/game/player";
+import type { Game, GameEngine, GameState, TransitionData } from "../../shared/types/Game";
+import type { Point2D } from "../../shared/types/geometry";
+
+// import type { Action } from "../../engine/input/ActionTypes";
 // import { setCameraPosition } from "../../domain/render/camera"; // TODO: Remove when camera system is extracted
 
 export interface PlanetSurface {
   planetId: string;
-  landingSite: { x: number; y: number };
+  landingSite: Point2D;
   terrain: TerrainFeature[];
   resources: Resource[];
   creatures: Creature[];
@@ -36,9 +40,9 @@ export interface Creature {
   radius: number;
 }
 
-export interface PlanetGameState extends GameState {
+export interface PlanetGameState {
   planetId: string;
-  playerPosition: { x: number; y: number };
+  playerPosition: Point2D;
   exploredAreas: Set<string>;
   surface?: PlanetSurface;
 }
@@ -49,12 +53,12 @@ export class PlanetGame implements Game {
 
   private currentPlanet?: Planet;
   private surface?: PlanetSurface;
-  private landingSite = { x: 0, y: 0 };
+  private landingSite: Point2D = { x: 0, y: 0 };
   private player?: Player;
   private engine?: GameEngine;
 
   // Callback for requesting mode transitions (will be set by GameManager)
-  private onModeTransition?: (targetMode: string, data?: unknown) => void;
+  private onModeTransition?: (targetMode: GameModeType, data?: TransitionData) => void;
 
   initialize(engine: GameEngine): void {
     this.engine = engine;
@@ -107,38 +111,36 @@ export class PlanetGame implements Game {
   }
 
   loadState(state: GameState): void {
-    const planetState = state as PlanetGameState;
-    if (planetState.surface) {
-      this.surface = planetState.surface;
+    if ("surface" in state && state.surface) {
+      this.surface = state.surface;
     }
   }
 
-  canTransitionTo(targetGame: string): boolean {
+  canTransitionTo(targetGame: GameModeType): boolean {
     return targetGame === "space";
   }
 
-  prepareTransition(targetGame: string): TransitionData {
+  prepareTransition(targetGame: GameModeType): TransitionData | null {
     if (targetGame === "space") {
       return {
         returnPosition: this.calculateSpaceReturnPosition(),
       };
     }
-    return {};
+
+    return null;
   }
 
   receiveTransition(data: TransitionData): void {
     // Handle landing from space mode
-    const planet = data.planet as Planet | undefined;
-    
-    if (planet) {
-      this.landOnPlanet(planet);
+    if ("planet" in data) {
+      this.landOnPlanet(data.planet);
     }
   }
 
   // Public API for backward compatibility
   landOnPlanet(planet: Planet): void {
     if (!this.player) return;
-    
+
     this.currentPlanet = planet;
     this.generatePlanetSurface(planet);
 
@@ -149,11 +151,11 @@ export class PlanetGame implements Game {
     this.player.state.vy = 0;
   }
 
-  get planetData(): Planet | undefined {
+  getPlanetData(): Planet | undefined {
     return this.currentPlanet;
   }
 
-  get surfaceData(): PlanetSurface | undefined {
+  getSurfaceData(): PlanetSurface | undefined {
     return this.surface;
   }
 
@@ -161,7 +163,11 @@ export class PlanetGame implements Game {
     this.player = player;
   }
 
-  setModeTransitionCallback(callback: (targetMode: string, data?: unknown) => void): void {
+  // Type guard helpers no longer needed with explicit types
+
+  setModeTransitionCallback(
+    callback: (targetMode: GameModeType, data?: TransitionData) => void,
+  ): void {
     this.onModeTransition = callback;
   }
 
@@ -243,7 +249,10 @@ export class PlanetGame implements Game {
 
     for (let i = this.surface.resources.length - 1; i >= 0; i--) {
       const resource = this.surface.resources[i];
-      const distance = Math.hypot(this.player.state.x - resource.x, this.player.state.y - resource.y);
+      const distance = Math.hypot(
+        this.player.state.x - resource.x,
+        this.player.state.y - resource.y,
+      );
 
       if (distance < 30) {
         // Collection radius
@@ -269,7 +278,7 @@ export class PlanetGame implements Game {
     }
   }
 
-  private calculateSpaceReturnPosition(): { x: number; y: number } {
+  private calculateSpaceReturnPosition(): Point2D {
     if (!this.currentPlanet) {
       return { x: 0, y: 0 };
     }

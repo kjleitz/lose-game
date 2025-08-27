@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import { useState } from "react";
 import type {
   PlayerInventory,
@@ -13,9 +14,9 @@ interface InventoryPanelProps {
   onItemDrop?: (item: Item, quantity: number) => void;
 }
 
-function ItemIcon({ item }: { item: Item }) {
+function ItemIcon({ item }: { item: Item }): JSX.Element {
   // Simple colored squares based on item type for now
-  const getItemColor = (item: Item) => {
+  const getItemColor = (item: Item): string => {
     switch (item.baseType) {
       case "tool":
         return "#4ECDC4";
@@ -49,7 +50,7 @@ function InventorySlotComponent({
   slot: InventorySlot;
   onItemUse?: (item: Item) => void;
   onItemDrop?: (item: Item, quantity: number) => void;
-}) {
+}): JSX.Element {
   const [showActions, setShowActions] = useState(false);
 
   if (!slot.item) {
@@ -66,8 +67,8 @@ function InventorySlotComponent({
   return (
     <div
       className="relative w-12 h-12 border-2 border-gray-400 rounded bg-gray-700 p-1 cursor-pointer hover:border-white transition-colors"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={(): void => setShowActions(true)}
+      onMouseLeave={(): void => setShowActions(false)}
       data-testid={`inventory-slot-${slot.item.id}`}
     >
       <ItemIcon item={slot.item} />
@@ -95,7 +96,7 @@ function InventorySlotComponent({
             {onItemUse && (
               <button
                 className="bg-green-600 hover:bg-green-500 px-2 py-1 rounded text-xs text-white transition-colors"
-                onClick={() => onItemUse(slot.item!)}
+                onClick={(): void => onItemUse(slot.item!)}
                 data-testid="use-item-button"
               >
                 Use
@@ -105,7 +106,7 @@ function InventorySlotComponent({
             {onItemDrop && (
               <button
                 className="bg-red-600 hover:bg-red-500 px-2 py-1 rounded text-xs text-white transition-colors"
-                onClick={() => onItemDrop(slot.item!, 1)}
+                onClick={(): void => onItemDrop(slot.item!, 1)}
                 data-testid="drop-item-button"
               >
                 Drop
@@ -118,19 +119,19 @@ function InventorySlotComponent({
   );
 }
 
-export default function InventoryPanel({
+export function InventoryPanel({
   inventory,
   visible = false,
   onToggle,
   onItemUse,
   onItemDrop,
-}: InventoryPanelProps) {
+}: InventoryPanelProps): JSX.Element | null {
   if (!inventory) {
     return null;
   }
 
-  const slots = inventory.slots;
-  const totalWeight = inventory.currentWeight;
+  const slots = inventory.getSlots();
+  const totalWeight = inventory.getCurrentWeight();
   const maxWeight = inventory.maxWeight;
   const maxSlots = inventory.maxSlots;
 
@@ -186,20 +187,22 @@ export default function InventoryPanel({
         style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
         data-testid="inventory-grid"
       >
-        {slotGrid.map((slot, index) => (
-          <div key={index}>
-            {slot ? (
-              <InventorySlotComponent slot={slot} onItemUse={onItemUse} onItemDrop={onItemDrop} />
-            ) : (
-              <div
-                className="w-12 h-12 border-2 border-gray-600 rounded bg-gray-800 flex items-center justify-center"
-                data-testid="inventory-slot-empty"
-              >
-                <span className="text-gray-500 text-xs">—</span>
-              </div>
-            )}
-          </div>
-        ))}
+        {slotGrid.map(
+          (slot, index): JSX.Element => (
+            <div key={index}>
+              {slot ? (
+                <InventorySlotComponent slot={slot} onItemUse={onItemUse} onItemDrop={onItemDrop} />
+              ) : (
+                <div
+                  className="w-12 h-12 border-2 border-gray-600 rounded bg-gray-800 flex items-center justify-center"
+                  data-testid="inventory-slot-empty"
+                >
+                  <span className="text-gray-500 text-xs">—</span>
+                </div>
+              )}
+            </div>
+          ),
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -207,7 +210,7 @@ export default function InventoryPanel({
         <div className="flex gap-2 text-xs">
           <button
             className="bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-white transition-colors"
-            onClick={() => inventory.sortInventory("category")}
+            onClick={(): void => inventory.sortInventory("category")}
             data-testid="sort-items-button"
           >
             Sort

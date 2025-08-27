@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Player } from "../../domain/game/player";
 import type { PlayerState } from "../../domain/game/player";
+import type { Action } from "../../engine/input/ActionTypes";
+
+export interface UsePlayerResult {
+  playerRef: React.MutableRefObject<Player>;
+  playerPos: { x: number; y: number; experience: number; health: number };
+  updatePlayer: (dt: number, actions: Set<Action>, visitedPlanet?: boolean) => void;
+}
 
 export function usePlayer(
   initial: PlayerState = { x: 0, y: 0, vx: 0, vy: 0, angle: 0, experience: 0, health: 100 },
-) {
+): UsePlayerResult {
   const playerRef = useRef<Player>(new Player(initial));
   const [playerPos, setPlayerPos] = useState<{
     x: number;
@@ -20,7 +27,7 @@ export function usePlayer(
   const prevSpeedRef = useRef<number>(playerRef.current.getSpeedMultiplier());
 
   // Initialize speed multiplier from localStorage (if present)
-  useEffect(() => {
+  useEffect((): void => {
     try {
       const raw = window.localStorage.getItem("lose.speedMultiplier");
       if (raw) {
@@ -33,7 +40,7 @@ export function usePlayer(
     }
   }, []);
 
-  function updatePlayer(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
+  function updatePlayer(dt: number, actions: Set<Action>, visitedPlanet?: boolean): void {
     playerRef.current.update(dt, actions, visitedPlanet);
     setPlayerPos({
       x: playerRef.current.state.x,

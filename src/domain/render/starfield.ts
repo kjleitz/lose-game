@@ -8,9 +8,9 @@ function hash32(x: number, y: number, seed = 1337): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
-function mulberry32(seed: number) {
+function mulberry32(seed: number): () => number {
   let t = seed >>> 0;
-  return function rand() {
+  return function rand(): number {
     t += 0x6d2b79f5;
     let r = Math.imul(t ^ (t >>> 15), 1 | t);
     r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
@@ -44,7 +44,7 @@ export function drawStarfield(
   viewportWidth: number,
   viewportHeight: number,
   opts: StarfieldOptions = {},
-) {
+): void {
   const { cellSize, starsPerCell, minSize, maxSize, color, alphaMin, alphaMax } = {
     ...defaultOpts,
     ...opts,

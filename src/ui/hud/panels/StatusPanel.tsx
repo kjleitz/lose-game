@@ -1,7 +1,14 @@
+import type { JSX } from "react";
 import { HealthBar } from "../components/HealthBar";
 import { ExperienceBar } from "../components/ExperienceBar";
 
-export function StatusPanel({ health, experience }: { health: number; experience: number }) {
+export function StatusPanel({
+  health,
+  experience,
+}: {
+  health: number;
+  experience: number;
+}): JSX.Element {
   return (
     <div
       className="hud-panel px-4 py-3 rounded border border-gray-600 bg-black bg-opacity-80 shadow flex flex-col space-y-3"

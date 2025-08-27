@@ -21,7 +21,7 @@ describe("GameSession enemies", () => {
       () => {},
       0.016,
     );
-    expect(session.projectiles.length).toBe(1);
+    expect(session.getProjectiles().length).toBe(1);
     // Advance until hit
     for (let i = 0; i < 10; i++)
       session.update(
@@ -30,7 +30,7 @@ describe("GameSession enemies", () => {
         () => {},
         0.05,
       );
-    expect(session.enemies.length).toBe(0);
+    expect(session.getEnemies().length).toBe(0);
     expect(player.state.experience ?? 0).toBeGreaterThanOrEqual(5);
   });
 });

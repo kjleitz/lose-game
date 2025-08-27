@@ -1,10 +1,16 @@
 import type { GameModeType, GameModeState } from "./GameMode";
 import type { Player } from "../player";
 import type { Planet } from "../planets";
+import type { Point2D } from "../../../shared/types/geometry";
+
+export interface ModeTransitionData {
+  planetId?: string;
+  returnPosition?: Point2D;
+}
 
 export interface ModeTransitionRequest {
   targetMode: GameModeType;
-  data?: unknown;
+  data?: ModeTransitionData;
 }
 
 export interface LandingTransitionData {
@@ -12,14 +18,14 @@ export interface LandingTransitionData {
 }
 
 export interface TakeoffTransitionData {
-  returnPosition: { x: number; y: number };
+  returnPosition: Point2D;
 }
 
 export class ModeTransitionManager {
   private modeStates: Map<GameModeType, GameModeState> = new Map();
   private pendingTransition: ModeTransitionRequest | null = null;
 
-  requestTransition(targetMode: GameModeType, data?: unknown): void {
+  requestTransition(targetMode: GameModeType, data?: ModeTransitionData): void {
     this.pendingTransition = { targetMode, data };
   }
 
@@ -41,10 +47,7 @@ export class ModeTransitionManager {
     return this.modeStates.get(mode);
   }
 
-  prepareLandingTransition(
-    _player: Player,
-    planet: Planet,
-  ): { playerPosition: { x: number; y: number } } {
+  prepareLandingTransition(_player: Player, planet: Planet): { playerPosition: Point2D } {
     // Calculate landing position on planet surface
     const landingX = planet.x + Math.random() * 40 - 20; // Small random offset
     const landingY = planet.y + Math.random() * 40 - 20;
@@ -57,7 +60,7 @@ export class ModeTransitionManager {
   prepareTakeoffTransition(
     _player: Player,
     data: TakeoffTransitionData,
-  ): { playerPosition: { x: number; y: number } } {
+  ): { playerPosition: Point2D } {
     return {
       playerPosition: data.returnPosition,
     };

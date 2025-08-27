@@ -21,8 +21,4 @@ Playwright cannot connect / blank page
 PlanetSVG casing error (TS1261)
 
 - On case‑sensitive filesystems, the import path must match filename case: `PlanetSvg`.
-
-Tinypool / worker errors locally
-
-- Try running a subset: `vitest run src/ui/components/Hud.test.tsx`.
-- Ensure your Node is current LTS; close other heavy processes.
+- Note: Our intended filename system is “file name matches primary export” (single‑export modules), with kebab‑case reserved for multi‑export utility modules. The repo is not fully migrated yet; prefer the new system for new/modified files.

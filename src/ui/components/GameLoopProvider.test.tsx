@@ -34,7 +34,7 @@ describe("GameLoopProvider", () => {
     );
     expect(screen.getByTestId("child")).toHaveTextContent("Hello");
     expect(ctorSpy).toHaveBeenCalledTimes(1);
-    const passed = ctorSpy.mock.calls[0][0];
+    const passed = ctorSpy.mock.calls[0][0] as any;
     expect(passed.update).toBe(update);
     expect(passed.render).toBe(renderCb);
     expect(mockStart).toHaveBeenCalledTimes(1);

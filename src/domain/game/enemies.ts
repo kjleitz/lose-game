@@ -1,4 +1,4 @@
-export type Enemy = {
+export interface Enemy {
   id: string;
   x: number;
   y: number;
@@ -13,7 +13,7 @@ export type Enemy = {
   turnSpeed: number; // rad/s
   accel: number; // units/s^2
   maxSpeed: number; // units/s
-};
+}
 
 export function createEnemy(id: string, x: number, y: number, radius = 14, health = 20): Enemy {
   return {

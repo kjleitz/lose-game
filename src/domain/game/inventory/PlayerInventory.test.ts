@@ -13,9 +13,9 @@ describe("PlayerInventory", () => {
 
   describe("basic inventory operations", () => {
     it("should initialize with empty slots", () => {
-      expect(inventory.slots).toHaveLength(20);
-      expect(inventory.currentWeight).toBe(0);
-      expect(inventory.slots.every((slot) => slot.item === null)).toBe(true);
+      expect(inventory.getSlots()).toHaveLength(20);
+      expect(inventory.getCurrentWeight()).toBe(0);
+      expect(inventory.getSlots().every((slot) => slot.item === null)).toBe(true);
     });
 
     it("should add items to inventory", () => {
@@ -152,14 +152,14 @@ describe("PlayerInventory", () => {
       const sourceSlotId = addResult.slot!.id;
 
       // Find an empty slot
-      const emptySlot = inventory.slots.find(
-        (slot) => slot.item === null && slot.id !== sourceSlotId,
-      );
+      const emptySlot = inventory
+        .getSlots()
+        .find((slot) => slot.item === null && slot.id !== sourceSlotId);
 
       const moveResult = inventory.moveItem(sourceSlotId, emptySlot!.id);
 
       expect(moveResult.success).toBe(true);
-      expect(inventory.slots.find((s) => s.id === sourceSlotId)?.item).toBeNull();
+      expect(inventory.getSlots().find((s) => s.id === sourceSlotId)?.item).toBeNull();
       expect(emptySlot!.item).toBe(wood);
       expect(emptySlot!.quantity).toBe(5);
     });
@@ -170,7 +170,7 @@ describe("PlayerInventory", () => {
       // First, add to different slots manually to simulate the situation
       const slot1 = inventory.addItem(wood, 5).slot!;
       // Create a second slot with wood by splitting
-      const emptySlot = inventory.slots.find((s) => s.item === null && s.id !== slot1.id)!;
+      const emptySlot = inventory.getSlots().find((s) => s.item === null && s.id !== slot1.id)!;
       emptySlot.item = wood;
       emptySlot.quantity = 3;
 
@@ -242,7 +242,7 @@ describe("PlayerInventory", () => {
       inventory.sortInventory("category");
 
       // Get only non-empty slots after sorting
-      const nonEmptySlots = inventory.slots.filter((slot) => slot.item !== null);
+      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item !== null);
 
       expect(nonEmptySlots.length).toBe(3);
       // Tools should come first, then materials, then food
@@ -260,7 +260,7 @@ describe("PlayerInventory", () => {
 
       inventory.sortInventory("name");
 
-      const nonEmptySlots = inventory.slots.filter((slot) => slot.item !== null);
+      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item !== null);
 
       // "Iron Axe" should come before "Wood" alphabetically
       expect(nonEmptySlots[0].item?.name).toBe("Iron Axe");
@@ -276,7 +276,7 @@ describe("PlayerInventory", () => {
 
       inventory.sortInventory("value");
 
-      const nonEmptySlots = inventory.slots.filter((slot) => slot.item !== null);
+      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item !== null);
 
       // Higher value items should come first
       expect(nonEmptySlots[0].item?.stats.value).toBeGreaterThan(
@@ -287,13 +287,13 @@ describe("PlayerInventory", () => {
 
   describe("quick slots", () => {
     it("should initialize 10 quick slots", () => {
-      expect(inventory.quickslots).toHaveLength(10);
-      expect(inventory.quickslots[0].hotkey).toBe("1");
-      expect(inventory.quickslots[9].hotkey).toBe("0");
+      expect(inventory.getQuickslots()).toHaveLength(10);
+      expect(inventory.getQuickslots()[0].hotkey).toBe("1");
+      expect(inventory.getQuickslots()[9].hotkey).toBe("0");
     });
 
     it("should have auto-refill enabled by default", () => {
-      expect(inventory.quickslots.every((slot) => slot.autoRefill)).toBe(true);
+      expect(inventory.getQuickslots().every((slot) => slot.autoRefill)).toBe(true);
     });
   });
 });

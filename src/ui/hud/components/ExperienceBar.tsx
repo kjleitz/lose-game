@@ -1,8 +1,10 @@
+import type { JSX } from "react";
+
 interface ExperienceBarProps {
   value: number; // 0-100 (for now treated as percentage)
 }
 
-export function ExperienceBar({ value }: ExperienceBarProps) {
+export function ExperienceBar({ value }: ExperienceBarProps): JSX.Element {
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div className="flex items-center space-x-2" data-testid="hud-score-panel">

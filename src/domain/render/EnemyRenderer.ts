@@ -2,7 +2,7 @@ import type { Enemy } from "../game/enemies";
 import { drawEnemyShip, drawEnemyThruster } from "./sprites";
 
 export class EnemyRenderer {
-  render(ctx: CanvasRenderingContext2D, enemies: Enemy[]) {
+  render(ctx: CanvasRenderingContext2D, enemies: Enemy[]): void {
     for (const enemy of enemies) {
       // Calculate ship size based on enemy radius (scale up from circle)
       const shipSize = enemy.radius * 2.5;

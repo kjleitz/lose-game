@@ -191,10 +191,19 @@ export class ItemFactory {
   // Specialized factory methods for different item types
   createTool(toolType: ToolType, quality: ItemQuality = ItemQuality.COMMON): Tool {
     const template = this.templates.getToolTemplate(toolType);
-    const baseItem = this.createItem(template.id, quality) as Tool;
+    const base = this.createItem(template.id, quality);
 
     return {
-      ...baseItem,
+      id: base.id,
+      type: base.type,
+      baseType: base.baseType,
+      name: base.name,
+      description: base.description,
+      properties: base.properties,
+      stats: base.stats,
+      requirements: base.requirements,
+      effects: base.effects,
+      metadata: base.metadata,
       toolType,
       effectiveness: new Map(template.effectiveness),
       energyCost: template.energyCost,
@@ -205,10 +214,19 @@ export class ItemFactory {
 
   createWeapon(weaponType: WeaponType, quality: ItemQuality = ItemQuality.COMMON): Weapon {
     const template = this.templates.getWeaponTemplate(weaponType);
-    const baseItem = this.createItem(template.id, quality) as Weapon;
+    const base = this.createItem(template.id, quality);
 
     return {
-      ...baseItem,
+      id: base.id,
+      type: base.type,
+      baseType: base.baseType,
+      name: base.name,
+      description: base.description,
+      properties: base.properties,
+      stats: base.stats,
+      requirements: base.requirements,
+      effects: base.effects,
+      metadata: base.metadata,
       weaponType,
       damage: template.damage,
       attackSpeed: template.attackSpeed,
@@ -225,18 +243,26 @@ export class ItemFactory {
 
   createMaterial(materialType: MaterialType, _quantity: number = 1): Material {
     const template = this.templates.getMaterialTemplate(materialType);
-    const baseItem = this.createItem(template.id) as Material;
+    const base = this.createItem(template.id);
 
     // Materials are typically stackable
     const enhancedProperties = {
-      ...baseItem.properties,
+      ...base.properties,
       stackable: true,
       maxStackSize: 50,
     };
 
     return {
-      ...baseItem,
+      id: base.id,
+      type: base.type,
+      baseType: base.baseType,
+      name: base.name,
+      description: base.description,
       properties: enhancedProperties,
+      stats: base.stats,
+      requirements: base.requirements,
+      effects: base.effects,
+      metadata: base.metadata,
       materialType,
       processingMethods: template.processingMethods,
       derivatives: template.derivatives,
@@ -246,10 +272,18 @@ export class ItemFactory {
 
   createConsumable(consumableType: ConsumableType): Consumable {
     const template = this.templates.getConsumableTemplate(consumableType);
-    const baseItem = this.createItem(template.id) as Consumable;
+    const base = this.createItem(template.id);
 
     return {
-      ...baseItem,
+      id: base.id,
+      type: base.type,
+      baseType: base.baseType,
+      name: base.name,
+      description: base.description,
+      properties: base.properties,
+      stats: base.stats,
+      requirements: base.requirements,
+      metadata: base.metadata,
       consumableType,
       effects: template.effects,
       duration: template.duration,

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { mapKeyToAction, applyKeyEvent, createActionState } from "./input";
+import { mapKeyToAction } from "../../engine/input/KeyBindings";
+import { applyKeyEvent, createActionState } from "../../engine/input/ActionManager";
 
 describe("input mapping", () => {
   it("maps common keys to actions", () => {

@@ -2,22 +2,22 @@ import { describe, it, expect } from "vitest";
 import { GameLoop } from "./loop";
 
 describe("GameLoop", () => {
-  it("accumulates and steps fixed updates", () => {
+  it("accumulates and steps fixed updates", (): void => {
     let updates = 0;
-    const update = () => {
+    const update = (): void => {
       updates += 1;
     };
-    const render = () => {};
+    const render = (): void => {};
 
     // Manual clock and scheduler
     let nowMs = 0;
-    const now = () => nowMs;
+    const now = (): number => nowMs;
     let cb: FrameRequestCallback | undefined;
-    const schedule = (fn: FrameRequestCallback) => {
+    const schedule = (fn: FrameRequestCallback): number => {
       cb = fn;
       return 1;
     };
-    const cancel = () => {};
+    const cancel = (): void => {};
 
     const loop = new GameLoop({ update, render, fixedDelta: 1 / 60, now, schedule, cancel });
     loop.start();
@@ -30,22 +30,22 @@ describe("GameLoop", () => {
     loop.stop();
   });
 
-  it("pauses and resumes without scheduling ticks while paused", () => {
+  it("pauses and resumes without scheduling ticks while paused", (): void => {
     let updates = 0;
     let renders = 0;
-    const update = () => void (updates += 1);
-    const render = () => void (renders += 1);
+    const update = (): void => void (updates += 1);
+    const render = (): void => void (renders += 1);
 
     let nowMs = 0;
-    const now = () => nowMs;
+    const now = (): number => nowMs;
     let scheduled = 0;
     let cb: FrameRequestCallback | undefined;
-    const schedule = (fn: FrameRequestCallback) => {
+    const schedule = (fn: FrameRequestCallback): number => {
       scheduled += 1;
       cb = fn;
       return scheduled;
     };
-    const cancel = () => {};
+    const cancel = (): void => {};
 
     const loop = new GameLoop({ update, render, fixedDelta: 1 / 60, now, schedule, cancel });
     loop.start();
@@ -66,17 +66,17 @@ describe("GameLoop", () => {
     expect(updates).toBeGreaterThan(1);
   });
 
-  it("steps once when paused", () => {
+  it("steps once when paused", (): void => {
     let updates = 0;
     let renders = 0;
-    const update = () => void (updates += 1);
-    const render = () => void (renders += 1);
-    const now = () => 0;
-    const schedule = () => {
+    const update = (): void => void (updates += 1);
+    const render = (): void => void (renders += 1);
+    const now = (): number => 0;
+    const schedule = (): number => {
       // don't auto-run cb in this test
       return 1;
     };
-    const cancel = () => {};
+    const cancel = (): void => {};
 
     const loop = new GameLoop({ update, render, fixedDelta: 1 / 60, now, schedule, cancel });
     loop.start();

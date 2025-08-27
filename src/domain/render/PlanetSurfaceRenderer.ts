@@ -1,7 +1,7 @@
 import type { PlanetSurface, TerrainFeature, Resource, Creature } from "../game/modes/PlanetMode";
 
 export class PlanetSurfaceRenderer {
-  render(ctx: CanvasRenderingContext2D, surface: PlanetSurface | undefined) {
+  render(ctx: CanvasRenderingContext2D, surface: PlanetSurface | undefined): void {
     if (!surface) return;
 
     // Clear to a planet surface color (brownish/sandy)

@@ -1,29 +1,31 @@
-import { defineSystem } from "../../../lib/ecs/dist";
-import type { World } from "../../../lib/ecs/dist";
+import type { Action } from "../../../engine/input/ActionTypes";
+import type { System, World } from "../../../lib/ecs";
+import { defineSystem } from "../../../lib/ecs";
 import {
-  Position,
-  Rotation,
-  Player,
-  WeaponCooldown,
-  Projectile,
-  Velocity,
-  TimeToLive,
-  Damage,
   Collider,
+  Damage,
+  Player,
+  Position,
+  Projectile,
+  Rotation,
   Sprite,
+  TimeToLive,
+  Velocity,
+  WeaponCooldown,
 } from "../components";
 
-export function createWeaponSystem(world: World, actions: Set<string>) {
+export function createWeaponSystem(world: World, actions: Set<Action>): System {
   return defineSystem(world)
     .withComponents({ position: Position, rotation: Rotation, player: Player })
     .withOptionalComponents({ weaponCooldown: WeaponCooldown })
-    .execute((entities) => {
+    .execute((entities): void => {
       entities.forEach(({ components }) => {
         const { position, rotation, weaponCooldown } = components;
 
         // Check if player wants to fire and weapon is ready
         const canFire = weaponCooldown === undefined || weaponCooldown.remaining <= 0;
-        const wantsToFire = actions.has("Space") || actions.has("KeyX");
+        // Use normalized action names, not key codes
+        const wantsToFire = actions.has("fire");
 
         if (wantsToFire && canFire) {
           // Create projectile

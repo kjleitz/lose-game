@@ -1,11 +1,8 @@
 import { PlayerInventoryManager, type PlayerInventory } from "./inventory/PlayerInventory";
+import type { Kinematics2D } from "../../shared/types/geometry";
+import type { Action } from "../../engine/input/ActionTypes";
 
-export type PlayerState = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  angle: number;
+export type PlayerState = Kinematics2D & {
   experience?: number;
   health?: number;
 };
@@ -23,16 +20,16 @@ export class Player {
       experience: initial.experience ?? 0,
       health: initial.health ?? 100,
     };
-    
+
     // Initialize player inventory (20 slots, 100kg max weight)
     this.inventory = new PlayerInventoryManager(20, 100);
   }
 
-  update(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
+  update(dt: number, actions: Set<Action>, visitedPlanet?: boolean): void {
     this.updateSpace(dt, actions, visitedPlanet);
   }
 
-  updateSpace(dt: number, actions: Set<string>, visitedPlanet?: boolean) {
+  updateSpace(dt: number, actions: Set<Action>, visitedPlanet?: boolean): void {
     const TURN_SPEED = 2.5;
     const BASE_THRUST = 280; // base ship thrust (units/sec^2)
     const DRAG = 0.98;
@@ -66,7 +63,7 @@ export class Player {
     }
   }
 
-  updatePlanet(dt: number, actions: Set<string>) {
+  updatePlanet(dt: number, actions: Set<Action>): void {
     const WALK_SPEED = 200; // units/sec
     const RUN_SPEED = 350; // units/sec when boosting
     const FRICTION = 0.85; // ground friction
@@ -110,11 +107,11 @@ export class Player {
     }
   }
 
-  getSpeedMultiplier() {
+  getSpeedMultiplier(): number {
     return this.speedMultiplier;
   }
 
-  setSpeedMultiplier(mult: number) {
+  setSpeedMultiplier(mult: number): void {
     if (!Number.isFinite(mult)) return;
     this.speedMultiplier = Math.min(this.MAX_MULT, Math.max(this.MIN_MULT, mult));
   }

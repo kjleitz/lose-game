@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { GameSession } from "./GameSession";
 import { Player } from "./player";
+import type { Action } from "../../engine/input/ActionTypes";
 import type { Planet } from "./planets";
 
 describe("GameSession", () => {
@@ -21,7 +22,7 @@ describe("GameSession", () => {
     const session = new GameSession({ camera, player, planets, size });
     expect(session.camera).toEqual(camera);
     expect(session.player).toEqual(player);
-    expect(session.planets).toEqual(planets);
+    expect(session.getPlanets()).toEqual(planets);
     expect(session.size).toEqual(size);
     expect(session.notification).toBeNull();
   });
@@ -34,7 +35,7 @@ describe("GameSession", () => {
     const session = new GameSession({ camera, player, planets, size });
     const updatePlayer = vi.fn();
     const maybeGenerateRegion = vi.fn();
-    session.update(new Set(["move"]), updatePlayer, maybeGenerateRegion, 0.016);
+    session.update(new Set<Action>(["thrust"]), updatePlayer, maybeGenerateRegion, 0.016);
     // In the new mode system, these are called internally by the active mode
     expect(maybeGenerateRegion).toHaveBeenCalled();
     expect(session.notification).toContain("Press L to land");

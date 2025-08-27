@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import Hud from "../hud/Hud";
+import { Hud } from "../hud/Hud";
 
 describe("Hud", () => {
   it("renders notification text and radar SVG", () => {

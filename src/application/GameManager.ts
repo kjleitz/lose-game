@@ -1,18 +1,26 @@
-import type { Game, TransitionData } from "../shared/types/Game";
-import { createGameEngine, type GameEngineConfig, GameEngine } from "../engine/core";
-import { SpaceGame, type SpaceGameConfig } from "../games/space/SpaceGame";
-import { PlanetGame } from "../games/planet/PlanetGame";
-import type { Player } from "../domain/game/player";
-import type { Planet } from "../domain/game/planets";
 import type { Enemy } from "../domain/game/enemies";
+import type { Planet } from "../domain/game/planets";
+import type { Player } from "../domain/game/player";
+import type { Camera } from "../domain/render/camera";
+import { createGameEngine, GameEngine, type GameEngineConfig } from "../engine/core";
 import type { Action, ActionState } from "../engine/input/ActionTypes";
+import { PlanetGame } from "../games/planet/PlanetGame";
+import { SpaceGame, type SpaceGameConfig } from "../games/space/SpaceGame";
+import type {
+  Game,
+  TransitionData,
+  SpaceToPlanetTransition,
+  PlanetLandingTransition,
+} from "../shared/types/Game";
+import type { ViewSize } from "../shared/types/geometry";
+import type { PlanetSurface } from "../games/planet/PlanetGame";
 
 export interface GameManagerConfig {
   canvas?: HTMLCanvasElement;
   player: Player;
   planets: Planet[];
   enemies?: Enemy[];
-  size: { width: number; height: number };
+  size: ViewSize;
 }
 
 export class GameManager {
@@ -20,10 +28,10 @@ export class GameManager {
   private games: Map<string, Game> = new Map();
   private engine: GameEngine;
   private _player: Player;
-  private _size: { width: number; height: number };
+  private _size: ViewSize;
 
   // For backward compatibility during transition
-  public camera: { x: number; y: number; zoom: number };
+  public camera: Camera;
   public notification: string | null = null;
 
   constructor(config: GameManagerConfig) {
@@ -49,10 +57,10 @@ export class GameManager {
 
     // Set up transition callbacks
     spaceGame.setModeTransitionCallback((targetMode, data) => {
-      this.switchToGame(targetMode, data as TransitionData);
+      this.switchToGame(targetMode, data);
     });
     planetGame.setModeTransitionCallback((targetMode, data) => {
-      this.switchToGame(targetMode, data as TransitionData);
+      this.switchToGame(targetMode, data);
     });
     planetGame.setPlayer(config.player);
 
@@ -67,7 +75,7 @@ export class GameManager {
     this.games.set(game.name, game);
   }
 
-  switchToGame(gameName: string, transitionData?: TransitionData): void {
+  switchToGame(gameName: "space" | "planet", transitionData?: TransitionData): void {
     const targetGame = this.games.get(gameName);
     if (!targetGame) throw new Error(`Game ${gameName} not found`);
 
@@ -84,11 +92,14 @@ export class GameManager {
 
     if (transitionData) {
       // Handle specific transitions
-      if (gameName === "planet" && transitionData.planetId) {
-        const spaceGame = this.games.get("space") as SpaceGame;
-        const planet = spaceGame.planetsData.find((p) => p.id === transitionData.planetId);
-        if (planet) {
-          this.currentGame.receiveTransition({ ...transitionData, planet });
+      if (gameName === "planet" && isSpaceToPlanet(transitionData)) {
+        const space = this.games.get("space");
+        if (space instanceof SpaceGame) {
+          const planet = space.getPlanetsData().find((p) => p.id === transitionData.planetId);
+          if (planet) {
+            const data: PlanetLandingTransition = { planet };
+            this.currentGame.receiveTransition(data);
+          }
         }
       } else {
         this.currentGame.receiveTransition(transitionData);
@@ -99,7 +110,7 @@ export class GameManager {
     this.updateNotifications();
   }
 
-  update(dt: number, externalActions?: Set<string>): void {
+  update(dt: number, externalActions?: Set<Action>): void {
     // Sync input actions from external system during transition
     if (externalActions) {
       const actionState = this.convertToActionState(externalActions);
@@ -117,58 +128,47 @@ export class GameManager {
 
   // Backward compatibility methods
   getCurrentModeType(): "space" | "planet" {
-    return (this.currentGame?.name as "space" | "planet") || "space";
+    const n = this.currentGame?.name;
+    return n === "planet" ? "planet" : "space";
   }
 
-  get planets(): Planet[] {
-    const spaceGame = this.games.get("space") as SpaceGame;
-    return spaceGame?.planetsData || [];
+  getPlanets(): Planet[] {
+    const space = this.games.get("space");
+    return space instanceof SpaceGame ? space.getPlanetsData() : [];
   }
 
   updatePlanets(newPlanets: Planet[]): void {
-    const spaceGame = this.games.get("space") as SpaceGame;
-    spaceGame?.updatePlanets(newPlanets);
+    const space = this.games.get("space");
+    if (space instanceof SpaceGame) space.updatePlanets(newPlanets);
   }
 
-  get projectiles() {
-    if (this.currentGame?.name === "space") {
-      const spaceGame = this.currentGame as SpaceGame;
-      return spaceGame.projectilesData;
-    }
-    return [];
+  getProjectiles(): { x: number; y: number; radius: number }[] {
+    const g = this.currentGame;
+    return g instanceof SpaceGame ? g.getProjectilesData() : [];
   }
 
-  get enemies() {
-    if (this.currentGame?.name === "space") {
-      const spaceGame = this.currentGame as SpaceGame;
-      return spaceGame.enemiesData;
-    }
-    return [];
+  getEnemies(): Enemy[] {
+    const g = this.currentGame;
+    return g instanceof SpaceGame ? g.getEnemiesData() : [];
   }
 
   // For planet mode compatibility
-  get currentPlanet() {
-    if (this.currentGame?.name === "planet") {
-      const planetGame = this.currentGame as PlanetGame;
-      return planetGame.planetData;
-    }
-    return undefined;
+  getCurrentPlanet(): Planet | undefined {
+    const g = this.currentGame;
+    return g instanceof PlanetGame ? g.getPlanetData() : undefined;
   }
 
-  get planetSurface() {
-    if (this.currentGame?.name === "planet") {
-      const planetGame = this.currentGame as PlanetGame;
-      return planetGame.surfaceData;
-    }
-    return undefined;
+  getPlanetSurface(): PlanetSurface | undefined {
+    const g = this.currentGame;
+    return g instanceof PlanetGame ? g.getSurfaceData() : undefined;
   }
 
   // Getters for backward compatibility
-  get player(): Player {
+  getPlayer(): Player {
     return this._player;
   }
 
-  get size(): { width: number; height: number } {
+  getSize(): ViewSize {
     return this._size;
   }
 
@@ -182,7 +182,7 @@ export class GameManager {
     if (this.currentGame?.name === "space") {
       // Check proximity to planets
       let nearPlanet: Planet | null = null;
-      for (const planet of this.planets) {
+      for (const planet of this.getPlanets()) {
         const dist = Math.hypot(this._player.state.x - planet.x, this._player.state.y - planet.y);
         if (dist < planet.radius + 60) {
           nearPlanet = planet;
@@ -195,36 +195,16 @@ export class GameManager {
       } else {
         this.notification = null;
       }
-    } else if (this.currentGame?.name === "planet" && this.currentPlanet) {
-      this.notification = `Exploring ${this.currentPlanet.id} - Press T to takeoff`;
+    } else if (this.currentGame?.name === "planet" && this.getCurrentPlanet()) {
+      this.notification = `Exploring ${this.getCurrentPlanet()!.id} - Press T to takeoff`;
     }
   }
 
-  private isValidAction(action: string): action is Action {
-    return (
-      action === "thrust" ||
-      action === "turnLeft" ||
-      action === "turnRight" ||
-      action === "fire" ||
-      action === "interact" ||
-      action === "boost" ||
-      action === "speedUp" ||
-      action === "speedDown" ||
-      action === "land" ||
-      action === "takeoff" ||
-      action === "inventory"
-    );
+  private convertToActionState(actions: Set<Action>): ActionState {
+    return new Set<Action>(actions);
   }
+}
 
-  private convertToActionState(actions: Set<string>): ActionState {
-    const actionState = new Set<Action>();
-
-    for (const action of actions) {
-      if (this.isValidAction(action)) {
-        actionState.add(action);
-      }
-    }
-
-    return actionState;
-  }
+function isSpaceToPlanet(x: TransitionData): x is SpaceToPlanetTransition {
+  return "planetId" in x;
 }

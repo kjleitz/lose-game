@@ -1,8 +1,8 @@
-import { defineSystem } from "../../../lib/ecs/dist";
-import type { World } from "../../../lib/ecs/dist";
-import { Position, Velocity, TimeToLive, Projectile } from "../components";
+import type { System, World } from "../../../lib/ecs";
+import { defineSystem } from "../../../lib/ecs";
+import { Position, Projectile, TimeToLive, Velocity } from "../components";
 
-export function createProjectileSystem(world: World, dt: number) {
+export function createProjectileSystem(world: World, dt: number): System {
   return defineSystem(world)
     .withComponents({
       position: Position,
@@ -10,7 +10,7 @@ export function createProjectileSystem(world: World, dt: number) {
       timeToLive: TimeToLive,
       projectile: Projectile,
     })
-    .execute((entities) => {
+    .execute((entities): void => {
       entities.forEach(({ entity, components }) => {
         const { timeToLive } = components;
 
