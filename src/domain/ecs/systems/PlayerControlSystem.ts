@@ -4,8 +4,8 @@ import { defineSystem } from "../../../lib/ecs";
 import { Player, Position, Rotation, Velocity, WeaponCooldown } from "../components";
 
 export function createPlayerControlSystem(world: World, actions: Set<Action>, dt: number): System {
-  const ACCELERATION = 200;
-  const MAX_SPEED = 150;
+  const BASE_ACCELERATION = 200;
+  const BASE_MAX_SPEED = 150;
   const TURN_SPEED = 3;
 
   return defineSystem(world)
@@ -23,8 +23,11 @@ export function createPlayerControlSystem(world: World, actions: Set<Action>, dt
           rotation.angle += TURN_SPEED * dt;
         }
 
-        // Handle thrust
+        // Handle thrust (+ boost modifier)
         if (actions.has("thrust")) {
+          const boost = actions.has("boost") ? 1.75 : 1;
+          const ACCELERATION = BASE_ACCELERATION * boost;
+          const MAX_SPEED = BASE_MAX_SPEED * boost;
           const thrustX = Math.cos(rotation.angle) * ACCELERATION * dt;
           const thrustY = Math.sin(rotation.angle) * ACCELERATION * dt;
 

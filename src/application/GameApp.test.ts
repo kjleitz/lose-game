@@ -71,6 +71,12 @@ describe("GameApp", () => {
     controller.dispose();
   });
 
+  it("defaults to a speed multiplier of 2x", async (): Promise<void> => {
+    const controller = await GameApp.create(canvas, { size: { width: 320, height: 200 } });
+    expect(controller.getSpeed()).toBeCloseTo(2, 5);
+    controller.dispose();
+  });
+
   it("publishes inputChanged when actions change and speedChanged when speed changes", async (): Promise<void> => {
     const controller = await GameApp.create(canvas, { size: { width: 320, height: 200 } });
     const events: string[] = [];
@@ -85,7 +91,7 @@ describe("GameApp", () => {
     controller.start();
 
     // Changing speed via API should publish speedChanged
-    controller.setSpeed(2);
+    controller.setSpeed(3);
 
     expect(events.some((s) => s.startsWith("input:"))).toBe(true);
     expect(events.some((s) => s.startsWith("speed:"))).toBe(true);

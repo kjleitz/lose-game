@@ -18,6 +18,9 @@ import { createWeaponSystem } from "./systems/WeaponSystem";
 export class GameSessionECS {
   private world = new World();
   private playerEntityId: number | null = null;
+  private mode: "space" | "planet" = "space";
+  private returnPosition: { x: number; y: number } | null = null;
+  private landedPlanetId: string | null = null;
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -98,6 +101,35 @@ export class GameSessionECS {
   }
 
   update(actions: Set<Action>, dt: number): void {
+    // Handle landing/takeoff based on proximity and actions
+    if (this.mode === "space") {
+      const near = this.findNearbyPlanetId();
+      if (near && actions.has("land")) {
+        // Store return position (player's current pos)
+        const p = this.getPlayer();
+        if (p) this.returnPosition = { x: p.x, y: p.y };
+        this.mode = "planet";
+        this.landedPlanetId = near;
+      }
+    } else if (this.mode === "planet") {
+      if (actions.has("takeoff")) {
+        // Return to stored position if available
+        if (this.returnPosition) {
+          const players = this.world.query({
+            position: Components.Position,
+            player: Components.Player,
+          });
+          if (players.length > 0) {
+            const { position } = players[0].components;
+            position.x = this.returnPosition.x;
+            position.y = this.returnPosition.y;
+          }
+        }
+        this.mode = "space";
+        this.landedPlanetId = null;
+      }
+    }
+
     // Create and run systems in order
     const playerControlSystem = createPlayerControlSystem(this.world, actions, dt);
     const weaponSystem = createWeaponSystem(this.world, actions);
@@ -237,7 +269,7 @@ export class GameSessionECS {
 
   // Mode management (simplified for now)
   getCurrentModeType(): "space" | "planet" {
-    return "space"; // Always space mode for now
+    return this.mode;
   }
 
   // Additional methods to match GameSession interface
@@ -278,20 +310,27 @@ export class GameSessionECS {
   }
 
   private updateNotifications(): void {
+    if (this.mode === "planet" && this.landedPlanetId) {
+      this.notification = `Exploring ${this.landedPlanetId} - Press T to takeoff`;
+      return;
+    }
     const player = this.getPlayer();
     if (!player) {
       this.notification = null;
       return;
     }
+    const near = this.findNearbyPlanetId();
+    this.notification = near ? `Press L to land on ${near}` : null;
+  }
+
+  private findNearbyPlanetId(): string | null {
+    const player = this.getPlayer();
+    if (!player) return null;
     const planets = this.getPlanets();
-    let near: { id: string } | null = null;
     for (const p of planets) {
       const dist = Math.hypot(player.x - p.x, player.y - p.y);
-      if (dist < p.radius + 60) {
-        near = p;
-        break;
-      }
+      if (dist < p.radius + 60) return p.id;
     }
-    this.notification = near ? `Press L to land on ${near.id}` : null;
+    return null;
   }
 }

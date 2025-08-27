@@ -112,7 +112,7 @@ export class GameApp {
     };
 
     // Speed multiplier
-    let speedMultiplier = 1;
+    let speedMultiplier = 2;
     const MIN_SPEED = 0.25;
     const MAX_SPEED = 5;
 

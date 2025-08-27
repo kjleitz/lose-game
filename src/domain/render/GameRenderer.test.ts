@@ -49,4 +49,45 @@ describe("GameRenderer", () => {
       ),
     ).not.toThrow();
   });
+
+  it("uses bound method for mode detection (no unbound this crash)", () => {
+    const renderer = new GameRenderer();
+    const ctx: Partial<CanvasRenderingContext2D> = {
+      setTransform: () => {},
+      clearRect: () => {},
+      fillRect: () => {},
+      fillStyle: "",
+      save: () => {},
+      restore: () => {},
+      beginPath: () => {},
+      arc: () => {},
+      fill: () => {},
+      stroke: () => {},
+      canvas: { width: 800, height: 600 } as HTMLCanvasElement,
+    };
+    const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
+    const camera = { x: 0, y: 0, zoom: 1 };
+    const size = { width: 800, height: 600 };
+    const sessionLike = {
+      mode: "space" as "space" | "planet",
+      getCurrentModeType(): "space" | "planet" {
+        // relies on this binding; would crash if unbound
+        return this.mode;
+      },
+    };
+    expect(() =>
+      renderer.render(
+        ctx as CanvasRenderingContext2D,
+        player,
+        camera,
+        [],
+        [],
+        [],
+        new Set(),
+        size,
+        1,
+        sessionLike,
+      ),
+    ).not.toThrow();
+  });
 });

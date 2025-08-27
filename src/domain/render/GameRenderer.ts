@@ -21,7 +21,7 @@ import type { GameMode } from "../game/modes/GameMode";
 import type { SpaceMode } from "../game/modes/SpaceMode";
 
 interface MinimalGameSession {
-  getCurrentModeType?: () => "space" | "planet";
+  getCurrentModeType?: (this: MinimalGameSession) => "space" | "planet";
   getCurrentMode?: () => GameMode | SpaceMode | PlanetMode;
 }
 
@@ -38,9 +38,11 @@ export class GameRenderer {
     dpr: number,
     gameSession?: MinimalGameSession | null,
   ): void {
-    // Determine current game mode (guard for optional function)
-    const getModeFn = gameSession?.getCurrentModeType;
-    const currentMode = typeof getModeFn === "function" ? getModeFn() : "space";
+    // Determine current game mode (avoid unbound method call)
+    let currentMode: "space" | "planet" = "space";
+    if (gameSession && typeof gameSession.getCurrentModeType === "function") {
+      currentMode = gameSession.getCurrentModeType();
+    }
 
     // Clear screen
     ctx.setTransform(1, 0, 0, 1, 0, 0);
