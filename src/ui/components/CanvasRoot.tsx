@@ -32,6 +32,7 @@ export function CanvasRoot(): JSX.Element {
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [inventoryVisible, setInventoryVisible] = useState(false);
+  const lastInventoryHeld = useRef(false);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hudState, setHudState] = useState<{
@@ -77,7 +78,14 @@ export function CanvasRoot(): JSX.Element {
         setNotification(e.message);
       });
       unsubInput = ctrl.bus.subscribe("inputChanged", (e): void => {
-        setHudActions(new Set(e.actions));
+        const set = new Set(e.actions);
+        setHudActions(set);
+        const hasInventory = set.has("inventory");
+        // Rising-edge toggle: only when inventory action becomes pressed
+        if (hasInventory && !lastInventoryHeld.current) {
+          setInventoryVisible((prev) => !prev);
+        }
+        lastInventoryHeld.current = hasInventory;
       });
       unsubSpeed = ctrl.bus.subscribe("speedChanged", (e): void => {
         setSpeed(e.value);
@@ -120,7 +128,7 @@ export function CanvasRoot(): JSX.Element {
         actions={hudActions}
         paused={paused}
         speedMultiplier={speed}
-        inventory={undefined}
+        inventory={controllerRef.current?.getInventory?.()}
         inventoryVisible={inventoryVisible}
         onChangeSpeed={(n: number): void => controllerRef.current?.setSpeed(n)}
         onOpenSettings={(): void => setSettingsOpen(true)}

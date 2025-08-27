@@ -1,6 +1,7 @@
 import { defineComponent } from "../../../lib/ecs";
 import type { Point2D } from "../../../shared/types/geometry";
 import type { Item } from "../../game/items/Item";
+import type { DropTable } from "../../game/damage/DamageableEntity";
 
 // Transform components
 export const Position = defineComponent<Point2D>();
@@ -83,4 +84,13 @@ export const PlanetMode = defineComponent<{
 export const WeaponCooldown = defineComponent<{
   remaining: number;
   duration: number;
+}>();
+
+// Looting and drops
+export const LootDropTable = defineComponent<DropTable>();
+export const DroppedItem = defineComponent<{
+  item: Item;
+  quantity: number;
+  ageSeconds: number;
+  sourceEntity?: string;
 }>();

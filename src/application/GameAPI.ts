@@ -1,6 +1,7 @@
 import type { Action } from "../engine/input/ActionTypes";
 import type { ViewSize, Circle2D, Kinematics2D } from "../shared/types/geometry";
 import type { Camera } from "../domain/render/camera";
+import type { PlayerInventory } from "../domain/game/inventory/PlayerInventory";
 import type { Planet } from "../domain/game/planets";
 import type { Enemy } from "../domain/game/enemies";
 
@@ -69,4 +70,6 @@ export interface GameController {
   bus: GameBus;
   dispatch(action: Action): void;
   rebind(action: Action, code: string): void;
+  // Optional extras exposed by some controllers
+  getInventory?: () => PlayerInventory;
 }

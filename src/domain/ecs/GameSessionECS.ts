@@ -15,6 +15,13 @@ import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
 import type { PlanetSurface } from "../game/modes/PlanetMode";
 import { createWeaponSystem } from "./systems/WeaponSystem";
+import {
+  createDroppedItemAgingSystem,
+  createPickupSystem,
+  type PickupEvent,
+} from "./systems/DroppedItemSystem";
+import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
+import type { Item } from "../game/items/Item";
 
 export class GameSessionECS {
   private world = new World();
@@ -23,6 +30,7 @@ export class GameSessionECS {
   private returnPosition: { x: number; y: number } | null = null;
   private landedPlanetId: string | null = null;
   private planetSurface: PlanetSurface | undefined;
+  private pickupEvents: PickupEvent[] = [];
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -114,6 +122,8 @@ export class GameSessionECS {
         this.landedPlanetId = near;
         const planet = this.getPlanets().find((pl) => pl.id === near);
         if (planet) this.planetSurface = this.generatePlanetSurface(planet);
+        // Spawn a few creatures near landing for planet mode
+        this.spawnPlanetCreatures();
       }
     } else if (this.mode === "planet") {
       if (actions.has("takeoff")) {
@@ -142,6 +152,10 @@ export class GameSessionECS {
     const movementSystem = createMovementSystem(this.world, dt);
     const projectileSystem = createProjectileSystem(this.world, dt);
     const collisionSystem = createCollisionSystem(this.world);
+    const dropAgingSystem = createDroppedItemAgingSystem(this.world, dt);
+    const pickupSystem = createPickupSystem(this.world, actions, (ev): void => {
+      this.pickupEvents.push(ev);
+    });
 
     // Run systems in order
     playerControlSystem.run();
@@ -150,6 +164,8 @@ export class GameSessionECS {
     movementSystem.run();
     projectileSystem.run();
     collisionSystem.run();
+    dropAgingSystem.run();
+    pickupSystem.run();
 
     // Update camera to follow player
     this.updateCameraFollowPlayer();
@@ -272,6 +288,29 @@ export class GameSessionECS {
       });
   }
 
+  getDroppedItems(): DroppedItemShape[] {
+    return this.world
+      .query({ position: Components.Position, dropped: Components.DroppedItem })
+      .map((e) => {
+        const { position, dropped } = e.components;
+        return {
+          id: `d_${e.entity}`,
+          item: dropped.item,
+          quantity: dropped.quantity,
+          x: position.x,
+          y: position.y,
+          ageSeconds: dropped.ageSeconds,
+          sourceEntity: undefined,
+        };
+      });
+  }
+
+  getAndClearPickupEvents(): Array<{ item: Item; quantity: number }> {
+    const out = [...this.pickupEvents];
+    this.pickupEvents = [];
+    return out;
+  }
+
   // Mode management (simplified for now)
   getCurrentModeType(): "space" | "planet" {
     return this.mode;
@@ -382,5 +421,23 @@ export class GameSessionECS {
     // PlanetSurfaceRenderer does not require complex creature data for background
 
     return { planetId: planet.id, landingSite, terrain, resources, creatures };
+  }
+
+  private spawnPlanetCreatures(): void {
+    // Spawn simple enemies near player when entering planet mode
+    const players = this.world.query({ position: Components.Position, player: Components.Player });
+    if (players.length === 0) return;
+    const base = players[0].components.position;
+    const count = Math.floor(Math.random() * 3) + 2;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 120 + Math.random() * 180;
+      EntityFactories.createBasicEnemy(
+        this.world,
+        `creature_${Date.now()}_${i}_${Math.floor(Math.random() * 1000)}`,
+        base.x + Math.cos(angle) * distance,
+        base.y + Math.sin(angle) * distance,
+      );
+    }
   }
 }

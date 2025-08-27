@@ -13,6 +13,7 @@ import { CameraTransform } from "./CameraTransform";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
 import type { PlanetSurface } from "../game/modes/PlanetMode";
+import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { Kinematics2D, Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { Camera } from "./camera";
 import type { Action } from "../../engine/input/ActionTypes";
@@ -25,6 +26,7 @@ interface MinimalGameSession {
   getCurrentMode?: () => GameMode | SpaceMode | PlanetMode;
   getPlanetSurface?: () => PlanetSurface | undefined;
   getProjectiles?: () => Array<Circle2D>;
+  getDroppedItems?: () => DroppedItem[];
 }
 
 export class GameRenderer {
@@ -156,9 +158,14 @@ export class GameRenderer {
 
     // Draw dropped items (behind characters but above death effects)
     const droppedItemSystem = this.getDroppedItemSystem(planetMode);
+    const droppedItemRenderer = new DroppedItemRenderer();
     if (droppedItemSystem) {
-      const droppedItemRenderer = new DroppedItemRenderer();
       droppedItemRenderer.render(ctx, droppedItemSystem.getAllDroppedItems());
+    } else if (gameSession && typeof gameSession.getDroppedItems === "function") {
+      const items = gameSession.getDroppedItems();
+      if (Array.isArray(items) && items.length > 0) {
+        droppedItemRenderer.render(ctx, items);
+      }
     }
 
     // Draw character instead of ship

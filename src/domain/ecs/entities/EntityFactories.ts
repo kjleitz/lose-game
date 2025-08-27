@@ -4,6 +4,7 @@ import type { Planet as OldPlanet } from "../../game/planets";
 import type { Player as OldPlayer } from "../../game/player";
 import type { Projectile as OldProjectile } from "../../game/projectiles";
 import * as Components from "../components";
+import { DamageType } from "../../game/damage/DamageableEntity";
 
 export function createPlayerEntity(world: World, player: OldPlayer): EntityBuilder {
   return world
@@ -34,30 +35,47 @@ export function createPlayerEntity(world: World, player: OldPlayer): EntityBuild
 }
 
 export function createEnemyEntity(world: World, enemy: OldEnemy): EntityBuilder {
-  return world
-    .createEntity()
-    .addComponent(Components.Position, { x: enemy.x, y: enemy.y })
-    .addComponent(Components.Velocity, { dx: enemy.vx, dy: enemy.vy })
-    .addComponent(Components.Rotation, { angle: enemy.angle })
-    .addComponent(Components.Health, { current: enemy.health, max: enemy.health })
-    .addComponent(Components.Enemy, { id: enemy.id })
-    .addComponent(Components.AIVision, {
-      radius: enemy.visionRadius,
-      hysteresis: enemy.visionHysteresis,
-      hasTarget: false,
-    })
-    .addComponent(Components.AIMovement, {
-      turnSpeed: enemy.turnSpeed,
-      accel: enemy.accel,
-      maxSpeed: enemy.maxSpeed,
-    })
-    .addComponent(Components.AIState, {
-      currentState: "idle",
-      stateTime: 0,
-    })
-    .addComponent(Components.Collider, { radius: enemy.radius })
-    .addComponent(Components.Sprite, { color: "#ff0000", scale: 1.0 })
-    .addComponent(Components.SpaceMode);
+  return (
+    world
+      .createEntity()
+      .addComponent(Components.Position, { x: enemy.x, y: enemy.y })
+      .addComponent(Components.Velocity, { dx: enemy.vx, dy: enemy.vy })
+      .addComponent(Components.Rotation, { angle: enemy.angle })
+      .addComponent(Components.Health, { current: enemy.health, max: enemy.health })
+      .addComponent(Components.Enemy, { id: enemy.id })
+      .addComponent(Components.AIVision, {
+        radius: enemy.visionRadius,
+        hysteresis: enemy.visionHysteresis,
+        hasTarget: false,
+      })
+      .addComponent(Components.AIMovement, {
+        turnSpeed: enemy.turnSpeed,
+        accel: enemy.accel,
+        maxSpeed: enemy.maxSpeed,
+      })
+      .addComponent(Components.AIState, {
+        currentState: "idle",
+        stateTime: 0,
+      })
+      .addComponent(Components.Collider, { radius: enemy.radius })
+      .addComponent(Components.Sprite, { color: "#ff0000", scale: 1.0 })
+      // Basic drop table so enemies can drop items on death (planet/space)
+      .addComponent(Components.LootDropTable, {
+        guaranteed: [
+          { itemType: "organic_matter", minQuantity: 1, maxQuantity: 2, probability: 1.0 },
+        ],
+        possible: [{ itemType: "alien_hide", minQuantity: 1, maxQuantity: 1, probability: 0.35 }],
+        rare: [{ itemType: "rare_essence", minQuantity: 1, maxQuantity: 1, probability: 0.05 }],
+        modifiers: [
+          {
+            type: "damage_type_bonus",
+            condition: { damageType: DamageType.ENERGY },
+            multiplier: 1.0,
+          },
+        ],
+      })
+      .addComponent(Components.SpaceMode)
+  );
 }
 
 export function createPlanetEntity(world: World, planet: OldPlanet): EntityBuilder {

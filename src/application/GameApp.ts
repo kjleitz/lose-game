@@ -1,6 +1,7 @@
 import { GameSessionECS } from "../domain/ecs/GameSessionECS";
 import type { Enemy } from "../domain/game/enemies";
 import type { Planet } from "../domain/game/planets";
+import { PlayerInventoryManager } from "../domain/game/inventory/PlayerInventory";
 import type { Camera } from "../domain/render/camera";
 import { GameRenderer } from "../domain/render/GameRenderer";
 import type { Action } from "../engine/input/ActionTypes";
@@ -42,12 +43,11 @@ export class GameApp {
           y: p.y,
           radius: p.radius,
           color: p.color ?? "#8888ff",
-          design: "solid",
+          design: p.design ?? "solid",
         }),
       );
     }
     if (options.initialWorld?.enemies) {
-      // Enrich to full Enemy type expected by ECS
       ecsConfig.enemies = options.initialWorld.enemies.map(
         (e): Enemy => ({
           id: e.id,
@@ -68,6 +68,8 @@ export class GameApp {
     }
     const session = new GameSessionECS(ecsConfig);
     const renderer = new GameRenderer();
+    // Bridge: maintain a domain inventory for the HUD fed by ECS pickup events
+    const hudInventory = new PlayerInventoryManager(20, 100);
 
     // Attach DOM listeners
     const target: Window | HTMLElement = options.input?.target ?? window;
@@ -130,13 +132,13 @@ export class GameApp {
       return {
         player: { ...player, experience: 0, health: player.health ?? 100 },
         camera,
-        planets: planets.map((p) => ({
-          id: p.id,
-          x: p.x,
-          y: p.y,
-          radius: p.radius,
-          color: p.color,
-          design: p.design,
+        planets: planets.map((pl) => ({
+          id: pl.id,
+          x: pl.x,
+          y: pl.y,
+          radius: pl.radius,
+          color: pl.color,
+          design: pl.design,
         })),
         enemies: enemies.map((e) => ({
           id: e.id,
@@ -146,7 +148,7 @@ export class GameApp {
           health: e.health,
           radius: e.radius,
         })),
-        projectiles: projectiles.map((p): Circle2D => ({ x: p.x, y: p.y, radius: p.radius })),
+        projectiles: projectiles.map((pr): Circle2D => ({ x: pr.x, y: pr.y, radius: pr.radius })),
         stats: { fps, entityCount },
       };
     };
@@ -184,6 +186,9 @@ export class GameApp {
         }
 
         session.update(actions, dt * speedMultiplier);
+        // Bridge picked-up items to HUD inventory
+        const picked = session.getAndClearPickupEvents();
+        for (const ev of picked) hudInventory.addItem(ev.item, ev.quantity);
         const current = session.getNotification();
         if (current && current !== lastNotification) {
           bus.publish({ type: "notification", message: current });
@@ -214,7 +219,7 @@ export class GameApp {
       },
     });
 
-    const controller: GameController = {
+    const controller: GameController & { getInventory: () => PlayerInventoryManager } = {
       start(): void {
         loop.start();
       },
@@ -255,6 +260,9 @@ export class GameApp {
       },
       rebind(action: Action, code: string): void {
         setKeyBinding(action, code);
+      },
+      getInventory(): PlayerInventoryManager {
+        return hudInventory;
       },
     };
 

@@ -1,6 +1,19 @@
 import type { System, World } from "../../../lib/ecs";
-import { defineSystem } from "../../../lib/ecs";
-import { Collider, Damage, Enemy, Health, Player, Position, Projectile } from "../components";
+import { defineSystem, Entity as ECSEntity } from "../../../lib/ecs";
+import {
+  Collider,
+  Damage,
+  LootDropTable,
+  DroppedItem,
+  Enemy,
+  Health,
+  Player,
+  Position,
+  Projectile,
+} from "../components";
+import type { DropEntry, DropTable as DropTableType } from "../../game/damage/DamageableEntity";
+import type { Item } from "../../game/items/Item";
+import { BaseItemType, ItemQuality, ItemRarity } from "../../game/items/Item";
 
 export function createCollisionSystem(world: World): System {
   // Create separate systems for different collision types
@@ -47,6 +60,24 @@ export function createCollisionSystem(world: World): System {
         targetHealth.current -= projDamage.amount;
 
         if (targetHealth.current <= 0) {
+          // Spawn drops if entity has a drop table
+          if (world.hasComponent(target.entity, LootDropTable)) {
+            const ent = new ECSEntity(target.entity, world);
+            const dt = ent.getComponent(LootDropTable);
+            const drops = dt ? rollDrops(dt) : [];
+            for (const d of drops) {
+              const offsetX = (Math.random() - 0.5) * 20;
+              const offsetY = (Math.random() - 0.5) * 20;
+              world
+                .createEntity()
+                .addComponent(Position, { x: targetPos.x + offsetX, y: targetPos.y + offsetY })
+                .addComponent(DroppedItem, {
+                  item: d.item,
+                  quantity: d.quantity,
+                  ageSeconds: 0,
+                });
+            }
+          }
           world.removeEntity(target.entity);
         }
 
@@ -60,4 +91,94 @@ export function createCollisionSystem(world: World): System {
   return defineSystem(world)
     .withComponents({})
     .execute((): void => {});
+}
+
+function rollDrops(dropTable: DropTableType): Array<{ item: Item; quantity: number }> {
+  const drops: Array<{ item: Item; quantity: number }> = [];
+  const consider = (entry: DropEntry): void => {
+    if (!entry.itemType) return;
+    if (Math.random() < entry.probability) {
+      const qty =
+        Math.floor(Math.random() * (entry.maxQuantity - entry.minQuantity + 1)) + entry.minQuantity;
+      const item = createItemFromType(entry.itemType);
+      if (item && qty > 0) drops.push({ item, quantity: qty });
+    }
+  };
+  for (const e of dropTable.guaranteed || []) consider(e);
+  for (const e of dropTable.possible || []) consider(e);
+  for (const e of dropTable.rare || []) consider(e);
+  return drops;
+}
+
+function createItemFromType(itemType: string): Item | null {
+  switch (itemType) {
+    case "organic_matter":
+      return {
+        id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+        type: "organic_matter",
+        baseType: BaseItemType.MATERIAL,
+        name: "Organic Matter",
+        description: "Basic biological material from defeated creatures",
+        properties: {
+          weight: 0.2,
+          volume: 0.3,
+          stackable: true,
+          maxStackSize: 50,
+          quality: ItemQuality.COMMON,
+          rarity: ItemRarity.COMMON,
+          tradeable: true,
+          dropOnDeath: false,
+        },
+        stats: { value: 2 },
+        requirements: {},
+        effects: [],
+        metadata: { discoveredAt: Date.now() },
+      };
+    case "alien_hide":
+      return {
+        id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+        type: "alien_hide",
+        baseType: BaseItemType.MATERIAL,
+        name: "Alien Hide",
+        description: "Tough hide from an alien creature, useful for crafting",
+        properties: {
+          weight: 1.0,
+          volume: 1.0,
+          stackable: true,
+          maxStackSize: 20,
+          quality: ItemQuality.GOOD,
+          rarity: ItemRarity.UNCOMMON,
+          tradeable: true,
+          dropOnDeath: false,
+        },
+        stats: { value: 15 },
+        requirements: {},
+        effects: [],
+        metadata: { discoveredAt: Date.now() },
+      };
+    case "rare_essence":
+      return {
+        id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+        type: "rare_essence",
+        baseType: BaseItemType.MATERIAL,
+        name: "Rare Essence",
+        description: "A mysterious essence with unknown properties",
+        properties: {
+          weight: 0.1,
+          volume: 0.2,
+          stackable: true,
+          maxStackSize: 10,
+          quality: ItemQuality.EXCELLENT,
+          rarity: ItemRarity.RARE,
+          tradeable: true,
+          dropOnDeath: false,
+        },
+        stats: { value: 100 },
+        requirements: {},
+        effects: [],
+        metadata: { discoveredAt: Date.now() },
+      };
+    default:
+      return null;
+  }
 }
