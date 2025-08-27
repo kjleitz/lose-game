@@ -162,6 +162,20 @@ export function createBasicEnemy(world: World, id: string, x: number, y: number)
     })
     .addComponent(Components.Collider, { radius: 14 })
     .addComponent(Components.Sprite, { color: "#ff0000", scale: 1.0 })
+    .addComponent(Components.LootDropTable, {
+      guaranteed: [
+        { itemType: "organic_matter", minQuantity: 1, maxQuantity: 2, probability: 1.0 },
+      ],
+      possible: [{ itemType: "alien_hide", minQuantity: 1, maxQuantity: 1, probability: 0.4 }],
+      rare: [{ itemType: "rare_essence", minQuantity: 1, maxQuantity: 1, probability: 0.08 }],
+      modifiers: [
+        {
+          type: "damage_type_bonus",
+          condition: { damageType: DamageType.ENERGY },
+          multiplier: 1.0,
+        },
+      ],
+    })
     .addComponent(Components.SpaceMode);
 }
 

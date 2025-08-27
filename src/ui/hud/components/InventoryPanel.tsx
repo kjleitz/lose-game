@@ -148,7 +148,7 @@ export function InventoryPanel({
 
   return (
     <div
-      className={`fixed right-4 bottom-20 bg-gray-900 border-2 border-gray-600 rounded-lg p-4 shadow-xl transition-all duration-300 ${visible ? "opacity-100 transform scale-100" : "opacity-0 transform scale-95 pointer-events-none"}`}
+      className={`fixed left-4 top-4 bg-gray-900 border-2 border-gray-600 rounded-lg p-4 shadow-xl transition-all duration-300 ${visible ? "opacity-100 transform scale-100" : "opacity-0 transform scale-95 pointer-events-none"}`}
     >
       <header className="flex justify-between items-center mb-3">
         <h3 className="text-white font-bold text-lg">Inventory</h3>

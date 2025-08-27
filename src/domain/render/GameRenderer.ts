@@ -2,6 +2,7 @@ import { StarfieldRenderer } from "./StarfieldRenderer";
 import { PlanetRenderer } from "./PlanetRenderer";
 import { ShipRenderer } from "./ShipRenderer";
 import { EnemyRenderer } from "./EnemyRenderer";
+import { CreatureRenderer } from "./CreatureRenderer";
 import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
 import { CharacterRenderer } from "./CharacterRenderer";
 import { DroppedItemRenderer } from "./DroppedItemRenderer";
@@ -27,6 +28,7 @@ interface MinimalGameSession {
   getPlanetSurface?: () => PlanetSurface | undefined;
   getProjectiles?: () => Array<Circle2D>;
   getDroppedItems?: () => DroppedItem[];
+  getEnemies?: () => Enemy[];
 }
 
 export class GameRenderer {
@@ -168,8 +170,13 @@ export class GameRenderer {
       }
     }
 
-    // Draw character instead of ship
+    // Draw character and enemies
     const characterRenderer = new CharacterRenderer();
+    const creatureRenderer = new CreatureRenderer();
+    if (gameSession && typeof gameSession.getEnemies === "function") {
+      const enemies = gameSession.getEnemies();
+      creatureRenderer.render(ctx, enemies);
+    }
     characterRenderer.render(ctx, player, actions, 32);
 
     // Draw projectiles from weapon system (classic PlanetMode) or ECS session

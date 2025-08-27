@@ -31,8 +31,7 @@ export function CanvasRoot(): JSX.Element {
   const [paused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [inventoryVisible, setInventoryVisible] = useState(false);
-  const lastInventoryHeld = useRef(false);
+  const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hudState, setHudState] = useState<{
@@ -78,14 +77,7 @@ export function CanvasRoot(): JSX.Element {
         setNotification(e.message);
       });
       unsubInput = ctrl.bus.subscribe("inputChanged", (e): void => {
-        const set = new Set(e.actions);
-        setHudActions(set);
-        const hasInventory = set.has("inventory");
-        // Rising-edge toggle: only when inventory action becomes pressed
-        if (hasInventory && !lastInventoryHeld.current) {
-          setInventoryVisible((prev) => !prev);
-        }
-        lastInventoryHeld.current = hasInventory;
+        setHudActions(new Set(e.actions));
       });
       unsubSpeed = ctrl.bus.subscribe("speedChanged", (e): void => {
         setSpeed(e.value);
@@ -129,10 +121,10 @@ export function CanvasRoot(): JSX.Element {
         paused={paused}
         speedMultiplier={speed}
         inventory={controllerRef.current?.getInventory?.()}
-        inventoryVisible={inventoryVisible}
+        inventoryVisible={true}
         onChangeSpeed={(n: number): void => controllerRef.current?.setSpeed(n)}
         onOpenSettings={(): void => setSettingsOpen(true)}
-        onToggleInventory={(): void => setInventoryVisible((prev) => !prev)}
+        onToggleInventory={(): void => setInventoryVisible((prev) => prev)}
         onItemUse={handleItemUse}
         onItemDrop={handleItemDrop}
       />
