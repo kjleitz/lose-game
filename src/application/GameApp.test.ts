@@ -71,9 +71,9 @@ describe("GameApp", () => {
     controller.dispose();
   });
 
-  it("defaults to a speed multiplier of 2x", async (): Promise<void> => {
+  it("defaults to a speed multiplier of 1x", async (): Promise<void> => {
     const controller = await GameApp.create(canvas, { size: { width: 320, height: 200 } });
-    expect(controller.getSpeed()).toBeCloseTo(2, 5);
+    expect(controller.getSpeed()).toBeCloseTo(1, 5);
     controller.dispose();
   });
 

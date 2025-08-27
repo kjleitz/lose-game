@@ -24,6 +24,7 @@ interface MinimalGameSession {
   getCurrentModeType?: (this: MinimalGameSession) => "space" | "planet";
   getCurrentMode?: () => GameMode | SpaceMode | PlanetMode;
   getPlanetSurface?: () => PlanetSurface | undefined;
+  getProjectiles?: () => Array<Circle2D>;
 }
 
 export class GameRenderer {
@@ -164,7 +165,7 @@ export class GameRenderer {
     const characterRenderer = new CharacterRenderer();
     characterRenderer.render(ctx, player, actions, 32);
 
-    // Draw projectiles from weapon system
+    // Draw projectiles from weapon system (classic PlanetMode) or ECS session
     if (weaponSystem) {
       ctx.save();
       ctx.fillStyle = "#00ff88"; // Bright green for energy projectiles
@@ -185,6 +186,19 @@ export class GameRenderer {
         ctx.fillStyle = "#00ff88";
       }
       ctx.restore();
+    } else if (gameSession && typeof gameSession.getProjectiles === "function") {
+      // ECS path: render projectiles provided by session
+      const ecsProjectiles = gameSession.getProjectiles();
+      if (Array.isArray(ecsProjectiles) && ecsProjectiles.length > 0) {
+        ctx.save();
+        ctx.fillStyle = "#ffd166";
+        for (const p of ecsProjectiles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
     }
   }
 

@@ -136,7 +136,7 @@ export class GameSessionECS {
     }
 
     // Create and run systems in order
-    const playerControlSystem = createPlayerControlSystem(this.world, actions, dt);
+    const playerControlSystem = createPlayerControlSystem(this.world, actions, dt, this.mode);
     const weaponSystem = createWeaponSystem(this.world, actions);
     const enemyAISystem = createEnemyAISystem(this.world, dt);
     const movementSystem = createMovementSystem(this.world, dt);

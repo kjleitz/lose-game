@@ -301,6 +301,7 @@ export class DroppedItemSystem {
   }
 
   private randomOffset(): number {
-    return (Math.random() - 0.5) * 30; // Random offset within 15 pixels
+    // Keep drops reasonably close to the source to reduce pickup flakiness in gameplay
+    return (Math.random() - 0.5) * 20; // Random offset within 10 pixels
   }
 }

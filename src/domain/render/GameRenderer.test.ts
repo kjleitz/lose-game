@@ -69,6 +69,7 @@ describe("GameRenderer", () => {
       arc: () => {},
       fill: () => {},
       stroke: () => {},
+      strokeRect: () => {},
       canvas: { width: 800, height: 600 } as HTMLCanvasElement,
     };
     const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
@@ -154,5 +155,62 @@ describe("GameRenderer", () => {
       ),
     ).not.toThrow();
     expect(drew).toBeGreaterThan(0);
+  });
+
+  it("renders ECS projectiles in planet mode when session provides them", () => {
+    const renderer = new GameRenderer();
+    let arcCalls = 0;
+    const ctx: Partial<CanvasRenderingContext2D> = {
+      setTransform: () => {},
+      clearRect: () => {},
+      fillRect: () => {},
+      fillStyle: "",
+      save: () => {},
+      restore: () => {},
+      beginPath: () => {},
+      arc: () => {
+        arcCalls += 1;
+      },
+      ellipse: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      closePath: () => {},
+      translate: () => {},
+      rotate: () => {},
+      fill: () => {},
+      stroke: () => {},
+      strokeRect: () => {},
+      canvas: { width: 800, height: 600 } as HTMLCanvasElement,
+    };
+    const player = { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
+    const camera = { x: 0, y: 0, zoom: 1 };
+    const size = { width: 800, height: 600 };
+
+    // Session-like object from ECS path that reports planet mode
+    const projectiles = [
+      { x: 10, y: 20, radius: 2 },
+      { x: -5, y: 15, radius: 2 },
+    ];
+    const sessionLike = {
+      getCurrentModeType: (): "planet" => "planet",
+      getPlanetSurface: (): PlanetSurface | undefined => undefined,
+      getProjectiles: (): Array<Circle2D> => projectiles,
+    };
+
+    renderer.render(
+      ctx as CanvasRenderingContext2D,
+      player,
+      camera,
+      [],
+      [],
+      [],
+      new Set(),
+      size,
+      1,
+      sessionLike,
+    );
+
+    // Expect at least one arc call for projectiles
+    expect(arcCalls).toBeGreaterThan(0);
   });
 });

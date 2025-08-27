@@ -47,6 +47,10 @@ This project: L.O.S.E. — Lots of Outer Space to Explore (Vite + React + TypeSc
 - Target ≥80% coverage on changed code.
 - Include integration tests for systems (e.g., physics step, collision pass).
 
+## End-of-Task Checks (Required)
+
+- Always run `npm run typecheck`, `npm run lint`, and `npm run test` before finishing a task or opening a PR. All must be clean. If any fails, fix issues first — do not ship or request review with failures.
+
 ## Commit & PR Guidelines
 
 - Conventional Commits: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `build`.

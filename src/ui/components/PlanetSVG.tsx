@@ -1,14 +1,14 @@
 import type { JSX } from "react";
 import type { Planet } from "../../domain/game/planets";
 
-export interface PlanetSVGProps {
+export interface PlanetSvgProps {
   planet: Planet;
   x: number;
   y: number;
   r: number;
 }
 
-export function PlanetSVG({ planet, x, y, r }: PlanetSVGProps): JSX.Element {
+export function PlanetSvg({ planet, x, y, r }: PlanetSvgProps): JSX.Element {
   // Render main body
   const overlays: JSX.Element[] = [];
   if (planet.design === "ringed") {

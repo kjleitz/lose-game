@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import { PlanetSVG as PlanetSvg } from "./PlanetSvg";
+import { PlanetSvg } from "./PlanetSvg";
 
 describe("PlanetSvg", () => {
   const basePlanet = {
