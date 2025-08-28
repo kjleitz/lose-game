@@ -23,6 +23,8 @@ These are the guiding principles for development in this repo. Keep them short, 
 
 - Keep tests aligned with the intended product behavior. Prefer high-value, integration-style tests at stable boundaries.
 - When refactoring, update tests to reflect the new design; do not preserve obsolete seams.
+- Unit tests should live right next to the file they cover, and should be named the same as the file but suffixed with `.test.ts(x)` instead of `.ts(x)`. For example: unit tests for `src/foo/Bar.ts` should live in `src/foo/Bar.test.ts`, NOT in some separate `src/foo/tests` directory.
+- We want comprehensive unit tests which test INTENDED behavior (not just EXISTING behavior... which may actually be broken in some cases! We'll find out when we write tests against INTENDED BEHAVIOR.)
 
 ## Enforcement
 

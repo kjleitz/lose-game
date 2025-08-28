@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
-import { World } from "../../ecs/src/World";
-import { defineComponent } from "../../ecs/src/Component";
+import { describe, expect, it } from "vitest";
+
+import { defineComponent } from "./Component";
+import { World } from "./World";
 
 describe("World.query and queryOptional", () => {
   const Position = defineComponent<{ x: number; y: number }>();
