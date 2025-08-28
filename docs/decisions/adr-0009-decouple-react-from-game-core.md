@@ -25,14 +25,14 @@
 ## Modules
 
 - Engine
-  - `src/engine/core/GameEngine.ts`: Fixed timestep loop; owns timing, pause/resume, speed multiplier.
   - `src/engine/input/*`: Key→action mapping and action queue; attaches DOM listeners to `window` or `canvas`.
+  - Note: the old `engine/core/GameEngine.ts` wrapper has been removed; the app bootstrap (`GameApp`) owns loop orchestration.
 - Simulation
   - `src/domain/ecs/GameSessionECS.ts`: ECS world, systems registration, and state queries (player, planets, enemies, projectiles, camera).
 - Rendering
   - `src/domain/render/GameRenderer.ts`: Draws to a provided `CanvasRenderingContext2D` using session queries.
 - Application Bootstrap
-  - New `src/application/GameApp.ts`: Orchestrates Engine + Input + Session + Renderer.
+  - `src/application/GameApp.ts`: Orchestrates input + ECS session + renderer and loop.
   - New `src/application/GameAPI.ts`: Public types and controller interface.
   - New `src/application/GameBus.ts`: Typed pub/sub for game→HUD and HUD→game messages.
 - UI (optional)

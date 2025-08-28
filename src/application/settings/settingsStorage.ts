@@ -5,8 +5,15 @@ import {
   type NamespacedStore,
 } from "../../lib/storage";
 
+export type SpriteTheme = "classic" | "art-deco";
+
 export interface Settings {
   speed: number;
+  spriteTheme: SpriteTheme;
+  spriteOverrides: Record<string, SpriteTheme>;
+  cloudDensity?: number; // 0..2
+  birdDensity?: number; // 0..2
+  foamDensity?: number; // 0..2
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -18,8 +25,32 @@ const settingsCodec = createJsonCodec<Settings>((u) => {
   const rec = u;
   const speedVal = rec["speed"];
   if (typeof speedVal !== "number" || !Number.isFinite(speedVal)) throw new Error("Invalid speed");
-  return { speed: speedVal };
+  const themeRaw = rec["spriteTheme"];
+  const overridesRaw = rec["spriteOverrides"];
+
+  const spriteTheme: SpriteTheme = themeRaw === "art-deco" ? "art-deco" : "classic";
+  const spriteOverrides: Record<string, SpriteTheme> = {};
+  if (isRecord(overridesRaw)) {
+    for (const [k, v] of Object.entries(overridesRaw)) {
+      spriteOverrides[k] = v === "art-deco" ? "art-deco" : "classic";
+    }
+  }
+  let cloud: number | undefined;
+  if (typeof rec["cloudDensity"] === "number") cloud = clamp(rec["cloudDensity"], 0, 2);
+  let bird: number | undefined;
+  if (typeof rec["birdDensity"] === "number") bird = clamp(rec["birdDensity"], 0, 2);
+  let foam: number | undefined;
+  if (typeof rec["foamDensity"] === "number") foam = clamp(rec["foamDensity"], 0, 2);
+  const base: Settings = { speed: speedVal, spriteTheme, spriteOverrides };
+  const withCloud = cloud !== undefined ? { ...base, cloudDensity: cloud } : base;
+  const withBird = bird !== undefined ? { ...withCloud, birdDensity: bird } : withCloud;
+  const withFoam = foam !== undefined ? { ...withBird, foamDensity: foam } : withBird;
+  return withFoam;
 });
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
 
 function getStore(): NamespacedStore<Settings> {
   const backend = detectBackend();
@@ -27,7 +58,14 @@ function getStore(): NamespacedStore<Settings> {
 }
 
 export function getDefaultSettings(): Settings {
-  return { speed: 1 };
+  return {
+    speed: 1,
+    spriteTheme: "classic",
+    spriteOverrides: {},
+    cloudDensity: 1,
+    birdDensity: 1,
+    foamDensity: 1,
+  };
 }
 
 export function loadSettings(): Settings | null {

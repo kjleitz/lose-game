@@ -1,0 +1,47 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <defs>
+    <!-- Art deco thruster flame gradients -->
+    <radialGradient id='coreFlame' cx='0.3' cy='0.5' r='0.8'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='1'/>
+      <stop offset='30%' stop-color='#fbbf24' stop-opacity='0.9'/>
+      <stop offset='70%' stop-color='#f59e0b' stop-opacity='0.7'/>
+      <stop offset='100%' stop-color='#d97706' stop-opacity='0.4'/>
+    </radialGradient>
+    
+    <radialGradient id='outerFlame' cx='0.2' cy='0.5' r='1'>
+      <stop offset='0%' stop-color='#60a5fa' stop-opacity='0.8'/>
+      <stop offset='40%' stop-color='#3b82f6' stop-opacity='0.6'/>
+      <stop offset='80%' stop-color='#1d4ed8' stop-opacity='0.4'/>
+      <stop offset='100%' stop-color='#1e40af' stop-opacity='0.1'/>
+    </radialGradient>
+    
+    <radialGradient id='redAccent' cx='0.4' cy='0.5' r='0.6'>
+      <stop offset='0%' stop-color='#ef4444' stop-opacity='0.8'/>
+      <stop offset='60%' stop-color='#dc2626' stop-opacity='0.6'/>
+      <stop offset='100%' stop-color='#b91c1c' stop-opacity='0.2'/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Outer blue flame envelope -->
+  <path d='M 2 24 L 12 18 Q 18 24 12 30 Z' fill='url(#outerFlame)'/>
+  
+  <!-- Main orange/yellow flame -->
+  <path d='M 4 24 L 12 20 Q 16 24 12 28 Z' fill='url(#coreFlame)'/>
+  
+  <!-- Hot core white-yellow -->
+  <path d='M 6 24 L 12 21 Q 14 24 12 27 Z' fill='#fbbf24' fill-opacity='0.9'/>
+  
+  <!-- Red accent (afterburner effect) -->
+  <path d='M 8 24 L 12 22 Q 13 24 12 26 Z' fill='url(#redAccent)'/>
+  
+  <!-- Art deco flame details -->
+  <path d='M 6 24 L 10 22 L 10 26 Z' fill='#ffffff' fill-opacity='0.6'/>
+  <line x1='10' y1='24' x2='12' y2='24' stroke='#ffffff' stroke-width='0.8' opacity='0.8'/>
+  
+  <!-- Exhaust particles -->
+  <circle cx='6' cy='20' r='0.8' fill='#fbbf24' opacity='0.5'/>
+  <circle cx='4' cy='22' r='0.6' fill='#60a5fa' opacity='0.4'/>
+  <circle cx='6' cy='28' r='0.8' fill='#fbbf24' opacity='0.5'/>
+  <circle cx='4' cy='26' r='0.6' fill='#60a5fa' opacity='0.4'/>
+  <circle cx='2' cy='24' r='0.5' fill='#ef4444' opacity='0.3'/>
+</svg>

@@ -1,0 +1,38 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
+  <defs>
+    <!-- Art deco energy projectile gradient -->
+    <radialGradient id='energyCore' cx='50%' cy='50%' r='50%'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='1'/>
+      <stop offset='20%' stop-color='#fbbf24' stop-opacity='0.9'/>
+      <stop offset='60%' stop-color='#f59e0b' stop-opacity='0.7'/>
+      <stop offset='100%' stop-color='#d97706' stop-opacity='0.3'/>
+    </radialGradient>
+    
+    <!-- Outer energy field -->
+    <radialGradient id='energyField' cx='50%' cy='50%' r='70%'>
+      <stop offset='0%' stop-color='#60a5fa' stop-opacity='0.8'/>
+      <stop offset='50%' stop-color='#3b82f6' stop-opacity='0.6'/>
+      <stop offset='100%' stop-color='#1d4ed8' stop-opacity='0.2'/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Outer energy field -->
+  <circle cx='12' cy='12' r='11' fill='url(#energyField)'/>
+  
+  <!-- Main projectile body - art deco diamond shape -->
+  <polygon points='12,4 18,12 12,20 6,12' fill='url(#energyCore)' stroke='#f59e0b' stroke-width='1' opacity='0.9'/>
+  
+  <!-- Inner energy core -->
+  <circle cx='12' cy='12' r='4' fill='#ffffff' opacity='0.8'/>
+  <circle cx='12' cy='12' r='2' fill='#fbbf24' opacity='0.9'/>
+  
+  <!-- Art deco accent lines -->
+  <line x1='12' y1='6' x2='12' y2='18' stroke='#ffffff' stroke-width='1' opacity='0.7'/>
+  <line x1='8' y1='12' x2='16' y2='12' stroke='#ffffff' stroke-width='1' opacity='0.7'/>
+  
+  <!-- Energy sparks -->
+  <circle cx='8' cy='8' r='1' fill='#fbbf24' opacity='0.6'/>
+  <circle cx='16' cy='8' r='1' fill='#fbbf24' opacity='0.6'/>
+  <circle cx='8' cy='16' r='1' fill='#fbbf24' opacity='0.6'/>
+  <circle cx='16' cy='16' r='1' fill='#fbbf24' opacity='0.6'/>
+</svg>

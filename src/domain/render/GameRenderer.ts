@@ -6,26 +6,23 @@ import { CreatureRenderer } from "./CreatureRenderer";
 import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
 import { CharacterRenderer } from "./CharacterRenderer";
 import { DroppedItemRenderer } from "./DroppedItemRenderer";
-import { WeaponSystem } from "../game/weapons/WeaponSystem";
-import { EntityDeathRenderer } from "./EntityDeathRenderer";
-import { DroppedItemSystem } from "../game/items/DroppedItemSystem";
-import { PlanetMode } from "../game/modes/PlanetMode";
 import { CameraTransform } from "./CameraTransform";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
-import type { PlanetSurface } from "../game/modes/PlanetMode";
+import type { PlanetSurface } from "../game/planet-surface/types";
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { Kinematics2D, Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { Camera } from "./camera";
 import type { Action } from "../../engine/input/ActionTypes";
 import { drawProjectile } from "./sprites";
+import type { Biome } from "../../shared/types/Biome";
+import { createSeededRng, hashStringToInt } from "../../shared/utils";
+import { getVisualConfig } from "./VisualConfig";
 
-import type { GameMode } from "../game/modes/GameMode";
-import type { SpaceMode } from "../game/modes/SpaceMode";
+// Legacy modes removed from renderer path; rely on session getters only
 
 interface MinimalGameSession {
   getCurrentModeType?: (this: MinimalGameSession) => "space" | "planet";
-  getCurrentMode?: () => GameMode | SpaceMode | PlanetMode;
   getPlanetSurface?: () => PlanetSurface | undefined;
   getProjectiles?: () => Array<Circle2D>;
   getDroppedItems?: () => DroppedItem[];
@@ -129,17 +126,10 @@ export class GameRenderer {
     dpr: number,
     gameSession?: MinimalGameSession | null,
   ): void {
-    // Get planet mode and related systems (guarded introspection)
-    const planetMode =
-      typeof gameSession?.getCurrentMode === "function" ? gameSession.getCurrentMode() : undefined;
-    let surface: PlanetSurface | undefined =
-      planetMode instanceof PlanetMode ? planetMode.getSurfaceData() : undefined;
-    // Prefer session-provided surface if available (ECS path)
-    if (gameSession && typeof gameSession.getPlanetSurface === "function") {
-      const s = gameSession.getPlanetSurface();
-      if (s) surface = s;
-    }
-    const weaponSystem = this.getWeaponSystem(planetMode);
+    // Ask session for surface (ECS path)
+    let surface: PlanetSurface | undefined = undefined;
+    if (gameSession && typeof gameSession.getPlanetSurface === "function")
+      surface = gameSession.getPlanetSurface();
 
     // Planet surface background
     const planetSurfaceRenderer = new PlanetSurfaceRenderer();
@@ -151,16 +141,16 @@ export class GameRenderer {
     // Render planet surface (must be provided by mode or session)
     planetSurfaceRenderer.render(ctx, surface);
 
-    // Draw death effects first (behind everything)
-    const deathRenderer = this.getDeathRenderer(planetMode);
-    if (deathRenderer) deathRenderer.render(ctx);
+    // Beneath-water parallax (archipelago-only), subtle and below entities
+    if (surface && surface.biome === "archipelago") {
+      this.renderUnderwaterParallax(ctx, camera, size, dpr);
+    }
+
+    // Death effects omitted in ECS path for now
 
     // Draw dropped items (behind characters but above death effects)
-    const droppedItemSystem = this.getDroppedItemSystem(planetMode);
     const droppedItemRenderer = new DroppedItemRenderer();
-    if (droppedItemSystem) {
-      droppedItemRenderer.render(ctx, droppedItemSystem.getAllDroppedItems());
-    } else if (gameSession && typeof gameSession.getDroppedItems === "function") {
+    if (gameSession && typeof gameSession.getDroppedItems === "function") {
       const items = gameSession.getDroppedItems();
       if (Array.isArray(items) && items.length > 0) {
         droppedItemRenderer.render(ctx, items);
@@ -176,14 +166,14 @@ export class GameRenderer {
     }
     characterRenderer.render(ctx, player, actions, 32);
 
-    // Draw projectiles from weapon system (classic PlanetMode) or ECS session
-    if (weaponSystem) {
-      const projectiles = weaponSystem.getAllProjectiles();
-      for (const p of projectiles) {
-        const ang = Math.atan2(p.vy, p.vx);
-        drawProjectile(ctx, p.x, p.y, ang, 10);
-      }
-    } else if (gameSession && typeof gameSession.getProjectiles === "function") {
+    // Above-ground parallax: clouds and birds
+    if (surface) {
+      const biome: Biome = surface.biome ?? "fields";
+      this.renderSkyParallax(ctx, camera, size, dpr, biome, surface.planetId);
+    }
+
+    // Draw projectiles provided by session (ECS path)
+    if (gameSession && typeof gameSession.getProjectiles === "function") {
       // ECS path: render projectiles provided by session
       const ecsProjectiles = gameSession.getProjectiles();
       if (Array.isArray(ecsProjectiles) && ecsProjectiles.length > 0) {
@@ -194,21 +184,97 @@ export class GameRenderer {
     }
   }
 
-  private getWeaponSystem(
-    planetMode: GameMode | SpaceMode | PlanetMode | undefined,
-  ): WeaponSystem | null {
-    return planetMode instanceof PlanetMode ? planetMode.getWeaponSystemData() : null;
+  private renderUnderwaterParallax(
+    ctx: CanvasRenderingContext2D,
+    camera: Camera,
+    size: ViewSize,
+    dpr: number,
+  ): void {
+    const factor = 0.7;
+    const camL = { x: camera.x * factor, y: camera.y * factor, zoom: camera.zoom };
+    const [a, b, c, d, e, f] = CameraTransform.getTransform(camL, size.width, size.height, dpr);
+    ctx.setTransform(a, b, c, d, e, f);
+
+    const w = size.width;
+    const h = size.height;
+    const t = Date.now() * 0.001;
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < 6; i++) {
+      const y = (i + 1) * (h / 8) + Math.sin(t + i) * 10;
+      ctx.fillRect(-w, y, w * 3, 8);
+    }
+    ctx.restore();
   }
 
-  private getDeathRenderer(
-    planetMode: GameMode | SpaceMode | PlanetMode | undefined,
-  ): EntityDeathRenderer | null {
-    return planetMode instanceof PlanetMode ? planetMode.getDeathRenderer() : null;
-  }
+  private renderSkyParallax(
+    ctx: CanvasRenderingContext2D,
+    camera: Camera,
+    size: ViewSize,
+    dpr: number,
+    biome: Biome,
+    planetId: string,
+  ): void {
+    const factor = 0.6;
+    const camL = { x: camera.x * factor, y: camera.y * factor, zoom: camera.zoom };
+    const [a, b, c, d, e, f] = CameraTransform.getTransform(camL, size.width, size.height, dpr);
+    ctx.setTransform(a, b, c, d, e, f);
 
-  private getDroppedItemSystem(
-    planetMode: GameMode | SpaceMode | PlanetMode | undefined,
-  ): DroppedItemSystem | null {
-    return planetMode instanceof PlanetMode ? planetMode.getDroppedItemSystem() : null;
+    const w = size.width;
+    const h = size.height;
+    const seed = hashStringToInt(planetId);
+    const rng = createSeededRng(seed);
+
+    // Clouds: soft ellipses
+    ctx.save();
+    ctx.globalAlpha = biome === "desert" ? 0.15 : 0.22;
+    ctx.fillStyle = "#ffffff";
+    const cfg = getVisualConfig();
+    const baseClouds = biome === "rainforest" ? 10 : 6;
+    const cloudCount = Math.max(0, Math.floor(baseClouds * cfg.cloudDensity));
+    const t = Date.now() * 0.0003;
+    for (let i = 0; i < cloudCount; i++) {
+      const baseX = (rng.int(0, w) + i * 123) % (w * 2);
+      const baseY = (rng.int(0, Math.floor(h / 2)) + i * 47) % Math.floor(h * 0.6);
+      const drift = (t * (20 + (i % 5))) % (w * 2);
+      const x = -w + baseX + drift;
+      const y = baseY * 0.5;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 80, 35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + 40, y + 5, 50, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x - 35, y + 8, 45, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Birds: small chevrons drifting
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = "#222";
+    ctx.lineWidth = 1;
+    const baseFlocks = biome === "rainforest" || biome === "fields" ? 3 : 1;
+    const birdFlocks = Math.max(0, Math.floor(baseFlocks * cfg.birdDensity));
+    for (let i = 0; i < birdFlocks; i++) {
+      const baseX = (rng.int(0, w) + i * 177) % (w * 2);
+      const baseY = (rng.int(0, Math.floor(h / 2)) + i * 59) % Math.floor(h * 0.5);
+      const drift = (t * 120 + i * 60) % (w * 2);
+      const x = -w + baseX + drift;
+      const y = 40 + baseY * 0.6;
+      for (let bI = 0; bI < 5; bI++) {
+        const bx = x + bI * 16;
+        const by = y + Math.sin(t * 8 + bI) * 3;
+        ctx.beginPath();
+        ctx.moveTo(bx - 4, by);
+        ctx.lineTo(bx, by + 3);
+        ctx.lineTo(bx + 4, by);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 }

@@ -9,7 +9,8 @@ import { InputManager } from "../engine/input/InputManager";
 import { setKeyBinding } from "../engine/input/KeyBindings";
 import type { Circle2D, Kinematics2D, ViewSize } from "../shared/types/geometry";
 import { GameLoop } from "./game/loop";
-import { loadSettings, saveSettings, getDefaultSettings } from "./settings/settingsStorage";
+import { loadSettings, getDefaultSettings, updateSettings } from "./settings/settingsStorage";
+import { setSpriteConfig } from "../domain/render/sprites";
 import {
   loadSessionState,
   saveSessionState,
@@ -143,24 +144,34 @@ export class GameApp {
     // Speed multiplier bounds
     const MIN_SPEED = 0.25;
     const MAX_SPEED = 5;
-    // Load persisted speed
+    // Load persisted settings
     const loaded = loadSettings() ?? getDefaultSettings();
+    // Apply sprite theme configuration at startup
+    setSpriteConfig({ defaultVariant: loaded.spriteTheme, overrides: loaded.spriteOverrides });
     let speedMultiplier = Math.min(MAX_SPEED, Math.max(MIN_SPEED, loaded.speed));
     // bounds declared above
 
     // Derive a snapshot for HUD per frame
     const getSnapshot = (): GameSnapshot => {
       const p = session.getPlayer();
-      const player: Kinematics2D & { health: number } = p
-        ? { x: p.x, y: p.y, vx: p.vx, vy: p.vy, angle: p.angle, health: p.health }
-        : defaultKinematicsWithHealth();
+      const player: Kinematics2D & { health: number; experience: number } = p
+        ? {
+            x: p.x,
+            y: p.y,
+            vx: p.vx,
+            vy: p.vy,
+            angle: p.angle,
+            health: p.health,
+            experience: p.experience,
+          }
+        : { ...defaultKinematicsWithHealth(), experience: 0 };
       const camera = session.getCamera();
       const planets = session.getPlanets();
       const enemies = session.getEnemies();
       const projectiles = session.getProjectiles();
       const entityCount = session.getEntityCount();
       return {
-        player: { ...player, experience: 0, health: player.health ?? 100 },
+        player: { ...player, experience: player.experience ?? 0, health: player.health ?? 100 },
         camera,
         planets: planets.map((pl) => ({
           id: pl.id,
@@ -215,7 +226,7 @@ export class GameApp {
         }
         if (changedSpeed) {
           bus.publish({ type: "speedChanged", value: speedMultiplier });
-          saveSettings({ speed: speedMultiplier });
+          updateSettings({ speed: speedMultiplier });
         }
 
         session.update(actions, dt * speedMultiplier);
@@ -298,7 +309,7 @@ export class GameApp {
         if (clamped !== speedMultiplier) {
           speedMultiplier = clamped;
           bus.publish({ type: "speedChanged", value: speedMultiplier });
-          saveSettings({ speed: speedMultiplier });
+          updateSettings({ speed: speedMultiplier });
         }
       },
       getSpeed(): number {

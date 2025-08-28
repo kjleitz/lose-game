@@ -1,46 +1,37 @@
-# Newcomer's Guide to L.O.S.E. Dual-Game Architecture
+# Newcomer's Guide to L.O.S.E. (ECS Modes)
 
 Welcome to L.O.S.E. (Lots of Outer Space to Explore)! This guide will help you understand our unique dual-game architecture and how to contribute effectively.
 
 ## What Makes L.O.S.E. Different?
 
-L.O.S.E. isn't just one game—it's **two distinct games that share a common engine**:
+L.O.S.E. has two gameplay modes implemented inside a single ECS session:
 
-1. **Space Game**: Top-down space exploration with ships, combat, and planets
-2. **Planet Game**: Character-based surface exploration with creatures, resources, and terrain
+1. Space: top-down ship exploration with enemies and planets
+2. Planet: on-foot surface exploration with terrain/resources/creatures
 
-Players seamlessly transition between these modes by landing on planets (`L` key) and taking off (`T` key).
+Players transition by landing (`L`) and taking off (`T`). The orchestration lives in `src/domain/ecs/GameSessionECS.ts`.
 
 ## Quick Start: Understanding the Codebase
 
-### 🎮 Current Game Modes
+### 🎮 ECS Overview
 
-#### Space Mode (`src/domain/game/modes/SpaceMode.ts`)
-
-- **What**: Ship-based space exploration
-- **Entities**: Spaceship, Planets, Enemies, Projectiles
-- **Controls**: WASD (thrust/turn), Space (fire), L (land)
-- **Physics**: Space drag, momentum-based movement
-- **Visuals**: Starfield, planets, ship sprite
-
-#### Planet Mode (`src/domain/game/modes/PlanetMode.ts`)
-
-- **What**: Character-based planet surface exploration
-- **Entities**: Character, Creatures, Resources, Terrain
-- **Controls**: WASD (walk), Shift (run), T (takeoff)
-- **Physics**: Ground friction, direct movement
-- **Visuals**: Planet surface, character sprite, terrain features
+- Orchestrator: `GameSessionECS` (updates world, tracks current mode)
+- Entities/Components: `src/domain/ecs/components`, `entities/EntityFactories.ts`
+- Systems: `src/domain/ecs/systems/*` (player control, movement, AI, weapon, projectile, collision, dropped items)
+- Planet surface: shared types `domain/game/planet-surface/types.ts`, generator `domain/game/planet-surface/generate.ts`
 
 ### 🏗️ Key Architecture Files
 
-| File              | Purpose                               | When to Edit                                   |
-| ----------------- | ------------------------------------- | ---------------------------------------------- |
-| `GameSession.ts`  | Mode coordinator & transition manager | Adding new modes or transition logic           |
-| `GameMode.ts`     | Abstract base for all game modes      | Changing core mode interface                   |
-| `SpaceMode.ts`    | Space game implementation             | Adding space-specific features                 |
-| `PlanetMode.ts`   | Planet game implementation            | Adding planet-specific features                |
-| `GameRenderer.ts` | Mode-aware rendering system           | Adding new rendering modes                     |
-| `Player.ts`       | Shared player entity                  | Adding player mechanics that work across modes |
+| File/Folder                              | Purpose                                     |
+| ---------------------------------------- | ------------------------------------------- |
+| `domain/ecs/GameSessionECS.ts`           | Orchestrator; mode switching, systems order |
+| `domain/ecs/components`                  | ECS component definitions                   |
+| `domain/ecs/systems`                     | Gameplay systems (controls, AI, collision)  |
+| `domain/ecs/entities/EntityFactories.ts` | Entity creation helpers                     |
+| `domain/game/planet-surface/types.ts`    | Canonical PlanetSurface types               |
+| `domain/game/planet-surface/generate.ts` | Shared surface generator                    |
+| `domain/render/GameRenderer.ts`          | Mode-aware renderer using session getters   |
+| `domain/render/PlanetSurfaceRenderer.ts` | Renders planet surface from shared types    |
 
 ### 🎨 Rendering System
 
@@ -54,18 +45,18 @@ GameRenderer (master)
 └── Planet Mode
     ├── PlanetSurfaceRenderer
     ├── CharacterRenderer
-    └── [Future: CreatureRenderer, TerrainRenderer]
+    └── CreatureRenderer
 ```
 
 ## How to Add Features
 
-### 🚀 Adding Space Game Features
+### 🚀 Adding Space Features (ECS)
 
 **Example**: Adding asteroid mining
 
-1. **Entity**: Create `Asteroid.ts` in `src/domain/game/`
-2. **Rendering**: Add asteroid rendering to space renderers
-3. **Logic**: Add mining system to `SpaceMode.ts`
+1. **Entity**: Extend `EntityFactories` to spawn asteroids with components
+2. **Rendering**: Add asteroid rendering to space renderers as needed
+3. **Logic**: Add an ECS system (e.g., `AsteroidMiningSystem.ts`) and run it in `GameSessionECS.update`
 4. **UI**: Add mining UI to space-specific HUD components
 5. **Input**: Add mining controls to input system
 
@@ -84,13 +75,13 @@ update(dt: number, actions: Set<string>, player: Player, session: GameSession) {
 }
 ```
 
-### 🪐 Adding Planet Game Features
+### 🪐 Adding Planet Features (ECS)
 
 **Example**: Adding base building
 
-1. **Entity**: Create `Structure.ts` in `src/domain/game/modes/PlanetMode.ts`
-2. **Rendering**: Add structure rendering to `PlanetSurfaceRenderer.ts`
-3. **Logic**: Add building system to `PlanetMode.ts`
+1. **Entity**: Add structure components/entities in ECS
+2. **Rendering**: Extend `PlanetSurfaceRenderer` or add a new renderer pass
+3. **Logic**: Add an ECS `BuildingSystem.ts` and hook into `GameSessionECS.update`
 4. **UI**: Create building interface components
 5. **Input**: Add building controls (separate from space controls)
 
@@ -114,49 +105,22 @@ update(dt: number, actions: Set<string>, player: Player, session: GameSession) {
 **Example**: Adding audio system
 
 1. **Engine**: Create `AudioManager.ts` in `src/domain/` or future `src/engine/`
-2. **Integration**: Add audio to both SpaceMode and PlanetMode
+2. **Integration**: Add audio via the app loop or an ECS-side event bus
 3. **Configuration**: Allow mode-specific audio settings
 4. **Testing**: Test audio works in both modes
 
 ## Development Rules & Best Practices
 
-### ✅ **DO** - Good Practices
+### ✅ **DO** - Good Practices (ECS)
 
 ```typescript
-// ✅ Mode-specific entities and logic
-class SpaceMode extends GameMode {
-  private spaceStations: SpaceStation[] = [];
-  private wormholes: Wormhole[] = [];
-}
-
-class PlanetMode extends GameMode {
-  private settlements: Settlement[] = [];
-  private weather: WeatherSystem;
-}
-
-// ✅ Shared engine services
-class AudioManager {
-  playSpaceMusic() {
-    /* */
-  }
-  playPlanetAmbience() {
-    /* */
-  }
-}
-
-// ✅ Mode-aware rendering
-if (mode === "space") {
-  this.renderSpaceMode();
-} else if (mode === "planet") {
-  this.renderPlanetMode();
-}
+// Define new components and add a focused system file; register it within GameSessionECS.update
 ```
 
 ### ❌ **DON'T** - Anti-Patterns
 
 ```typescript
-// ❌ Cross-mode dependencies
-import { SpaceMode } from "./SpaceMode"; // in PlanetMode.ts
+// ❌ Cross-mode class coupling (removed)
 
 // ❌ Hardcoded mode assumptions
 if (player.hasSpaceship) {

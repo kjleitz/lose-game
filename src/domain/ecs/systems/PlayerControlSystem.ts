@@ -32,7 +32,7 @@ export function createPlayerControlSystem(
           if (actions.has("thrust")) moveY -= 1; // up
           if (actions.has("turnLeft")) moveX -= 1; // left
           if (actions.has("turnRight")) moveX += 1; // right
-          if (actions.has("interact")) moveY += 1; // down
+          if (actions.has("moveDown")) moveY += 1; // down
 
           if (moveX !== 0 || moveY !== 0) {
             const len = Math.hypot(moveX, moveY);

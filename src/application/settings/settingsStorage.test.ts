@@ -16,7 +16,7 @@ describe("settingsStorage", () => {
   });
 
   it("saves and loads settings", () => {
-    const s = { speed: 2 };
+    const s = { ...getDefaultSettings(), speed: 2 };
     saveSettings(s);
     expect(loadSettings()).toEqual(s);
   });
@@ -25,6 +25,7 @@ describe("settingsStorage", () => {
     const def = getDefaultSettings();
     const next = updateSettings({ speed: 3 });
     expect(next).toEqual({ ...def, speed: 3 });
-    expect(loadSettings()).toEqual({ speed: 3 });
+    const loaded = loadSettings();
+    expect(loaded).toEqual({ ...def, speed: 3 });
   });
 });

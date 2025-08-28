@@ -1,0 +1,47 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <defs>
+    <!-- Art deco rock gradients -->
+    <linearGradient id='rockGrad' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#9ca3af'/>
+      <stop offset='30%' stop-color='#6b7280'/>
+      <stop offset='70%' stop-color='#4b5563'/>
+      <stop offset='100%' stop-color='#374151'/>
+    </linearGradient>
+    
+    <linearGradient id='rockHighlight' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='0.6'/>
+      <stop offset='100%' stop-color='#e5e7eb' stop-opacity='0.2'/>
+    </linearGradient>
+    
+    <linearGradient id='crystalVein' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#a7f3d0'/>
+      <stop offset='50%' stop-color='#34d399'/>
+      <stop offset='100%' stop-color='#10b981'/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main rock formation - angular, art deco style -->
+  <polygon points='12,36 18,14 24,12 32,16 38,30 32,38 20,40' fill='url(#rockGrad)' stroke='#374151' stroke-width='2'/>
+  
+  <!-- Rock face highlights -->
+  <polygon points='12,36 18,14 24,12 32,16 24,20 16,32' fill='url(#rockHighlight)' opacity='0.7'/>
+  
+  <!-- Geometric rock segments -->
+  <polygon points='24,12 32,16 28,24 20,20' fill='url(#rockGrad)' stroke='#1f2937' stroke-width='1'/>
+  <polygon points='20,20 28,24 32,38 20,40' fill='#4b5563' stroke='#374151' stroke-width='1'/>
+  
+  <!-- Crystal veins (art deco geometric patterns) -->
+  <polygon points='22,16 26,14 28,18 24,20' fill='url(#crystalVein)' stroke='#10b981' stroke-width='0.8'/>
+  <polygon points='26,22 30,20 32,24 28,26' fill='url(#crystalVein)' stroke='#10b981' stroke-width='0.8'/>
+  <polygon points='18,28 22,26 24,30 20,32' fill='url(#crystalVein)' stroke='#10b981' stroke-width='0.8'/>
+  
+  <!-- Art deco accent lines -->
+  <line x1='18' y1='14' x2='32' y2='16' stroke='#e5e7eb' stroke-width='1' opacity='0.5'/>
+  <line x1='20' y1='20' x2='28' y2='24' stroke='#e5e7eb' stroke-width='1' opacity='0.5'/>
+  <line x1='20' y1='32' x2='32' y2='30' stroke='#e5e7eb' stroke-width='1' opacity='0.5'/>
+  
+  <!-- Crystalline details -->
+  <polygon points='24,15 25,13 26,15 25,17' fill='#34d399' opacity='0.8'/>
+  <polygon points='30,23 31,21 32,23 31,25' fill='#34d399' opacity='0.8'/>
+  <polygon points='21,29 22,27 23,29 22,31' fill='#34d399' opacity='0.8'/>
+</svg>

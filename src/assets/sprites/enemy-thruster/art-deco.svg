@@ -1,0 +1,77 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='32' height='20' viewBox='0 0 32 20'>
+  <defs>
+    <!-- Enemy thruster flame gradients - more aggressive -->
+    <radialGradient id='enemyFlameCore' cx='0.3' cy='0.5' r='0.9'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='1'/>
+      <stop offset='20%' stop-color='#f59e0b' stop-opacity='0.95'/>
+      <stop offset='50%' stop-color='#dc2626' stop-opacity='0.8'/>
+      <stop offset='80%' stop-color='#991b1b' stop-opacity='0.5'/>
+      <stop offset='100%' stop-color='#7f1d1d' stop-opacity='0.1'/>
+    </radialGradient>
+    
+    <linearGradient id='enemyFlameTail' x1='0' y1='0.5' x2='1' y2='0.5'>
+      <stop offset='0%' stop-color='#dc2626' stop-opacity='0.8'/>
+      <stop offset='40%' stop-color='#b91c1c' stop-opacity='0.6'/>
+      <stop offset='80%' stop-color='#7f1d1d' stop-opacity='0.3'/>
+      <stop offset='100%' stop-color='#450a0a' stop-opacity='0.1'/>
+    </linearGradient>
+    
+    <radialGradient id='enemyAccent' cx='0.4' cy='0.5' r='0.6'>
+      <stop offset='0%' stop-color='#f59e0b' stop-opacity='0.9'/>
+      <stop offset='60%' stop-color='#d97706' stop-opacity='0.7'/>
+      <stop offset='100%' stop-color='#92400e' stop-opacity='0.2'/>
+    </radialGradient>
+    
+    <radialGradient id='enemyGlow' cx='0.2' cy='0.5' r='1.2'>
+      <stop offset='0%' stop-color='#dc2626' stop-opacity='0.6'/>
+      <stop offset='50%' stop-color='#991b1b' stop-opacity='0.4'/>
+      <stop offset='100%' stop-color='#7f1d1d' stop-opacity='0.1'/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Outer enemy flame envelope - aggressive angular shape -->
+  <path d='M 1 10
+           Q 6 4, 14 6
+           Q 22 7, 30 10
+           Q 22 13, 14 14
+           Q 6 16, 1 10 Z' 
+        fill='url(#enemyGlow)' opacity='0.7'/>
+  
+  <!-- Main thruster flame body -->
+  <ellipse cx='7' cy='10' rx='22' ry='8' fill='url(#enemyFlameCore)' opacity='0.8'/>
+  
+  <!-- Enemy flame tail with sharper edges -->
+  <path d='M 3 10 L 10 7 Q 18 10 10 13 Z' fill='url(#enemyFlameTail)'/>
+  
+  <!-- Inner core with rounded ends -->
+  <ellipse cx='9' cy='10' rx='14' ry='5' fill='#dc2626' opacity='0.9'/>
+  
+  <!-- Hot center streak -->
+  <ellipse cx='11' cy='10' rx='8' ry='3' fill='#f59e0b' opacity='0.95'/>
+  
+  <!-- Art deco flame details -->
+  <path d='M 5 10 L 9 8 L 9 12 Z' fill='#ffffff' fill-opacity='0.7'/>
+  <line x1='9' y1='10' x2='13' y2='10' stroke='#ffffff' stroke-width='1' opacity='0.9'/>
+  
+  <!-- Hostile plasma wisps -->
+  <ellipse cx='5' cy='7' rx='4' ry='1.2' fill='#dc2626' opacity='0.8'/>
+  <ellipse cx='5' cy='13' rx='4' ry='1.2' fill='#dc2626' opacity='0.8'/>
+  
+  <!-- Enemy accent (afterburner effect) -->
+  <path d='M 7 10 L 11 8 Q 13 10 11 12 Z' fill='url(#enemyAccent)'/>
+  
+  <!-- Core hotspot -->
+  <ellipse cx='13' cy='10' rx='3' ry='2' fill='#ffffff' opacity='0.9'/>
+  
+  <!-- Enemy exhaust particles -->
+  <circle cx='4' cy='8' r='1' fill='#dc2626' opacity='0.6'/>
+  <circle cx='2' cy='10' r='0.8' fill='#f59e0b' opacity='0.5'/>
+  <circle cx='4' cy='12' r='1' fill='#dc2626' opacity='0.6'/>
+  <circle cx='1' cy='9' r='0.6' fill='#991b1b' opacity='0.4'/>
+  <circle cx='1' cy='11' r='0.6' fill='#991b1b' opacity='0.4'/>
+  
+  <!-- Art deco geometric accents -->
+  <polygon points='8,9 10,8 11,10 10,12 8,11' fill='#f59e0b' opacity='0.6'/>
+  <line x1='6' y1='8' x2='8' y2='10' stroke='#dc2626' stroke-width='0.8' opacity='0.7'/>
+  <line x1='6' y1='12' x2='8' y2='10' stroke='#dc2626' stroke-width='0.8' opacity='0.7'/>
+</svg>

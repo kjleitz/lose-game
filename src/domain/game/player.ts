@@ -80,7 +80,7 @@ export class Player {
     if (actions.has("thrust")) moveY -= 1; // W/Up = move up
     if (actions.has("turnLeft")) moveX -= 1; // A/Left = move left
     if (actions.has("turnRight")) moveX += 1; // D/Right = move right
-    if (actions.has("interact")) moveY += 1; // S/Down = move down (reuse interact for now)
+    if (actions.has("moveDown")) moveY += 1; // S/Down = move down
 
     // Normalize diagonal movement
     if (moveX !== 0 && moveY !== 0) {

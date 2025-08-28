@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GameRenderer } from "./GameRenderer";
-import type { PlanetSurface } from "../game/modes/PlanetMode";
+import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Planet } from "../../domain/game/planets";
 import type { Enemy } from "../game/enemies";
 import type { Circle2D } from "../../shared/types/geometry";

@@ -1,0 +1,77 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <defs>
+    <!-- Hostile creature gradient -->
+    <radialGradient id='hostileGrad' cx='0.3' cy='0.3' r='0.8'>
+      <stop offset='0%' stop-color='#ff4444'/>
+      <stop offset='40%' stop-color='#dc2626'/>
+      <stop offset='80%' stop-color='#991b1b'/>
+      <stop offset='100%' stop-color='#7f1d1d'/>
+    </radialGradient>
+    
+    <!-- Claw/spine gradient -->
+    <linearGradient id='clawGrad' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#1f2937'/>
+      <stop offset='50%' stop-color='#111827'/>
+      <stop offset='100%' stop-color='#030712'/>
+    </linearGradient>
+    
+    <!-- Hostile eye -->
+    <radialGradient id='hostileEye' cx='0.5' cy='0.5' r='0.6'>
+      <stop offset='0%' stop-color='#fbbf24'/>
+      <stop offset='50%' stop-color='#f59e0b'/>
+      <stop offset='100%' stop-color='#d97706'/>
+    </radialGradient>
+    
+    <!-- Armor plating -->
+    <linearGradient id='armorGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#4b5563'/>
+      <stop offset='50%' stop-color='#374151'/>
+      <stop offset='100%' stop-color='#1f2937'/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main body - attacking stance, tilted forward -->
+  <polygon points='24,10 32,14 36,22 36,26 32,34 24,38 16,34 12,26 12,22 16,14' fill='url(#hostileGrad)' stroke='#7f1d1d' stroke-width='2' transform='rotate(-5 24 24)'/>
+  
+  <!-- Armor plating -->
+  <polygon points='24,12 30,16 30,32 24,36 18,32 18,16' fill='url(#armorGrad)' stroke='#1f2937' stroke-width='1' transform='rotate(-5 24 24)'/>
+  
+  <!-- Dorsal spines (more aggressive) -->
+  <polygon points='24,6 27,11 24,14 21,11' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+  <polygon points='19,8 22,13 19,16 16,13' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+  <polygon points='29,8 32,13 29,16 26,13' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+  
+  <!-- Claws/appendages (extended, aggressive) -->
+  <polygon points='12,16 4,14 2,18 8,20' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  <polygon points='36,16 44,14 46,18 40,20' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  <polygon points='12,32 4,34 2,30 8,28' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  <polygon points='36,32 44,34 46,30 40,28' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  
+  <!-- Claw tips (extended) -->
+  <polygon points='2,16 0,18 2,20' fill='#030712'/>
+  <polygon points='46,16 48,18 46,20' fill='#030712'/>
+  <polygon points='2,32 0,30 2,28' fill='#030712'/>
+  <polygon points='46,32 48,30 46,28' fill='#030712'/>
+  
+  <!-- Predator eyes (glowing, alert) -->
+  <ellipse cx='19' cy='19' rx='3.5' ry='3' fill='url(#hostileEye)' stroke='#92400e' stroke-width='1'/>
+  <ellipse cx='29' cy='19' rx='3.5' ry='3' fill='url(#hostileEye)' stroke='#92400e' stroke-width='1'/>
+  
+  <!-- Eye pupils (wider, alert) -->
+  <ellipse cx='19' cy='19' rx='2' ry='0.8' fill='#030712'/>
+  <ellipse cx='29' cy='19' rx='2' ry='0.8' fill='#030712'/>
+  
+  <!-- Art deco hostile patterns (intensified) -->
+  <polygon points='24,15 28,19 24,23 20,19' fill='#ff4444' opacity='0.9'/>
+  <line x1='18' y1='23' x2='30' y2='23' stroke='#ff4444' stroke-width='2.5' opacity='1'/>
+  <line x1='24' y1='17' x2='24' y2='29' stroke='#ff4444' stroke-width='2.5' opacity='1'/>
+  
+  <!-- Ventral armor segments -->
+  <ellipse cx='24' cy='28' rx='6' ry='3' fill='url(#armorGrad)' stroke='#1f2937' stroke-width='1' transform='rotate(-5 24 28)'/>
+  <line x1='20' y1='28' x2='28' y2='28' stroke='#030712' stroke-width='0.8' transform='rotate(-5 24 28)'/>
+  <line x1='22' y1='26' x2='26' y2='26' stroke='#030712' stroke-width='0.8' transform='rotate(-5 24 28)'/>
+  <line x1='22' y1='30' x2='26' y2='30' stroke='#030712' stroke-width='0.8' transform='rotate(-5 24 28)'/>
+  
+  <!-- Tail spikes (raised, threatening) -->
+  <polygon points='24,36 27,40 24,42 21,40' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+</svg>

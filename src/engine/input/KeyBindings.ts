@@ -9,10 +9,10 @@ const DEFAULT_KEY_TO_ACTION: Record<string, Action | undefined> = {
   KeyA: "turnLeft",
   ArrowRight: "turnRight",
   KeyD: "turnRight",
-  ArrowDown: "interact",
-  KeyS: "interact",
+  ArrowDown: "moveDown",
+  KeyS: "moveDown",
   Space: "fire",
-  KeyE: "interact",
+  KeyC: "interact",
   KeyL: "land",
   KeyT: "takeoff",
   KeyI: "inventory",
@@ -56,6 +56,7 @@ const ACTIONS = {
   turnRight: true,
   fire: true,
   interact: true,
+  moveDown: true,
   boost: true,
   speedUp: true,
   speedDown: true,
@@ -93,7 +94,18 @@ export function loadKeyBindingsFromStorage(): void {
     if (!value) return;
     const next: Record<string, Action | undefined> = {};
     for (const [code, act] of Object.entries(value)) next[code] = act;
+
+    // Migration: if ArrowDown/KeyS were previously bound to "interact",
+    // rebind them to the new "moveDown" action so players can still walk down.
+    let migrated = false;
+    for (const code of ["ArrowDown", "KeyS"]) {
+      if (next[code] === "interact") {
+        next[code] = "moveDown";
+        migrated = true;
+      }
+    }
     KEY_TO_ACTION = { ...DEFAULT_KEY_TO_ACTION, ...next };
+    if (migrated) saveKeyBindingsToStorage();
   } catch {
     // ignore
   }

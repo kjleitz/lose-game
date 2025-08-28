@@ -7,28 +7,10 @@ afterEach((): void => {
   cleanup();
 });
 
-// JSDOM does not implement canvas; provide a minimal, side-effect-free 2D context mock
-const mockCtx = {
-  save: (): void => {},
-  restore: (): void => {},
-  setTransform: (): void => {},
-  fillRect: (): void => {},
-  beginPath: (): void => {},
-  moveTo: (): void => {},
-  lineTo: (): void => {},
-  stroke: (): void => {},
-  get canvas(): HTMLCanvasElement {
-    const el = document.createElement("canvas");
-    el.width = 1024;
-    el.height = 768;
-    return el;
-  },
-};
+// JSDOM does not implement canvas; tests provide their own context mocks where needed.
 
 Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
   configurable: true,
-  // Casts are allowed in tests to simulate minimal environments
-  value: (type?: string): CanvasRenderingContext2D | null =>
-    // eslint-disable-next-line no-restricted-syntax
-    type === "2d" ? (mockCtx as unknown as CanvasRenderingContext2D) : null,
+  // Return null; tests that require a context provide their own mock
+  value: (type?: string): CanvasRenderingContext2D | null => (type === "2d" ? null : null),
 });

@@ -11,9 +11,11 @@ import * as EntityFactories from "./entities/EntityFactories";
 import { createCollisionSystem } from "./systems/CollisionSystem";
 import { createEnemyAISystem } from "./systems/EnemyAISystem";
 import { createMovementSystem } from "./systems/MovementSystem";
+import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
-import type { PlanetSurface } from "../game/modes/PlanetMode";
+import type { PlanetSurface } from "../game/planet-surface/types";
+import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
 import { createWeaponSystem } from "./systems/WeaponSystem";
 import {
   createDroppedItemAgingSystem,
@@ -121,27 +123,38 @@ export class GameSessionECS {
         this.mode = "planet";
         this.landedPlanetId = near;
         const planet = this.getPlanets().find((pl) => pl.id === near);
-        if (planet) this.planetSurface = this.generatePlanetSurface(planet);
+        if (planet)
+          this.planetSurface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
         // Spawn a few creatures near landing for planet mode
         this.spawnPlanetCreatures();
       }
     } else if (this.mode === "planet") {
       if (actions.has("takeoff")) {
-        // Return to stored position if available
-        if (this.returnPosition) {
-          const players = this.world.query({
-            position: Components.Position,
-            player: Components.Player,
-          });
-          if (players.length > 0) {
+        // Require proximity to landing site
+        const surface = this.planetSurface;
+        const players = this.world.query({
+          position: Components.Position,
+          player: Components.Player,
+        });
+        let nearLanding = false;
+        if (surface && players.length > 0) {
+          const { x, y } = players[0].components.position;
+          const dx = x - surface.landingSite.x;
+          const dy = y - surface.landingSite.y;
+          nearLanding = Math.hypot(dx, dy) <= 64;
+        }
+
+        if (nearLanding) {
+          // Return to stored position if available
+          if (this.returnPosition && players.length > 0) {
             const { position } = players[0].components;
             position.x = this.returnPosition.x;
             position.y = this.returnPosition.y;
           }
+          this.mode = "space";
+          this.landedPlanetId = null;
+          this.planetSurface = undefined;
         }
-        this.mode = "space";
-        this.landedPlanetId = null;
-        this.planetSurface = undefined;
       }
     }
 
@@ -162,6 +175,11 @@ export class GameSessionECS {
     weaponSystem.run();
     enemyAISystem.run();
     movementSystem.run();
+    // Planet terrain blocking after movement
+    if (this.mode === "planet") {
+      const blocker = createPlanetTerrainCollisionSystem(this.world, () => this.planetSurface);
+      blocker.run();
+    }
     projectileSystem.run();
     collisionSystem.run();
     dropAgingSystem.run();
@@ -169,6 +187,11 @@ export class GameSessionECS {
 
     // Update camera to follow player
     this.updateCameraFollowPlayer();
+
+    // Auto-collect nearby planet resources (matches classic PlanetMode behavior)
+    if (this.mode === "planet") {
+      this.collectNearbyResources();
+    }
 
     // Update proximity notification for planets
     this.updateNotifications();
@@ -196,11 +219,12 @@ export class GameSessionECS {
       rotation: Components.Rotation,
       health: Components.Health,
       player: Components.Player,
+      experience: Components.PlayerExperience,
     });
     if (players.length === 0) return null;
 
     const player = players[0];
-    const { position, velocity, rotation, health } = player.components;
+    const { position, velocity, rotation, health, experience } = player.components;
     return {
       x: position.x,
       y: position.y,
@@ -208,6 +232,7 @@ export class GameSessionECS {
       vy: velocity.dy,
       angle: rotation.angle,
       health: health.current,
+      experience: experience.current,
     };
   }
 
@@ -383,6 +408,35 @@ export class GameSessionECS {
     return this.planetSurface;
   }
 
+  // Collect planet resources (e.g., energy/mineral/organic) when the player is close
+  private collectNearbyResources(): void {
+    if (!this.planetSurface) return;
+    const players = this.world.query({ position: Components.Position, player: Components.Player });
+    if (players.length === 0) return;
+    const playerPos = players[0].components.position;
+    const xpEntities = this.world.query({
+      player: Components.Player,
+      experience: Components.PlayerExperience,
+    });
+    const xp = xpEntities.length > 0 ? xpEntities[0].components.experience : null;
+
+    // Match classic collection radius
+    const RADIUS = 30;
+    const { resources } = this.planetSurface;
+    for (let i = resources.length - 1; i >= 0; i--) {
+      const r = resources[i];
+      const dist = Math.hypot(playerPos.x - r.x, playerPos.y - r.y);
+      if (dist < RADIUS) {
+        // Remove collected resource and award XP if available
+        resources.splice(i, 1);
+        if (xp) {
+          xp.current += r.amount;
+          // Level progression can be added later
+        }
+      }
+    }
+  }
+
   // Allow application layer to set player position on load/restore
   setPlayerPosition(pos: { x: number; y: number }): void {
     const players = this.world.query({ position: Components.Position, player: Components.Player });
@@ -405,7 +459,7 @@ export class GameSessionECS {
       this.landedPlanetId = data.planetId ?? null;
       if (this.landedPlanetId) {
         const p = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
-        if (p) this.planetSurface = this.generatePlanetSurface(p);
+        if (p) this.planetSurface = generatePlanetSurfaceFor({ id: p.id, radius: p.radius });
       }
     } else {
       this.mode = "space";
@@ -415,45 +469,7 @@ export class GameSessionECS {
     this.updateNotifications();
   }
 
-  // Simple procedural surface generation inspired by PlanetMode
-  private generatePlanetSurface(planet: {
-    id: string;
-    x: number;
-    y: number;
-    radius: number;
-  }): PlanetSurface {
-    const landingSite = { x: 0, y: 0 };
-    const terrain: PlanetSurface["terrain"] = [];
-    const resources: PlanetSurface["resources"] = [];
-    const creatures: PlanetSurface["creatures"] = [];
-
-    const r = Math.random;
-    const features = Math.floor(r() * 10) + 5;
-    for (let i = 0; i < features; i++) {
-      const angle = r() * Math.PI * 2;
-      const distance = 100 + r() * 300;
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
-      const type: PlanetSurface["terrain"][number]["type"] = r() > 0.5 ? "rock" : "vegetation";
-      terrain.push({ id: `terrain-${i}`, x, y, type, size: 20 + r() * 30 });
-    }
-
-    const resCount = Math.floor(r() * 5) + 2;
-    const resTypes: PlanetSurface["resources"][number]["type"][] = ["mineral", "energy", "organic"];
-    for (let i = 0; i < resCount; i++) {
-      const angle = r() * Math.PI * 2;
-      const distance = 50 + r() * 200;
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
-      const type = resTypes[Math.floor(r() * resTypes.length)];
-      resources.push({ id: `resource-${i}`, x, y, type, amount: Math.floor(r() * 50) + 10 });
-    }
-
-    // Omit creatures in ECS surface for now to keep types simple
-    // PlanetSurfaceRenderer does not require complex creature data for background
-
-    return { planetId: planet.id, landingSite, terrain, resources, creatures };
-  }
+  // generatePlanetSurface is now shared in domain/game/planet-surface/generate.ts
 
   private spawnPlanetCreatures(): void {
     // Spawn simple enemies near player when entering planet mode

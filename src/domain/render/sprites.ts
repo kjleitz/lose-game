@@ -1,4 +1,4 @@
-// Generic sprite cache
+// Generic sprite cache with themeable variants
 interface CachedSprite {
   img: HTMLImageElement;
   loaded: boolean;
@@ -6,7 +6,85 @@ interface CachedSprite {
 
 const spriteCache: Map<string, CachedSprite> = new Map();
 
-function getSprite(path: string): CachedSprite {
+// Vite will transform these into hashed URLs at build time
+const RAW_SPRITES = import.meta.glob("/src/assets/sprites/*/*.svg", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+const SPRITE_FILES: Record<string, string> = {};
+for (const [k, v] of Object.entries(RAW_SPRITES)) {
+  if (typeof v === "string") SPRITE_FILES[k] = v;
+}
+
+function resolveSpriteUrl(key: string, variant: SpriteVariant): string | null {
+  // Try exact match first
+  const exact = `/src/assets/sprites/${key}/${variant}.svg`;
+  if (Object.prototype.hasOwnProperty.call(SPRITE_FILES, exact)) return SPRITE_FILES[exact];
+  // Try numbered frames e.g. art-deco-1.svg, art-deco-2.svg
+  const base = `/src/assets/sprites/${key}/${variant}`;
+  const candidates: string[] = Object.keys(SPRITE_FILES).filter((p) => p.startsWith(base + "-"));
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => a.localeCompare(b));
+    return SPRITE_FILES[candidates[0]];
+  }
+  // As a last resort, pick any available variant for the key
+  const anyForKey: string[] = Object.keys(SPRITE_FILES).filter((p) =>
+    p.startsWith(`/src/assets/sprites/${key}/`),
+  );
+  if (anyForKey.length > 0) {
+    anyForKey.sort((a, b) => a.localeCompare(b));
+    return SPRITE_FILES[anyForKey[0]];
+  }
+  return null;
+}
+
+export type SpriteVariant = string;
+
+interface SpriteConfig {
+  defaultVariant: SpriteVariant;
+  overrides: Record<string, SpriteVariant>;
+}
+
+const config: SpriteConfig = {
+  defaultVariant: "classic",
+  overrides: {},
+};
+
+export function setSpriteDefaultVariant(variant: SpriteVariant): void {
+  config.defaultVariant = variant;
+}
+
+export function setSpriteOverrides(overrides: Record<string, SpriteVariant>): void {
+  // Replace wholesale to avoid stale keys lingering
+  config.overrides = { ...overrides };
+}
+
+export function setSpriteConfig(next: Partial<SpriteConfig>): void {
+  if (typeof next.defaultVariant === "string") config.defaultVariant = next.defaultVariant;
+  if (next.overrides) config.overrides = { ...next.overrides };
+  // Invalidate top-level sprite refs so new theme takes effect immediately
+  shipImg = null;
+  shipImgLoaded = false;
+  thrusterImg = null;
+  enemyShipImg = null;
+  enemyShipImgLoaded = false;
+  enemyThrusterImg = null;
+}
+
+function getVariantForKey(key: string): SpriteVariant {
+  return config.overrides[key] ?? config.defaultVariant;
+}
+
+function spritePath(key: string): string {
+  const variant = getVariantForKey(key);
+  const url = resolveSpriteUrl(key, variant);
+  // If resolution fails, fall back to an impossible path to avoid 404 spam
+  return url ?? `/__missing_sprite__/${key}/${variant}.svg`;
+}
+
+function getSpriteByKey(key: string): CachedSprite {
+  const path = spritePath(key);
   const existing = spriteCache.get(path);
   if (existing) return existing;
   const img = new window.Image();
@@ -17,6 +95,13 @@ function getSprite(path: string): CachedSprite {
   };
   spriteCache.set(path, record);
   return record;
+}
+
+// Expose URL builder for UI previews. If variant is provided, use it instead
+// of the currently configured one.
+export function getSpriteUrlForKey(key: string, variant?: SpriteVariant): string {
+  if (variant) return resolveSpriteUrl(key, variant) ?? `/__missing_sprite__/${key}/${variant}.svg`;
+  return spritePath(key);
 }
 
 // Module-level cache for the SVG image and loaded state (legacy helpers)
@@ -31,8 +116,9 @@ export function drawShipTriangle(
   size = 24,
 ): void {
   if (!shipImg) {
-    shipImg = new window.Image();
-    shipImg.src = "/src/assets/svg/ship.svg";
+    const { img, loaded } = getSpriteByKey("ship");
+    shipImg = img;
+    shipImgLoaded = loaded;
     shipImg.onload = (): void => {
       shipImgLoaded = true;
     };
@@ -80,8 +166,8 @@ export function drawThruster(
   power = 1,
 ): void {
   if (!thrusterImg) {
-    thrusterImg = new window.Image();
-    thrusterImg.src = "/src/assets/svg/thruster.svg";
+    const { img } = getSpriteByKey("thruster");
+    thrusterImg = img;
     // Image will be ready when needed
   }
 
@@ -180,8 +266,9 @@ export function drawEnemyShip(
   size = 24,
 ): void {
   if (!enemyShipImg) {
-    enemyShipImg = new window.Image();
-    enemyShipImg.src = "/src/assets/svg/enemy-ship.svg";
+    const { img, loaded } = getSpriteByKey("enemy-ship");
+    enemyShipImg = img;
+    enemyShipImgLoaded = loaded;
     enemyShipImg.onload = (): void => {
       enemyShipImgLoaded = true;
     };
@@ -209,8 +296,8 @@ export function drawEnemyThruster(
   enemyId = "default",
 ): void {
   if (!enemyThrusterImg) {
-    enemyThrusterImg = new window.Image();
-    enemyThrusterImg.src = "/src/assets/svg/enemy-thruster.svg";
+    const { img } = getSpriteByKey("enemy-thruster");
+    enemyThrusterImg = img;
     // Image will be ready when needed
   }
 
@@ -308,7 +395,7 @@ type DrawCtx = Pick<
 >;
 
 export function drawProjectile(ctx: DrawCtx, x: number, y: number, angle: number, size = 8): void {
-  const { img, loaded } = getSprite("/src/assets/svg/projectile.svg");
+  const { img, loaded } = getSpriteByKey("projectile");
   if (!loaded) return;
   ctx.save();
   ctx.translate(x, y);
@@ -318,7 +405,7 @@ export function drawProjectile(ctx: DrawCtx, x: number, y: number, angle: number
 }
 
 export function drawCharacter(ctx: DrawCtx, x: number, y: number, angle: number, size = 32): void {
-  const { img, loaded } = getSprite("/src/assets/svg/character.svg");
+  const { img, loaded } = getSpriteByKey("character");
   if (!loaded) return;
   ctx.save();
   ctx.translate(x, y);
@@ -336,13 +423,13 @@ export function drawCreature(
   type: CreatureSpriteType,
   size: number,
 ): void {
-  const path =
+  const key =
     type === "passive"
-      ? "/src/assets/svg/creature-passive.svg"
+      ? "creature-passive"
       : type === "neutral"
-        ? "/src/assets/svg/creature-neutral.svg"
-        : "/src/assets/svg/creature-hostile.svg";
-  const { img, loaded } = getSprite(path);
+        ? "creature-neutral"
+        : "creature-hostile";
+  const { img, loaded } = getSpriteByKey(key);
   if (!loaded) return;
   ctx.save();
   ctx.translate(x, y);
@@ -368,8 +455,8 @@ export function drawDroppedItem(
   baseType: DroppedItemSpriteType,
   size = 16,
 ): void {
-  const path = `/src/assets/svg/item-${baseType}.svg`;
-  const { img, loaded } = getSprite(path);
+  const key = `item-${baseType}`;
+  const { img, loaded } = getSpriteByKey(key);
   if (!loaded) return;
   ctx.save();
   ctx.translate(x, y);
@@ -386,8 +473,8 @@ export function drawTerrain(
   type: TerrainSpriteType,
   size: number,
 ): void {
-  const path = `/src/assets/svg/terrain-${type}.svg`;
-  const { img, loaded } = getSprite(path);
+  const key = `terrain-${type}`;
+  const { img, loaded } = getSpriteByKey(key);
   if (!loaded) return;
   ctx.save();
   ctx.translate(x, y);
@@ -404,8 +491,8 @@ export function drawResource(
   type: ResourceSpriteType,
   size = 20,
 ): void {
-  const path = `/src/assets/svg/resource-${type}.svg`;
-  const { img, loaded } = getSprite(path);
+  const key = `resource-${type}`;
+  const { img, loaded } = getSpriteByKey(key);
   if (!loaded) return;
   ctx.save();
   ctx.translate(x, y);

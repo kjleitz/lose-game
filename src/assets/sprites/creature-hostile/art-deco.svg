@@ -1,0 +1,77 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <defs>
+    <!-- Hostile creature gradient -->
+    <radialGradient id='hostileGrad' cx='0.3' cy='0.3' r='0.8'>
+      <stop offset='0%' stop-color='#ff4444'/>
+      <stop offset='40%' stop-color='#dc2626'/>
+      <stop offset='80%' stop-color='#991b1b'/>
+      <stop offset='100%' stop-color='#7f1d1d'/>
+    </radialGradient>
+    
+    <!-- Claw/spine gradient -->
+    <linearGradient id='clawGrad' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#1f2937'/>
+      <stop offset='50%' stop-color='#111827'/>
+      <stop offset='100%' stop-color='#030712'/>
+    </linearGradient>
+    
+    <!-- Hostile eye -->
+    <radialGradient id='hostileEye' cx='0.5' cy='0.5' r='0.6'>
+      <stop offset='0%' stop-color='#fbbf24'/>
+      <stop offset='50%' stop-color='#f59e0b'/>
+      <stop offset='100%' stop-color='#d97706'/>
+    </radialGradient>
+    
+    <!-- Armor plating -->
+    <linearGradient id='armorGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#4b5563'/>
+      <stop offset='50%' stop-color='#374151'/>
+      <stop offset='100%' stop-color='#1f2937'/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main body - predatorial, angular shape -->
+  <polygon points='24,10 32,14 36,22 36,26 32,34 24,38 16,34 12,26 12,22 16,14' fill='url(#hostileGrad)' stroke='#7f1d1d' stroke-width='2'/>
+  
+  <!-- Armor plating -->
+  <polygon points='24,12 30,16 30,32 24,36 18,32 18,16' fill='url(#armorGrad)' stroke='#1f2937' stroke-width='1'/>
+  
+  <!-- Dorsal spines -->
+  <polygon points='24,8 26,12 24,14 22,12' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+  <polygon points='20,10 22,14 20,16 18,14' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+  <polygon points='28,10 30,14 28,16 26,14' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+  
+  <!-- Claws/appendages -->
+  <polygon points='12,18 6,16 4,20 10,22' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  <polygon points='36,18 42,16 44,20 38,22' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  <polygon points='12,30 6,32 4,28 10,26' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  <polygon points='36,30 42,32 44,28 38,26' fill='url(#clawGrad)' stroke='#030712' stroke-width='1'/>
+  
+  <!-- Claw tips -->
+  <polygon points='4,18 2,20 4,22' fill='#030712'/>
+  <polygon points='44,18 46,20 44,22' fill='#030712'/>
+  <polygon points='4,30 2,28 4,26' fill='#030712'/>
+  <polygon points='44,30 46,28 44,26' fill='#030712'/>
+  
+  <!-- Predator eyes -->
+  <ellipse cx='20' cy='20' rx='3' ry='2.5' fill='url(#hostileEye)' stroke='#92400e' stroke-width='1'/>
+  <ellipse cx='28' cy='20' rx='3' ry='2.5' fill='url(#hostileEye)' stroke='#92400e' stroke-width='1'/>
+  
+  <!-- Eye pupils (menacing slits) -->
+  <ellipse cx='20' cy='20' rx='1.5' ry='0.5' fill='#030712'/>
+  <ellipse cx='28' cy='20' rx='1.5' ry='0.5' fill='#030712'/>
+  
+  <!-- Art deco hostile patterns -->
+  <polygon points='24,16 27,20 24,24 21,20' fill='#7f1d1d' opacity='0.8'/>
+  <line x1='18' y1='24' x2='30' y2='24' stroke='#7f1d1d' stroke-width='2' opacity='0.9'/>
+  <line x1='24' y1='18' x2='24' y2='30' stroke='#7f1d1d' stroke-width='2' opacity='0.9'/>
+  
+  <!-- Ventral armor segments -->
+  <ellipse cx='24' cy='28' rx='6' ry='3' fill='url(#armorGrad)' stroke='#1f2937' stroke-width='1'/>
+  <line x1='20' y1='28' x2='28' y2='28' stroke='#030712' stroke-width='0.5'/>
+  <line x1='22' y1='26' x2='26' y2='26' stroke='#030712' stroke-width='0.5'/>
+  <line x1='22' y1='30' x2='26' y2='30' stroke='#030712' stroke-width='0.5'/>
+  
+  <!-- Tail spikes -->
+  <polygon points='24,38 26,42 24,44 22,42' fill='url(#clawGrad)' stroke='#030712' stroke-width='0.8'/>
+</svg>

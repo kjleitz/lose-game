@@ -4,6 +4,7 @@ export type Action =
   | "turnRight"
   | "fire"
   | "interact"
+  | "moveDown"
   | "boost"
   | "speedUp"
   | "speedDown"

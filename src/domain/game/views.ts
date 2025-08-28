@@ -4,6 +4,7 @@ import type { Planet } from "./planets";
 
 export interface PlayerView extends Kinematics2D {
   health: number;
+  experience: number;
 }
 
 export type EnemyView = Enemy;

@@ -32,6 +32,8 @@ describe("GameSessionECS planet surface generation", () => {
     session.update(actionsSet(["land"]), 1 / 60);
     expect(session.getPlanetSurface()).toBeDefined();
 
+    // Move to landing site to satisfy takeoff gating
+    session.setPlayerPosition({ x: 0, y: 0 });
     session.update(actionsSet(["takeoff"]), 1 / 60);
     expect(session.getCurrentModeType()).toBe("space");
     expect(session.getPlanetSurface()).toBeUndefined();

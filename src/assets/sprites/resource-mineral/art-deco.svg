@@ -1,0 +1,53 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>
+  <defs>
+    <!-- Art deco mineral gradients -->
+    <linearGradient id='mineralGrad' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#f3f4f6'/>
+      <stop offset='30%' stop-color='#d1d5db'/>
+      <stop offset='70%' stop-color='#9ca3af'/>
+      <stop offset='100%' stop-color='#6b7280'/>
+    </linearGradient>
+    
+    <linearGradient id='facetGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='0.9'/>
+      <stop offset='100%' stop-color='#e5e7eb' stop-opacity='0.3'/>
+    </linearGradient>
+    
+    <radialGradient id='sparkle' cx='0.5' cy='0.5' r='0.5'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='0.9'/>
+      <stop offset='100%' stop-color='#ffffff' stop-opacity='0'/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Main crystal structure - art deco diamond shape -->
+  <polygon points='16,2 26,8 28,16 26,24 16,30 6,24 4,16 6,8' fill='url(#mineralGrad)' stroke='#6b7280' stroke-width='2'/>
+  
+  <!-- Crystal facets -->
+  <polygon points='16,2 26,8 20,12 10,8' fill='url(#facetGrad)' opacity='0.8'/>
+  <polygon points='26,8 28,16 22,16 20,12' fill='url(#mineralGrad)' stroke='#4b5563' stroke-width='1'/>
+  <polygon points='6,8 4,16 10,16 12,12' fill='url(#facetGrad)' opacity='0.6'/>
+  <polygon points='4,16 6,24 12,20 10,16' fill='url(#mineralGrad)' stroke='#4b5563' stroke-width='1'/>
+  <polygon points='28,16 26,24 20,20 22,16' fill='url(#mineralGrad)' stroke='#4b5563' stroke-width='1'/>
+  <polygon points='16,30 6,24 12,20 22,20' fill='url(#facetGrad)' opacity='0.7'/>
+  
+  <!-- Art deco geometric details -->
+  <polygon points='16,6 20,12 16,16 12,12' fill='#ffffff' opacity='0.4'/>
+  <polygon points='16,16 20,20 16,26 12,20' fill='#e5e7eb' opacity='0.3'/>
+  
+  <!-- Crystal structure lines -->
+  <line x1='16' y1='6' x2='16' y2='26' stroke='#9ca3af' stroke-width='1' opacity='0.7'/>
+  <line x1='10' y1='12' x2='22' y2='20' stroke='#9ca3af' stroke-width='0.8' opacity='0.6'/>
+  <line x1='22' y1='12' x2='10' y2='20' stroke='#9ca3af' stroke-width='0.8' opacity='0.6'/>
+  
+  <!-- Sparkle effects -->
+  <circle cx='14' cy='10' r='1.5' fill='url(#sparkle)'/>
+  <circle cx='20' cy='14' r='1' fill='url(#sparkle)'/>
+  <circle cx='12' cy='18' r='1' fill='url(#sparkle)'/>
+  <circle cx='18' cy='22' r='1.5' fill='url(#sparkle)'/>
+  
+  <!-- Small crystal points -->
+  <polygon points='16,4 17,6 16,8 15,6' fill='#ffffff' opacity='0.8'/>
+  <polygon points='16,24 17,26 16,28 15,26' fill='#d1d5db' opacity='0.6'/>
+  <polygon points='8,16 10,15 12,16 10,17' fill='#ffffff' opacity='0.7'/>
+  <polygon points='24,16 22,15 20,16 22,17' fill='#d1d5db' opacity='0.5'/>
+</svg>

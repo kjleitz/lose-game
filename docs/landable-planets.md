@@ -4,16 +4,16 @@ Implementation guide for the dual-game architecture supporting landable planets.
 
 ## Overview
 
-L.O.S.E. will support two distinct gameplay modes:
+L.O.S.E. supports two gameplay modes implemented under a single ECS session:
 
-- **SpaceMode**: Current ship-based space exploration
-- **PlanetMode**: On-foot exploration of planet surfaces
+- Space: ship-based space exploration
+- Planet: on-foot exploration of planet surfaces
 
-Both modes share core systems while maintaining clean separation for mode-specific logic.
+Both modes share core systems (ECS components/systems) while maintaining clean separation for mode-specific logic.
 
 ## Architecture
 
-### GameMode Pattern
+### Implementation Pattern (historical)
 
 ```typescript
 abstract class GameMode {
@@ -25,7 +25,7 @@ abstract class GameMode {
 }
 ```
 
-### Mode State Management
+### Mode State Management (now handled by ECS session)
 
 Each mode maintains its own state that persists when switching:
 
@@ -65,17 +65,17 @@ class Player {
 }
 ```
 
-## Mode Transitions
+## Mode Transitions (now in GameSessionECS)
 
 ### Landing on Planets
 
 **Trigger**: Press 'L' key when within landing range of a planet
 **Process**:
 
-1. Save current SpaceMode state
+1. Save current space state
 2. Generate planet surface terrain
 3. Position player at landing site
-4. Switch to PlanetMode
+4. Switch to planet mode
 5. Update HUD to show planet-specific UI
 
 ### Taking Off
@@ -83,10 +83,10 @@ class Player {
 **Trigger**: Press 'T' key while on planet surface
 **Process**:
 
-1. Save current PlanetMode state
+1. Save current planet state
 2. Restore SpaceMode state
 3. Position ship outside planet in space
-4. Switch to SpaceMode
+4. Switch to space mode
 5. Update HUD to show space-specific UI
 
 ## Shared Systems
@@ -112,9 +112,7 @@ class Player {
 
 ### Rendering Pipeline
 
-- GameRenderer delegates to mode-specific renderers
-- Shared: camera transforms, UI overlay
-- Mode-specific: backgrounds, entity renderers
+- `GameRenderer` queries `GameSessionECS` for the current mode and delegates to space/planet render passes.
 
 ## Implementation Phases
 
@@ -176,15 +174,15 @@ class Player {
 - Modular HUD allows mode-specific UI components
 - Shared systems support multiple entity types
 
-## File Organization
+## File Organization (historical; classes removed)
 
 ```
 src/domain/game/
 ├── modes/
-│   ├── GameMode.ts          # Abstract base class
-│   ├── SpaceMode.ts         # Space exploration mode
-│   ├── PlanetMode.ts        # Planet surface exploration
-│   └── ModeTransition.ts    # Mode switching logic
+│   ├── (removed) GameMode.ts
+│   ├── (removed) SpaceMode.ts
+│   ├── (removed) PlanetMode.ts
+│   └── (removed) ModeTransition.ts
 ├── terrain/
 │   ├── TerrainGenerator.ts  # Procedural planet surfaces
 │   └── TerrainRenderer.ts   # Planet surface rendering

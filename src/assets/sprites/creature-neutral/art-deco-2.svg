@@ -1,0 +1,70 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <defs>
+    <!-- Metallic body gradient -->
+    <radialGradient id='metalGrad' cx='0.3' cy='0.3' r='0.8'>
+      <stop offset='0%' stop-color='#fbbf24'/>
+      <stop offset='40%' stop-color='#f59e0b'/>
+      <stop offset='80%' stop-color='#d97706'/>
+      <stop offset='100%' stop-color='#92400e'/>
+    </radialGradient>
+    
+    <!-- Leg gradient -->
+    <linearGradient id='legGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#6b7280'/>
+      <stop offset='50%' stop-color='#4b5563'/>
+      <stop offset='100%' stop-color='#374151'/>
+    </linearGradient>
+    
+    <!-- Eye scanner -->
+    <radialGradient id='scanGrad' cx='0.5' cy='0.5' r='0.6'>
+      <stop offset='0%' stop-color='#ef4444'/>
+      <stop offset='70%' stop-color='#dc2626'/>
+      <stop offset='100%' stop-color='#b91c1c'/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Main body - lowered position -->
+  <polygon points='24,13 30,16 33,22 33,28 30,34 24,37 18,34 15,28 15,22 18,16' fill='url(#metalGrad)' stroke='#92400e' stroke-width='2'/>
+  
+  <!-- Mechanical legs (lowered, closer to ground) -->
+  <!-- Front legs -->
+  <line x1='18' y1='19' x2='9' y2='14' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  <line x1='30' y1='19' x2='39' y2='14' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  
+  <!-- Side legs -->
+  <line x1='15' y1='25' x2='5' y2='22' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  <line x1='33' y1='25' x2='43' y2='22' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  <line x1='15' y1='25' x2='5' y2='30' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  <line x1='33' y1='25' x2='43' y2='30' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  
+  <!-- Back legs -->
+  <line x1='18' y1='31' x2='9' y2='38' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  <line x1='30' y1='31' x2='39' y2='38' stroke='url(#legGrad)' stroke-width='2' stroke-linecap='round'/>
+  
+  <!-- Leg joints -->
+  <circle cx='9' cy='14' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='39' cy='14' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='5' cy='22' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='43' cy='22' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='5' cy='30' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='43' cy='30' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='9' cy='38' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  <circle cx='39' cy='38' r='1.5' fill='#374151' stroke='#1f2937' stroke-width='0.5'/>
+  
+  <!-- Scanner eyes (dimmer) -->
+  <circle cx='21' cy='23' r='2.2' fill='url(#scanGrad)' stroke='#7f1d1d' stroke-width='0.8'/>
+  <circle cx='27' cy='23' r='2.2' fill='url(#scanGrad)' stroke='#7f1d1d' stroke-width='0.8'/>
+  
+  <!-- Eye pupils (narrower scanner beam) -->
+  <circle cx='21' cy='23' r='0.8' fill='#ffffff' opacity='0.8'/>
+  <circle cx='27' cy='23' r='0.8' fill='#ffffff' opacity='0.8'/>
+  
+  <!-- Art deco body details -->
+  <polygon points='24,17 26,21 24,25 22,21' fill='#ffffff' opacity='0.2'/>
+  <line x1='18' y1='25' x2='30' y2='25' stroke='#92400e' stroke-width='0.8' opacity='0.6'/>
+  <line x1='24' y1='19' x2='24' y2='31' stroke='#92400e' stroke-width='0.8' opacity='0.6'/>
+  
+  <!-- Central processing unit (idle) -->
+  <circle cx='24' cy='27' r='2.8' fill='#4b5563' stroke='#374151' stroke-width='1'/>
+  <circle cx='24' cy='27' r='1.2' fill='#ef4444' opacity='0.6'/>
+</svg>

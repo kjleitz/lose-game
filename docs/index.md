@@ -10,18 +10,12 @@ Welcome to the L.O.S.E. (Lots of Outer Space to Explore) documentation hub.
 - [Development Playbook](dev-playbook.md) - How to develop and contribute
 - [Testing Guide](testing.md) - Testing strategies and tools
 
-## 🎮 Dual-Game Architecture
+## 🎮 Modes under ECS
 
-L.O.S.E. features a unique dual-game system where players seamlessly switch between space exploration and planet surface exploration.
+Players seamlessly switch between space and planet exploration, implemented as states inside a single ECS session (`GameSessionECS`). There are no `SpaceMode`/`PlanetMode` classes anymore; mode-specific behavior lives in ECS systems and shared generators.
 
-- [Dual-Game System Architecture](architecture/dual-game-system.md) - Complete architectural overview
-- [Landable Planets](landable-planets.md) - Design and implementation guide
-
-### Game Modes
-
-- **Space Mode**: Ship-based exploration, combat, and planet discovery
-- **Planet Mode**: Character-based surface exploration, creatures, and resources
-- **Transitions**: Seamless switching via landing (L) and takeoff (T)
+- [Landable Planets](landable-planets.md) – Design goals (historical; see note inside)
+- [ECS Refactoring Steps](ecs-refactoring-steps.md) – Historical notes on the migration
 
 ## 🏗️ Architecture & Systems
 
@@ -51,7 +45,7 @@ L.O.S.E. features a unique dual-game system where players seamlessly switch betw
 
 ## 🎯 Current Focus
 
-We're evolving toward a true dual-game architecture where SpaceMode and PlanetMode operate as independent games sharing a common engine. See [ADR-0008](decisions/adr-0008-engine-extraction-plan.md) for the complete roadmap.
+We consolidated onto an ECS-first architecture. Space/Planet are modes of `GameSessionECS`; legacy classes and engine wrappers have been removed. See [legacy-removal-plan](legacy-removal-plan.md) for details.
 
 Quick Commands
 

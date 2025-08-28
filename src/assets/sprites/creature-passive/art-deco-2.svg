@@ -1,0 +1,52 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <defs>
+    <!-- Crystalline gradient for passive creatures -->
+    <linearGradient id='crystalGrad' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#a7f3d0'/>
+      <stop offset='30%' stop-color='#6ee7b7'/>
+      <stop offset='70%' stop-color='#34d399'/>
+      <stop offset='100%' stop-color='#10b981'/>
+    </linearGradient>
+    
+    <!-- Crystal facet highlights -->
+    <linearGradient id='highlightGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='0.8'/>
+      <stop offset='100%' stop-color='#ffffff' stop-opacity='0.2'/>
+    </linearGradient>
+    
+    <!-- Eye glow -->
+    <radialGradient id='eyeGlow' cx='0.5' cy='0.5' r='0.6'>
+      <stop offset='0%' stop-color='#fbbf24'/>
+      <stop offset='70%' stop-color='#f59e0b'/>
+      <stop offset='100%' stop-color='#d97706'/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Main body - hexagonal crystal shape (rotated opposite) -->
+  <polygon points='24,8 34,16 34,32 24,40 14,32 14,16' fill='url(#crystalGrad)' stroke='#059669' stroke-width='2' transform='rotate(3 24 24)'/>
+  
+  <!-- Crystal facets -->
+  <polygon points='24,8 34,16 24,24 14,16' fill='url(#highlightGrad)' opacity='0.6' transform='rotate(3 24 24)'/>
+  <polygon points='14,16 24,24 14,32' fill='url(#crystalGrad)' stroke='#047857' stroke-width='1' transform='rotate(3 24 24)'/>
+  <polygon points='24,24 34,16 34,32' fill='url(#crystalGrad)' stroke='#047857' stroke-width='1' transform='rotate(3 24 24)'/>
+  
+  <!-- Art deco geometric patterns on body -->
+  <polygon points='24,12 28,18 24,20 20,18' fill='#ffffff' opacity='0.3' transform='rotate(3 24 24)'/>
+  <polygon points='24,28 28,30 24,36 20,30' fill='#ffffff' opacity='0.2' transform='rotate(3 24 24)'/>
+  
+  <!-- Eyes - glowing amber (dimmer) -->
+  <circle cx='20' cy='20' r='2.8' fill='url(#eyeGlow)' stroke='#92400e' stroke-width='0.8'/>
+  <circle cx='28' cy='20' r='2.8' fill='url(#eyeGlow)' stroke='#92400e' stroke-width='0.8'/>
+  
+  <!-- Eye pupils -->
+  <circle cx='20' cy='20' r='1.7' fill='#451a03' opacity='0.7'/>
+  <circle cx='28' cy='20' r='1.7' fill='#451a03' opacity='0.7'/>
+  
+  <!-- Small crystal protrusions (retracted) -->
+  <polygon points='13,24 9,22 9,26' fill='url(#crystalGrad)' stroke='#059669' stroke-width='1'/>
+  <polygon points='35,24 39,22 39,26' fill='url(#crystalGrad)' stroke='#059669' stroke-width='1'/>
+  
+  <!-- Art deco accent lines -->
+  <line x1='24' y1='16' x2='24' y2='32' stroke='#047857' stroke-width='0.8' opacity='0.6' transform='rotate(3 24 24)'/>
+  <line x1='18' y1='24' x2='30' y2='24' stroke='#047857' stroke-width='0.6' opacity='0.6' transform='rotate(3 24 24)'/>
+</svg>

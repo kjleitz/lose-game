@@ -1,8 +1,10 @@
 # ADR-0007: Landable Planets with Dual-Game Architecture
 
+> Note (Status Update): This ADR reflects an earlier class-based approach using `SpaceMode`/`PlanetMode`. The current implementation consolidates on an ECS session (`GameSessionECS`) with mode-specific behavior in systems and a shared planet-surface generator. Keep this ADR for historical context.
+
 ## Status
 
-Proposed
+Superseded by ECS GameSession
 
 ## Context
 

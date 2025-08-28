@@ -1,0 +1,72 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='64' height='32' viewBox='0 0 64 32'>
+  <defs>
+    <!-- Art deco ship hull gradient -->
+    <linearGradient id='hullGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#e5e7eb'/>
+      <stop offset='30%' stop-color='#f9fafb'/>
+      <stop offset='70%' stop-color='#ffffff'/>
+      <stop offset='100%' stop-color='#d1d5db'/>
+    </linearGradient>
+    
+    <!-- Cockpit gradient -->
+    <radialGradient id='cockpitGrad' cx='0.3' cy='0.3' r='0.8'>
+      <stop offset='0%' stop-color='#dbeafe'/>
+      <stop offset='40%' stop-color='#60a5fa'/>
+      <stop offset='80%' stop-color='#3b82f6'/>
+      <stop offset='100%' stop-color='#1d4ed8'/>
+    </radialGradient>
+    
+    <!-- Engine gradient -->
+    <linearGradient id='engineGrad' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#9ca3af'/>
+      <stop offset='50%' stop-color='#6b7280'/>
+      <stop offset='100%' stop-color='#4b5563'/>
+    </linearGradient>
+    
+    <!-- Wing accent -->
+    <linearGradient id='wingAccent' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#ffffff' stop-opacity='0.8'/>
+      <stop offset='100%' stop-color='#e5e7eb' stop-opacity='0.4'/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main hull - art deco streamlined design -->
+  <polygon points='60,16 24,10 8,16 24,22' fill='url(#hullGrad)' stroke='#9ca3af' stroke-width='1.5'/>
+  
+  <!-- Primary wing structure -->
+  <polygon points='50,16 20,6 4,16 20,26' fill='url(#hullGrad)' stroke='#9ca3af' stroke-width='1.2'/>
+  
+  <!-- Wing accent panels -->
+  <polygon points='44,16 20,8 8,16 20,24' fill='url(#wingAccent)' opacity='0.7'/>
+  
+  <!-- Art deco wing details -->
+  <polygon points='38,16 20,10 12,16 20,22' fill='#ffffff' opacity='0.5'/>
+  <line x1='20' y1='12' x2='32' y2='16' stroke='#d1d5db' stroke-width='1'/>
+  <line x1='20' y1='20' x2='32' y2='16' stroke='#d1d5db' stroke-width='1'/>
+  
+  <!-- Cockpit canopy -->
+  <ellipse cx='32' cy='16' rx='10' ry='5' fill='url(#cockpitGrad)' stroke='#1d4ed8' stroke-width='1'/>
+  
+  <!-- Cockpit frame details -->
+  <ellipse cx='32' cy='16' rx='8' ry='3.5' fill='none' stroke='#3b82f6' stroke-width='0.8' opacity='0.7'/>
+  
+  <!-- Engine nacelles -->
+  <ellipse cx='26' cy='11' rx='8' ry='2.5' fill='url(#engineGrad)' stroke='#4b5563' stroke-width='1'/>
+  <ellipse cx='26' cy='21' rx='8' ry='2.5' fill='url(#engineGrad)' stroke='#4b5563' stroke-width='1'/>
+  
+  <!-- Engine intakes -->
+  <ellipse cx='22' cy='11' rx='3' ry='1.5' fill='#1f2937' stroke='#111827' stroke-width='0.5'/>
+  <ellipse cx='22' cy='21' rx='3' ry='1.5' fill='#1f2937' stroke='#111827' stroke-width='0.5'/>
+  
+  <!-- Central spine with art deco lines -->
+  <line x1='8' y1='16' x2='52' y2='16' stroke='#9ca3af' stroke-width='2'/>
+  <line x1='16' y1='14' x2='44' y2='14' stroke='#d1d5db' stroke-width='1' opacity='0.6'/>
+  <line x1='16' y1='18' x2='44' y2='18' stroke='#d1d5db' stroke-width='1' opacity='0.6'/>
+  
+  <!-- Wing tips with geometric details -->
+  <polygon points='8,16 4,13 4,19' fill='#9ca3af' stroke='#6b7280' stroke-width='0.8'/>
+  <polygon points='6,16 4,15 4,17' fill='#ffffff' opacity='0.4'/>
+  
+  <!-- Nose cone detail -->
+  <polygon points='60,16 56,14 56,18' fill='#d1d5db' stroke='#9ca3af' stroke-width='0.8'/>
+</svg>
