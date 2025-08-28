@@ -1,0 +1,9 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+  <g stroke='#7f1d1d' stroke-width='2'>
+    <circle cx='24' cy='24' r='16' fill='#FF6347'/>
+    <circle cx='18' cy='20' r='3' fill='#fff' stroke='none'/>
+    <circle cx='30' cy='20' r='3' fill='#fff' stroke='none'/>
+    <circle cx='19' cy='20' r='1.5' fill='#111827' stroke='none'/>
+    <circle cx='29' cy='20' r='1.5' fill='#111827' stroke='none'/>
+  </g>
+</svg>

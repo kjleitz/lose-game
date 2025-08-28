@@ -1,4 +1,5 @@
 import type { Action } from "./ActionTypes";
+import { createJsonCodec, createStore, detectBackend } from "../../lib/storage";
 
 // Default key bindings
 const DEFAULT_KEY_TO_ACTION: Record<string, Action | undefined> = {
@@ -67,35 +68,31 @@ function isAction(x: string): x is Action {
   return x in ACTIONS;
 }
 
-function parseBindingsFromString(raw: string): Record<string, string> | null {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
-    const out: Record<string, string> = {};
-    for (const [k, v] of Object.entries(parsed)) {
-      if (typeof v !== "string") return null; // fail fast on unexpected types
-      out[k] = v;
-    }
-    return out;
-  } catch {
-    return null;
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+const keyMapCodec = createJsonCodec<Record<string, Action>>((u) => {
+  if (!isRecord(u)) throw new Error("Invalid key bindings map");
+  const out: Record<string, Action> = {};
+  for (const [code, act] of Object.entries(u)) {
+    if (typeof act !== "string" || !isAction(act)) throw new Error("Invalid binding value");
+    out[code] = act;
+  }
+  return out;
+});
 
 export function loadKeyBindingsFromStorage(): void {
   try {
-    if (typeof window === "undefined") return; // tests
-    const raw = window.localStorage.getItem("lose.keyBindings");
-    if (!raw) return;
-    const asStrings = parseBindingsFromString(raw);
-    if (!asStrings) return; // ignore invalid persisted data
-    // Ensure all are known actions; otherwise ignore persisted data
-    for (const act of Object.values(asStrings)) if (!isAction(act)) return;
+    const store = createStore<Record<string, Action>>({
+      namespace: "lose.keybindings",
+      backend: detectBackend(),
+      codec: keyMapCodec,
+    });
+    const value = store.get("map");
+    if (!value) return;
     const next: Record<string, Action | undefined> = {};
-    for (const [code, act] of Object.entries(asStrings)) {
-      if (isAction(act)) next[code] = act;
-    }
-    // Preserve speed controls if missing
+    for (const [code, act] of Object.entries(value)) next[code] = act;
     KEY_TO_ACTION = { ...DEFAULT_KEY_TO_ACTION, ...next };
   } catch {
     // ignore
@@ -104,10 +101,14 @@ export function loadKeyBindingsFromStorage(): void {
 
 export function saveKeyBindingsToStorage(): void {
   try {
-    if (typeof window === "undefined") return;
     const toSave: Record<string, Action> = {};
     for (const [code, action] of Object.entries(KEY_TO_ACTION)) if (action) toSave[code] = action;
-    window.localStorage.setItem("lose.keyBindings", JSON.stringify(toSave));
+    const store = createStore<Record<string, Action>>({
+      namespace: "lose.keybindings",
+      backend: detectBackend(),
+      codec: keyMapCodec,
+    });
+    store.set("map", toSave);
   } catch {
     // ignore
   }

@@ -18,6 +18,7 @@ import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { Kinematics2D, Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { Camera } from "./camera";
 import type { Action } from "../../engine/input/ActionTypes";
+import { drawProjectile } from "./sprites";
 
 import type { GameMode } from "../game/modes/GameMode";
 import type { SpaceMode } from "../game/modes/SpaceMode";
@@ -112,15 +113,11 @@ export class GameRenderer {
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
 
-    // Draw projectiles
-    ctx.save();
-    ctx.fillStyle = "#ffd166";
+    // Draw projectiles with sprite
     for (const p of projectiles) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      ctx.fill();
+      const angle = 0; // space bullets are drawn without heading for now
+      drawProjectile(ctx, p.x, p.y, angle, p.radius * 2);
     }
-    ctx.restore();
   }
 
   private renderPlanetMode(
@@ -181,37 +178,18 @@ export class GameRenderer {
 
     // Draw projectiles from weapon system (classic PlanetMode) or ECS session
     if (weaponSystem) {
-      ctx.save();
-      ctx.fillStyle = "#00ff88"; // Bright green for energy projectiles
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = "#00ff88";
-
       const projectiles = weaponSystem.getAllProjectiles();
       for (const p of projectiles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Add motion trail
-        ctx.fillStyle = "rgba(0, 255, 136, 0.3)";
-        ctx.beginPath();
-        ctx.arc(p.x - p.vx * 0.01, p.y - p.vy * 0.01, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#00ff88";
+        const ang = Math.atan2(p.vy, p.vx);
+        drawProjectile(ctx, p.x, p.y, ang, 10);
       }
-      ctx.restore();
     } else if (gameSession && typeof gameSession.getProjectiles === "function") {
       // ECS path: render projectiles provided by session
       const ecsProjectiles = gameSession.getProjectiles();
       if (Array.isArray(ecsProjectiles) && ecsProjectiles.length > 0) {
-        ctx.save();
-        ctx.fillStyle = "#ffd166";
         for (const p of ecsProjectiles) {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fill();
+          drawProjectile(ctx, p.x, p.y, 0, p.radius * 2);
         }
-        ctx.restore();
       }
     }
   }

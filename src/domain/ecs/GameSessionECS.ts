@@ -383,6 +383,38 @@ export class GameSessionECS {
     return this.planetSurface;
   }
 
+  // Allow application layer to set player position on load/restore
+  setPlayerPosition(pos: { x: number; y: number }): void {
+    const players = this.world.query({ position: Components.Position, player: Components.Player });
+    if (players.length === 0) return;
+    const { position } = players[0].components;
+    position.x = pos.x;
+    position.y = pos.y;
+    // Reset camera to follow immediately
+    this.camera.x = pos.x;
+    this.camera.y = pos.y;
+  }
+
+  getModeSnapshot(): { mode: "space" | "planet"; planetId?: string } {
+    return { mode: this.mode, planetId: this.landedPlanetId ?? undefined };
+  }
+
+  restoreMode(data: { mode: "space" | "planet"; planetId?: string }): void {
+    if (data.mode === "planet") {
+      this.mode = "planet";
+      this.landedPlanetId = data.planetId ?? null;
+      if (this.landedPlanetId) {
+        const p = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
+        if (p) this.planetSurface = this.generatePlanetSurface(p);
+      }
+    } else {
+      this.mode = "space";
+      this.landedPlanetId = null;
+      this.planetSurface = undefined;
+    }
+    this.updateNotifications();
+  }
+
   // Simple procedural surface generation inspired by PlanetMode
   private generatePlanetSurface(planet: {
     id: string;

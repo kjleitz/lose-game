@@ -46,6 +46,7 @@ This project: L.O.S.E. — Lots of Outer Space to Explore (Vite + React + TypeSc
 - Name tests `*.test.ts[x]`; colocate with code or under `tests/`.
 - Target ≥80% coverage on changed code.
 - Include integration tests for systems (e.g., physics step, collision pass).
+- Do not freeze design to preserve old tests. If a refactor improves clarity or architecture, refactor the code and update or replace the tests to match the new behavior. Tests serve the code, not the other way around.
 
 ## End-of-Task Checks (Required)
 

@@ -1,5 +1,6 @@
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { Item } from "../game/items/Item";
+import { drawDroppedItem } from "./sprites";
 
 export class DroppedItemRenderer {
   render(ctx: CanvasRenderingContext2D, droppedItems: DroppedItem[]): void {
@@ -43,13 +44,8 @@ export class DroppedItemRenderer {
     ctx.arc(droppedItem.x, droppedItem.y + floatOffset, glowRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw item icon/representation
-    ctx.fillStyle = itemColor;
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
-
-    // Draw based on item type
-    this.drawItemShape(ctx, droppedItem, floatOffset);
+    // Draw item icon/representation using sprite
+    drawDroppedItem(ctx, droppedItem.x, droppedItem.y + floatOffset, droppedItem.item.baseType, 18);
 
     // Draw quantity indicator if more than 1
     if (droppedItem.quantity > 1) {
@@ -62,66 +58,7 @@ export class DroppedItemRenderer {
     ctx.restore();
   }
 
-  private drawItemShape(
-    ctx: CanvasRenderingContext2D,
-    droppedItem: DroppedItem,
-    floatOffset: number,
-  ): void {
-    const x = droppedItem.x;
-    const y = droppedItem.y + floatOffset;
-    const size = 8;
-
-    switch (droppedItem.item.baseType) {
-      case "tool":
-        // Draw a wrench-like shape
-        ctx.beginPath();
-        ctx.rect(x - size / 2, y - size / 2, size, size);
-        ctx.fill();
-        ctx.stroke();
-        break;
-
-      case "weapon":
-        // Draw a sword-like shape
-        ctx.beginPath();
-        ctx.moveTo(x, y - size);
-        ctx.lineTo(x + 2, y - 2);
-        ctx.lineTo(x + 4, y);
-        ctx.lineTo(x - 4, y);
-        ctx.lineTo(x - 2, y - 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        break;
-
-      case "consumable":
-        // Draw a potion-like shape
-        ctx.beginPath();
-        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        break;
-
-      case "material":
-        // Draw a crystal-like shape
-        ctx.beginPath();
-        ctx.moveTo(x, y - size);
-        ctx.lineTo(x + size, y);
-        ctx.lineTo(x, y + size);
-        ctx.lineTo(x - size, y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        break;
-
-      default:
-        // Draw a generic box
-        ctx.beginPath();
-        ctx.rect(x - size / 2, y - size / 2, size, size);
-        ctx.fill();
-        ctx.stroke();
-        break;
-    }
-  }
+  // Shape drawing replaced by sprite usage above
 
   private drawQuantityIndicator(
     ctx: CanvasRenderingContext2D,

@@ -9,6 +9,8 @@ import type { Action } from "../../engine/input/ActionTypes";
 import type { Point2D, ViewSize } from "../../shared/types/geometry";
 import { Hud } from "../hud/Hud";
 import { SettingsModal } from "./SettingsModal";
+import { PauseMenu } from "./PauseMenu";
+import { deleteAllGameData } from "../../application/persistence/deleteData";
 
 function useCanvasSize(): ViewSize {
   const [size, setSize] = useState<ViewSize>({
@@ -28,7 +30,7 @@ function useCanvasSize(): ViewSize {
 export function CanvasRoot(): JSX.Element {
   const size = useCanvasSize();
   const { width, height } = size;
-  const [paused] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
@@ -85,12 +87,25 @@ export function CanvasRoot(): JSX.Element {
       ctrl.start();
     })();
 
+    const onEsc = (e: KeyboardEvent): void => {
+      if (e.code === "Escape") {
+        setPaused((prev) => {
+          const next = !prev;
+          if (next) controllerRef.current?.pause();
+          else controllerRef.current?.resume();
+          return next;
+        });
+      }
+    };
+    window.addEventListener("keydown", onEsc);
+
     return (): void => {
       disposed = true;
       if (unsub) unsub();
       if (unsubNotif) unsubNotif();
       if (unsubInput) unsubInput();
       if (unsubSpeed) unsubSpeed();
+      window.removeEventListener("keydown", onEsc);
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };
@@ -128,6 +143,19 @@ export function CanvasRoot(): JSX.Element {
         onItemUse={handleItemUse}
         onItemDrop={handleItemDrop}
       />
+      {paused ? (
+        <PauseMenu
+          onResume={(): void => {
+            setPaused(false);
+            controllerRef.current?.resume();
+          }}
+          onDeleteData={(): void => {
+            deleteAllGameData();
+            setPaused(false);
+            controllerRef.current?.resume();
+          }}
+        />
+      ) : null}
       <SettingsModal
         open={settingsOpen}
         onClose={(): void => setSettingsOpen(false)}

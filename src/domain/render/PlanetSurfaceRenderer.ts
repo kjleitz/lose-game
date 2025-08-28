@@ -1,4 +1,5 @@
 import type { PlanetSurface, TerrainFeature, Resource, Creature } from "../game/modes/PlanetMode";
+import { drawCreature, drawResource, drawTerrain } from "./sprites";
 
 export class PlanetSurfaceRenderer {
   render(ctx: CanvasRenderingContext2D, surface: PlanetSurface | undefined): void {
@@ -35,26 +36,8 @@ export class PlanetSurfaceRenderer {
       ctx.save();
       ctx.translate(feature.x, feature.y);
 
-      if (feature.type === "rock") {
-        ctx.fillStyle = "#696969"; // Dark gray
-        ctx.beginPath();
-        ctx.arc(0, 0, feature.size, 0, Math.PI * 2);
-        ctx.fill();
-        // Add some texture
-        ctx.fillStyle = "#778899"; // Light gray
-        ctx.beginPath();
-        ctx.arc(-feature.size * 0.3, -feature.size * 0.3, feature.size * 0.4, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (feature.type === "vegetation") {
-        // Simple tree/bush representation
-        ctx.fillStyle = "#228B22"; // Forest green
-        ctx.beginPath();
-        ctx.arc(0, 0, feature.size, 0, Math.PI * 2);
-        ctx.fill();
-        // Add a brown trunk
-        ctx.fillStyle = "#8B4513";
-        ctx.fillRect(-feature.size * 0.1, 0, feature.size * 0.2, feature.size * 0.5);
-      }
+      const spriteType = feature.type;
+      drawTerrain(ctx, 0, 0, spriteType, feature.size * 2);
 
       ctx.restore();
     }
@@ -67,34 +50,8 @@ export class PlanetSurfaceRenderer {
       ctx.save();
       ctx.translate(resource.x, resource.y);
 
-      // Different colors for different resource types
-      switch (resource.type) {
-        case "mineral":
-          ctx.fillStyle = "#C0C0C0"; // Silver
-          break;
-        case "energy":
-          ctx.fillStyle = "#FFD700"; // Gold
-          break;
-        case "organic":
-          ctx.fillStyle = "#90EE90"; // Light green
-          break;
-      }
-
-      // Draw as a diamond shape
-      ctx.beginPath();
-      ctx.moveTo(0, -8);
-      ctx.lineTo(8, 0);
-      ctx.lineTo(0, 8);
-      ctx.lineTo(-8, 0);
-      ctx.closePath();
-      ctx.fill();
-
-      // Add a glow effect
-      ctx.strokeStyle = ctx.fillStyle;
-      ctx.lineWidth = 2;
-      ctx.globalAlpha = 0.5;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+      // Draw resource sprite
+      drawResource(ctx, 0, 0, resource.type, 24);
 
       ctx.restore();
     }
@@ -107,32 +64,7 @@ export class PlanetSurfaceRenderer {
       ctx.save();
       ctx.translate(creature.x, creature.y);
 
-      // Different colors for different creature types
-      switch (creature.type) {
-        case "passive":
-          ctx.fillStyle = "#90EE90"; // Light green
-          break;
-        case "neutral":
-          ctx.fillStyle = "#FFD700"; // Gold
-          break;
-        case "hostile":
-          ctx.fillStyle = "#FF6347"; // Tomato red
-          break;
-      }
-
-      // Draw as a simple circle with eyes
-      ctx.beginPath();
-      ctx.arc(0, 0, creature.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Add simple eyes
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      ctx.arc(-creature.radius * 0.3, -creature.radius * 0.3, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(creature.radius * 0.3, -creature.radius * 0.3, 2, 0, Math.PI * 2);
-      ctx.fill();
+      drawCreature(ctx, 0, 0, creature.type, creature.radius * 2);
 
       ctx.restore();
     }

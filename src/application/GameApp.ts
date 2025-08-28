@@ -9,6 +9,13 @@ import { InputManager } from "../engine/input/InputManager";
 import { setKeyBinding } from "../engine/input/KeyBindings";
 import type { Circle2D, Kinematics2D, ViewSize } from "../shared/types/geometry";
 import { GameLoop } from "./game/loop";
+import { loadSettings, saveSettings, getDefaultSettings } from "./settings/settingsStorage";
+import {
+  loadSessionState,
+  saveSessionState,
+  type InventoryEntry,
+} from "./persistence/sessionStorage";
+import { ItemFactory } from "../domain/game/items/ItemFactory";
 import type { GameController, GameOptions, GameSnapshot } from "./GameAPI";
 import { SimpleGameBus } from "./GameBus";
 
@@ -67,9 +74,29 @@ export class GameApp {
       );
     }
     const session = new GameSessionECS(ecsConfig);
+    // Restore last session state (e.g., player position)
+    const last = loadSessionState();
+    if (last) {
+      session.setPlayerPosition({ x: last.player.x, y: last.player.y });
+      session.restoreMode({ mode: last.mode, planetId: last.planetId });
+    }
     const renderer = new GameRenderer();
     // Bridge: maintain a domain inventory for the HUD fed by ECS pickup events
     const hudInventory = new PlayerInventoryManager(20, 100);
+    // Restore saved inventory entries if any
+    if (last?.inventory && last.inventory.length > 0) {
+      const factory = new ItemFactory();
+      for (const entry of last.inventory) {
+        const { type, quantity } = entry;
+        // Recreate item from templates by type
+        try {
+          const item = factory.createItem(type);
+          hudInventory.addItem(item, quantity);
+        } catch {
+          // ignore unknown templates
+        }
+      }
+    }
 
     // Attach DOM listeners
     const target: Window | HTMLElement = options.input?.target ?? window;
@@ -113,10 +140,13 @@ export class GameApp {
       }
     };
 
-    // Speed multiplier
-    let speedMultiplier = 1;
+    // Speed multiplier bounds
     const MIN_SPEED = 0.25;
     const MAX_SPEED = 5;
+    // Load persisted speed
+    const loaded = loadSettings() ?? getDefaultSettings();
+    let speedMultiplier = Math.min(MAX_SPEED, Math.max(MIN_SPEED, loaded.speed));
+    // bounds declared above
 
     // Derive a snapshot for HUD per frame
     const getSnapshot = (): GameSnapshot => {
@@ -158,6 +188,8 @@ export class GameApp {
     let lastActionsKey = "";
 
     // Game loop
+    let lastSavedAt = performance.now();
+    const SAVE_INTERVAL_MS = 1500;
     const loop = new GameLoop({
       update: (dt: number): void => {
         // Update input state and publish input changes
@@ -183,9 +215,33 @@ export class GameApp {
         }
         if (changedSpeed) {
           bus.publish({ type: "speedChanged", value: speedMultiplier });
+          saveSettings({ speed: speedMultiplier });
         }
 
         session.update(actions, dt * speedMultiplier);
+        // Periodically persist session state (position, mode, inventory)
+        const now = performance.now();
+        if (now - lastSavedAt >= SAVE_INTERVAL_MS) {
+          const p = session.getPlayer();
+          if (p) {
+            const mode = session.getCurrentModeType();
+            const modeData = session.getModeSnapshot();
+            const inv: InventoryEntry[] = hudInventory
+              .getSlots()
+              .filter((s) => s.item !== null && s.quantity > 0)
+              .map((s) => {
+                const item = s.item!;
+                return { type: item.type, quantity: s.quantity };
+              });
+            saveSessionState({
+              player: { x: p.x, y: p.y },
+              mode,
+              planetId: modeData.planetId,
+              inventory: inv,
+            });
+          }
+          lastSavedAt = now;
+        }
         // Bridge picked-up items to HUD inventory
         const picked = session.getAndClearPickupEvents();
         for (const ev of picked) hudInventory.addItem(ev.item, ev.quantity);
@@ -242,6 +298,7 @@ export class GameApp {
         if (clamped !== speedMultiplier) {
           speedMultiplier = clamped;
           bus.publish({ type: "speedChanged", value: speedMultiplier });
+          saveSettings({ speed: speedMultiplier });
         }
       },
       getSpeed(): number {

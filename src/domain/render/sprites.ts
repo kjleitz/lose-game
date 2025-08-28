@@ -1,4 +1,25 @@
-// Module-level cache for the SVG image and loaded state
+// Generic sprite cache
+interface CachedSprite {
+  img: HTMLImageElement;
+  loaded: boolean;
+}
+
+const spriteCache: Map<string, CachedSprite> = new Map();
+
+function getSprite(path: string): CachedSprite {
+  const existing = spriteCache.get(path);
+  if (existing) return existing;
+  const img = new window.Image();
+  img.src = path;
+  const record: CachedSprite = { img, loaded: false };
+  img.onload = (): void => {
+    record.loaded = true;
+  };
+  spriteCache.set(path, record);
+  return record;
+}
+
+// Module-level cache for the SVG image and loaded state (legacy helpers)
 let shipImg: HTMLImageElement | null = null;
 let shipImgLoaded = false;
 
@@ -278,3 +299,116 @@ export function drawEnemyThruster(
 }
 
 // No fallback: only draw SVG if loaded
+
+// Additional sprite-based helpers
+
+type DrawCtx = Pick<
+  CanvasRenderingContext2D,
+  "save" | "restore" | "translate" | "rotate" | "drawImage"
+>;
+
+export function drawProjectile(ctx: DrawCtx, x: number, y: number, angle: number, size = 8): void {
+  const { img, loaded } = getSprite("/src/assets/svg/projectile.svg");
+  if (!loaded) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+export function drawCharacter(ctx: DrawCtx, x: number, y: number, angle: number, size = 32): void {
+  const { img, loaded } = getSprite("/src/assets/svg/character.svg");
+  if (!loaded) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+export type CreatureSpriteType = "passive" | "neutral" | "hostile";
+
+export function drawCreature(
+  ctx: DrawCtx,
+  x: number,
+  y: number,
+  type: CreatureSpriteType,
+  size: number,
+): void {
+  const path =
+    type === "passive"
+      ? "/src/assets/svg/creature-passive.svg"
+      : type === "neutral"
+        ? "/src/assets/svg/creature-neutral.svg"
+        : "/src/assets/svg/creature-hostile.svg";
+  const { img, loaded } = getSprite(path);
+  if (!loaded) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+export type DroppedItemSpriteType =
+  | "tool"
+  | "weapon"
+  | "material"
+  | "consumable"
+  | "equipment"
+  | "container"
+  | "seed"
+  | "blueprint"
+  | "artifact";
+
+export function drawDroppedItem(
+  ctx: DrawCtx,
+  x: number,
+  y: number,
+  baseType: DroppedItemSpriteType,
+  size = 16,
+): void {
+  const path = `/src/assets/svg/item-${baseType}.svg`;
+  const { img, loaded } = getSprite(path);
+  if (!loaded) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+export type TerrainSpriteType = "rock" | "vegetation" | "structure";
+
+export function drawTerrain(
+  ctx: DrawCtx,
+  x: number,
+  y: number,
+  type: TerrainSpriteType,
+  size: number,
+): void {
+  const path = `/src/assets/svg/terrain-${type}.svg`;
+  const { img, loaded } = getSprite(path);
+  if (!loaded) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+export type ResourceSpriteType = "mineral" | "energy" | "organic";
+
+export function drawResource(
+  ctx: DrawCtx,
+  x: number,
+  y: number,
+  type: ResourceSpriteType,
+  size = 20,
+): void {
+  const path = `/src/assets/svg/resource-${type}.svg`;
+  const { img, loaded } = getSprite(path);
+  if (!loaded) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
