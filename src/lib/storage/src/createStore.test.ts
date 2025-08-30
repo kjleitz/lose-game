@@ -78,4 +78,32 @@ describe("storage/createStore", () => {
     expect(all.one).toEqual({ a: 1, b: "x" });
     expect(all.two).toEqual({ a: 2, b: "y" });
   });
+
+  it("does not collide with similar prefixes (APP vs APP2)", () => {
+    const backend = new MemoryStorageBackend();
+    const s1 = createStore<number>({ namespace: "APP", backend, codec: numberCodec });
+    const s2 = createStore<number>({ namespace: "APP2", backend, codec: numberCodec });
+    s1.set("k", 1);
+    s2.set("k", 2);
+    expect(s1.get("k")).toBe(1);
+    expect(s2.get("k")).toBe(2);
+    expect(new Set(s1.keys())).toEqual(new Set(["k"]));
+    expect(new Set(s2.keys())).toEqual(new Set(["k"]));
+  });
+
+  it("remove on nonexistent key is a no-op and does not affect others", () => {
+    const backend = new MemoryStorageBackend();
+    const s = createStore<number>({ namespace: "APP", backend, codec: numberCodec });
+    s.set("a", 1);
+    s.remove("missing");
+    expect(s.get("a")).toBe(1);
+    expect(s.keys()).toEqual(["a"]);
+  });
+
+  it("clear on empty namespace is a no-op", () => {
+    const backend = new MemoryStorageBackend();
+    const s = createStore<number>({ namespace: "NSE", backend, codec: numberCodec });
+    s.clear();
+    expect(s.keys()).toEqual([]);
+  });
 });

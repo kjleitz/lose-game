@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { CharacterRenderer } from "./CharacterRenderer";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Action } from "../../application/input/ActionTypes";
+import { CharacterRenderer } from "./CharacterRenderer";
 vi.mock("./sprites", () => {
   return {
     drawCharacter: vi.fn((ctx: unknown, x: number, y: number, _angle: number, _size: number) => {
@@ -21,7 +22,6 @@ vi.mock("./sprites", () => {
     }),
   };
 });
-import type { Action } from "../../engine/input/ActionTypes";
 
 interface MockCtx {
   save: () => void;

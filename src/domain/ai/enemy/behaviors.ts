@@ -1,5 +1,5 @@
-import type { Node } from "../bt";
-import { Action, Condition } from "../bt";
+import type { Node } from "../../../lib/behavior-tree";
+import { Action, Condition } from "../../../lib/behavior-tree";
 // Types are provided via Blackboard; no direct imports needed here.
 import type { Point2D } from "../../../shared/types/geometry";
 import type { EnemyBlackboard } from "./EnemyBlackboard";
@@ -31,8 +31,8 @@ function turnTowards(
   return currentAngle + Math.sign(diff) * maxTurn;
 }
 
-function distance(a: Point2D, b: Point2D): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
+function distance(pointA: Point2D, pointB: Point2D): number {
+  return Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
 }
 
 // Conditions

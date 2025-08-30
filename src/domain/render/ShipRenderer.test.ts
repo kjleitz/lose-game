@@ -1,4 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import type { Action } from "../../application/input/ActionTypes";
 import { ShipRenderer } from "./ShipRenderer";
 
 describe("ShipRenderer", () => {
@@ -42,4 +44,3 @@ describe("ShipRenderer", () => {
     ).not.toThrow();
   });
 });
-import type { Action } from "../../engine/input/ActionTypes";

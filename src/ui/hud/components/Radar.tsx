@@ -40,18 +40,23 @@ export function Radar({ player, planets, screenW, screenH }: RadarProps): JSX.El
           strokeWidth={2}
         />
         {/* Planets and edge indicators */}
-        {planets.map((p) => {
-          const dx = p.x - player.x;
-          const dy = p.y - player.y;
+        {planets.map((planet) => {
+          const dx = planet.x - player.x;
+          const dy = planet.y - player.y;
           const angle = Math.atan2(dy, dx);
-          const { x, y, r } = radarService.toRadarCoordsAndScale(player, p.x, p.y, p.radius);
+          const { x, y, r } = radarService.toRadarCoordsAndScale(
+            player,
+            planet.x,
+            planet.y,
+            planet.radius,
+          );
           const radarCenter = RADAR_SIZE / 2;
           const radarRadius = radarCenter - 2;
           const distToCenter = Math.hypot(x - radarCenter, y - radarCenter);
           if (distToCenter <= radarRadius + r) {
             return (
-              <g key={p.id} clipPath="url(#radar-clip)">
-                <PlanetSvg planet={p} x={x} y={y} r={r} />
+              <g key={planet.id} clipPath="url(#radar-clip)">
+                <PlanetSvg planet={planet} x={x} y={y} r={r} />
                 <circle
                   cx={x}
                   cy={y}
@@ -67,9 +72,9 @@ export function Radar({ player, planets, screenW, screenH }: RadarProps): JSX.El
             const arrow = radarService.getEdgeArrow(angle);
             return (
               <polygon
-                key={p.id}
+                key={planet.id}
                 points={arrow.points.map(([px, py]) => `${px},${py}`).join(" ")}
-                fill={p.color}
+                fill={planet.color}
                 stroke="#fff"
                 strokeWidth={1}
                 opacity={0.85}

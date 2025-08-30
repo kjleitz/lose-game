@@ -65,15 +65,15 @@ export function createCollisionSystem(world: World): System {
             const ent = new ECSEntity(target.entity, world);
             const dt = ent.getComponent(LootDropTable);
             const drops = dt ? rollDrops(dt) : [];
-            for (const d of drops) {
+            for (const drop of drops) {
               const offsetX = (Math.random() - 0.5) * 20;
               const offsetY = (Math.random() - 0.5) * 20;
               world
                 .createEntity()
                 .addComponent(Position, { x: targetPos.x + offsetX, y: targetPos.y + offsetY })
                 .addComponent(DroppedItem, {
-                  item: d.item,
-                  quantity: d.quantity,
+                  item: drop.item,
+                  quantity: drop.quantity,
                   ageSeconds: 0,
                 });
             }
@@ -104,9 +104,9 @@ function rollDrops(dropTable: DropTableType): Array<{ item: Item; quantity: numb
       if (item && qty > 0) drops.push({ item, quantity: qty });
     }
   };
-  for (const e of dropTable.guaranteed || []) consider(e);
-  for (const e of dropTable.possible || []) consider(e);
-  for (const e of dropTable.rare || []) consider(e);
+  for (const entry of dropTable.guaranteed || []) consider(entry);
+  for (const entry of dropTable.possible || []) consider(entry);
+  for (const entry of dropTable.rare || []) consider(entry);
   return drops;
 }
 

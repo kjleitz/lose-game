@@ -1,48 +1,48 @@
 import type { GameBus, GameEvent, Unsubscribe } from "./GameAPI";
 
 function isEventOfType<T extends GameEvent["type"]>(
-  e: GameEvent,
+  event: GameEvent,
   type: T,
-): e is Extract<GameEvent, { type: T }> {
-  return e.type === type;
+): event is Extract<GameEvent, { type: T }> {
+  return event.type === type;
 }
 
 export class SimpleGameBus implements GameBus {
-  private handlers: Map<GameEvent["type"], Set<(e: GameEvent) => void>> = new Map();
-  private anyHandlers: Set<(e: GameEvent) => void> = new Set();
+  private handlers: Map<GameEvent["type"], Set<(event: GameEvent) => void>> = new Map();
+  private anyHandlers: Set<(event: GameEvent) => void> = new Set();
 
   subscribe<T extends GameEvent["type"]>(
     type: T,
-    handler: (e: Extract<GameEvent, { type: T }>) => void,
+    handler: (event: Extract<GameEvent, { type: T }>) => void,
   ): Unsubscribe {
-    let set = this.handlers.get(type);
-    if (!set) {
-      set = new Set();
-      this.handlers.set(type, set);
+    let handlerSet = this.handlers.get(type);
+    if (!handlerSet) {
+      handlerSet = new Set();
+      this.handlers.set(type, handlerSet);
     }
-    const wrapped = (e: GameEvent): void => {
-      if (isEventOfType(e, type)) handler(e);
+    const wrapped = (event: GameEvent): void => {
+      if (isEventOfType(event, type)) handler(event);
     };
-    set.add(wrapped);
+    handlerSet.add(wrapped);
     return (): void => {
-      set?.delete(wrapped);
+      handlerSet?.delete(wrapped);
     };
   }
 
-  onAny(handler: (e: GameEvent) => void): Unsubscribe {
+  onAny(handler: (event: GameEvent) => void): Unsubscribe {
     this.anyHandlers.add(handler);
     return (): void => {
       this.anyHandlers.delete(handler);
     };
   }
 
-  publish(e: GameEvent): void {
-    const set = this.handlers.get(e.type);
-    if (set) {
-      for (const h of set) h(e);
+  publish(event: GameEvent): void {
+    const handlerSet = this.handlers.get(event.type);
+    if (handlerSet) {
+      for (const handler of handlerSet) handler(event);
     }
     if (this.anyHandlers.size > 0) {
-      for (const h of this.anyHandlers) h(e);
+      for (const handler of this.anyHandlers) handler(event);
     }
   }
 }

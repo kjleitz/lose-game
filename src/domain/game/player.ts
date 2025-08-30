@@ -1,6 +1,6 @@
-import { PlayerInventoryManager, type PlayerInventory } from "./inventory/PlayerInventory";
+import type { Action } from "../../application/input/ActionTypes";
 import type { Kinematics2D } from "../../shared/types/geometry";
-import type { Action } from "../../engine/input/ActionTypes";
+import { type PlayerInventory, PlayerInventoryManager } from "./inventory/PlayerInventory";
 
 export type PlayerState = Kinematics2D & {
   experience?: number;

@@ -29,7 +29,7 @@ export function generatePlanets(options: GeneratePlanetsOptions): Planet[] {
   // Build a list of candidate grid points around the center, then take the closest N.
   // Choose a radius in grid cells large enough to exceed `count` comfortably.
   const cellsRadius = Math.ceil(Math.sqrt(count)) + 2; // ensures (2r+1)^2 > count
-  const candidates: { x: number; y: number; ix: number; iy: number; dist: number }[] = [];
+  const candidates: { x: number; y: number; ix: number; iy: number; distance: number }[] = [];
 
   const ix0 = Math.round(center.x / gridStep);
   const iy0 = Math.round(center.y / gridStep);
@@ -40,29 +40,31 @@ export function generatePlanets(options: GeneratePlanetsOptions): Planet[] {
       const x = ix * gridStep;
       const y = iy * gridStep;
       if (Number.isNaN(x) || Number.isNaN(y)) continue;
-      const dist = Math.hypot(x - center.x, y - center.y);
-      candidates.push({ x, y, ix, iy, dist });
+      const distance = Math.hypot(x - center.x, y - center.y);
+      candidates.push({ x, y, ix, iy, distance });
     }
   }
 
   // Sort by distance so we prefer planets close to the center/player
-  candidates.sort((a, b) => a.dist - b.dist);
+  candidates.sort((left, right) => left.distance - right.distance);
 
   const planets: Planet[] = [];
   const seen = new Set<string>();
 
-  for (const c of candidates) {
-    const id = `planet-${c.ix}-${c.iy}`;
+  for (const candidate of candidates) {
+    const id = `planet-${candidate.ix}-${candidate.iy}`;
     if (seen.has(id)) continue; // safety against any duplicate indices
     seen.add(id);
 
-    const planetData = generatePlanet(c.x, c.y);
+    const planetData = generatePlanet(candidate.x, candidate.y);
     const design =
-      DESIGNS[(Math.abs((c.ix * 73856093) ^ (c.iy * 19349663)) >>> 0) % DESIGNS.length];
+      DESIGNS[
+        (Math.abs((candidate.ix * 73856093) ^ (candidate.iy * 19349663)) >>> 0) % DESIGNS.length
+      ];
     planets.push({
       id,
-      x: c.x,
-      y: c.y,
+      x: candidate.x,
+      y: candidate.y,
       radius: planetData.size,
       color: planetData.color,
       design,

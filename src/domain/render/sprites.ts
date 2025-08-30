@@ -13,8 +13,8 @@ const RAW_SPRITES = import.meta.glob("/src/assets/sprites/*/*.svg", {
   import: "default",
 });
 const SPRITE_FILES: Record<string, string> = {};
-for (const [k, v] of Object.entries(RAW_SPRITES)) {
-  if (typeof v === "string") SPRITE_FILES[k] = v;
+for (const [keyPath, urlValue] of Object.entries(RAW_SPRITES)) {
+  if (typeof urlValue === "string") SPRITE_FILES[keyPath] = urlValue;
 }
 
 function resolveSpriteUrl(key: string, variant: SpriteVariant): string | null {
@@ -23,17 +23,19 @@ function resolveSpriteUrl(key: string, variant: SpriteVariant): string | null {
   if (Object.prototype.hasOwnProperty.call(SPRITE_FILES, exact)) return SPRITE_FILES[exact];
   // Try numbered frames e.g. art-deco-1.svg, art-deco-2.svg
   const base = `/src/assets/sprites/${key}/${variant}`;
-  const candidates: string[] = Object.keys(SPRITE_FILES).filter((p) => p.startsWith(base + "-"));
+  const candidates: string[] = Object.keys(SPRITE_FILES).filter((path) =>
+    path.startsWith(base + "-"),
+  );
   if (candidates.length > 0) {
-    candidates.sort((a, b) => a.localeCompare(b));
+    candidates.sort((left, right) => left.localeCompare(right));
     return SPRITE_FILES[candidates[0]];
   }
   // As a last resort, pick any available variant for the key
-  const anyForKey: string[] = Object.keys(SPRITE_FILES).filter((p) =>
-    p.startsWith(`/src/assets/sprites/${key}/`),
+  const anyForKey: string[] = Object.keys(SPRITE_FILES).filter((path) =>
+    path.startsWith(`/src/assets/sprites/${key}/`),
   );
   if (anyForKey.length > 0) {
-    anyForKey.sort((a, b) => a.localeCompare(b));
+    anyForKey.sort((left, right) => left.localeCompare(right));
     return SPRITE_FILES[anyForKey[0]];
   }
   return null;
@@ -213,17 +215,17 @@ export function drawThruster(
     ctx.globalCompositeOperation = "lighter";
 
     for (let i = playerThrusterTrail.length - 1; i >= 0; i--) {
-      const p = playerThrusterTrail[i];
-      const age = Math.min(1, (now - p.timestamp) / TRAIL_LIFETIME);
+      const point = playerThrusterTrail[i];
+      const age = Math.min(1, (now - point.timestamp) / TRAIL_LIFETIME);
       const alpha = Math.max(0, 0.6 * (1 - age));
       if (alpha <= 0.01) continue;
       const falloff = 0.6 + 0.4 * (1 - age); // taper older stamps
-      const stampScale = p.scale * 0.6 * falloff;
+      const stampScale = point.scale * 0.6 * falloff;
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.angle);
+      ctx.translate(point.x, point.y);
+      ctx.rotate(point.angle);
       ctx.drawImage(
         thrusterImg,
         (-size / 2) * stampScale,

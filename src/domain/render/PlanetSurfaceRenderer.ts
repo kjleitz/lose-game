@@ -85,22 +85,22 @@ export class PlanetSurfaceRenderer {
     biome: Biome,
   ): void {
     ctx.save();
-    for (const w of waters) {
+    for (const water of waters) {
       ctx.save();
-      ctx.translate(w.x, w.y);
-      ctx.rotate(w.rotation);
+      ctx.translate(water.x, water.y);
+      ctx.rotate(water.rotation);
       // Main water fill
       ctx.globalAlpha = 0.9;
       ctx.fillStyle = "#2e77b6";
       ctx.beginPath();
-      ctx.ellipse(0, 0, w.rx, w.ry, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, water.rx, water.ry, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Shallow-water blending: inner lighter water near shore
       ctx.globalAlpha = 0.35;
       ctx.fillStyle = "#6bbbe6";
       ctx.beginPath();
-      ctx.ellipse(0, 0, w.rx * 0.86, w.ry * 0.86, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, water.rx * 0.86, water.ry * 0.86, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Feathered band to blend into ground
@@ -108,7 +108,7 @@ export class PlanetSurfaceRenderer {
       ctx.strokeStyle = "#6bbbe6";
       ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.ellipse(0, 0, w.rx * 0.95, w.ry * 0.95, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, water.rx * 0.95, water.ry * 0.95, 0, 0, Math.PI * 2);
       ctx.stroke();
 
       // Inner gradient suggestion (simple alpha ring)
@@ -116,7 +116,7 @@ export class PlanetSurfaceRenderer {
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.ellipse(0, 0, w.rx * 0.92, w.ry * 0.92, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, water.rx * 0.92, water.ry * 0.92, 0, 0, Math.PI * 2);
       ctx.stroke();
 
       // Shoreline highlight
@@ -124,7 +124,7 @@ export class PlanetSurfaceRenderer {
       ctx.strokeStyle = "#e9d8a6";
       ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.ellipse(0, 0, w.rx + 4, w.ry + 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, water.rx + 4, water.ry + 4, 0, 0, Math.PI * 2);
       ctx.stroke();
 
       // Gentle ripple lines
@@ -133,14 +133,22 @@ export class PlanetSurfaceRenderer {
       ctx.lineWidth = 2;
       for (let i = 0; i < 4; i++) {
         ctx.beginPath();
-        ctx.ellipse(0, 0, w.rx * (0.6 + i * 0.08), w.ry * (0.6 + i * 0.08), 0, 0, Math.PI * 2);
+        ctx.ellipse(
+          0,
+          0,
+          water.rx * (0.6 + i * 0.08),
+          water.ry * (0.6 + i * 0.08),
+          0,
+          0,
+          Math.PI * 2,
+        );
         ctx.stroke();
       }
 
       // Edge foam and shoreline clutter (deterministic per water id)
-      this.drawShoreFoam(ctx, w.rx, w.ry, biome, w.id);
-      this.drawShoreClutter(ctx, w.rx, w.ry, biome, w.id);
-      this.drawShorePlants(ctx, w.rx, w.ry, biome, w.id);
+      this.drawShoreFoam(ctx, water.rx, water.ry, biome, water.id);
+      this.drawShoreClutter(ctx, water.rx, water.ry, biome, water.id);
+      this.drawShorePlants(ctx, water.rx, water.ry, biome, water.id);
 
       ctx.restore();
     }
@@ -164,14 +172,14 @@ export class PlanetSurfaceRenderer {
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
     for (let i = 0; i < density; i++) {
-      const a = rng.float(0, Math.PI * 2);
+      const angle = rng.float(0, Math.PI * 2);
       const len = rng.float(10, 26);
       const off = rng.float(3, 10);
       // Foam arc positioned just outside shoreline
-      const cx = Math.cos(a) * (rx + off);
-      const cy = Math.sin(a) * (ry + off);
+      const cx = Math.cos(angle) * (rx + off);
+      const cy = Math.sin(angle) * (ry + off);
       ctx.beginPath();
-      ctx.ellipse(cx, cy, len, len * 0.35, a, Math.PI * 0.1, Math.PI * 0.9);
+      ctx.ellipse(cx, cy, len, len * 0.35, angle, Math.PI * 0.1, Math.PI * 0.9);
       ctx.stroke();
     }
     ctx.restore();
@@ -195,13 +203,21 @@ export class PlanetSurfaceRenderer {
     ctx.fillStyle = "#7c6f64";
     ctx.globalAlpha = 0.8;
     for (let i = 0; i < stones; i++) {
-      const a = rng.float(0, Math.PI * 2);
-      const rj = rng.float(6, 16);
-      const off = rng.float(8, 22);
-      const px = Math.cos(a) * (rx + off);
-      const py = Math.sin(a) * (ry + off);
+      const angle = rng.float(0, Math.PI * 2);
+      const radiusJitter = rng.float(6, 16);
+      const offset = rng.float(8, 22);
+      const px = Math.cos(angle) * (rx + offset);
+      const py = Math.sin(angle) * (ry + offset);
       ctx.beginPath();
-      ctx.ellipse(px, py, rj, rj * rng.float(0.5, 0.9), rng.float(0, Math.PI), 0, Math.PI * 2);
+      ctx.ellipse(
+        px,
+        py,
+        radiusJitter,
+        radiusJitter * rng.float(0.5, 0.9),
+        rng.float(0, Math.PI),
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
     }
     ctx.restore();
@@ -212,19 +228,19 @@ export class PlanetSurfaceRenderer {
     ctx.lineWidth = 3;
     ctx.globalAlpha = 0.9;
     for (let i = 0; i < sticks; i++) {
-      const a = rng.float(0, Math.PI * 2);
+      const angleAround = rng.float(0, Math.PI * 2);
       // Tangent direction for stick orientation
-      const tx = -Math.sin(a) * rx;
-      const ty = Math.cos(a) * ry;
-      const tlen = Math.hypot(tx, ty) || 1;
-      const ux = tx / tlen;
-      const uy = ty / tlen;
-      const cx = Math.cos(a) * (rx + rng.float(10, 28));
-      const cy = Math.sin(a) * (ry + rng.float(10, 28));
+      const tangentX = -Math.sin(angleAround) * rx;
+      const tangentY = Math.cos(angleAround) * ry;
+      const tangentLen = Math.hypot(tangentX, tangentY) || 1;
+      const unitX = tangentX / tangentLen;
+      const unitY = tangentY / tangentLen;
+      const cx = Math.cos(angleAround) * (rx + rng.float(10, 28));
+      const cy = Math.sin(angleAround) * (ry + rng.float(10, 28));
       const half = rng.float(8, 20);
       ctx.beginPath();
-      ctx.moveTo(cx - ux * half, cy - uy * half);
-      ctx.lineTo(cx + ux * half, cy + uy * half);
+      ctx.moveTo(cx - unitX * half, cy - unitY * half);
+      ctx.lineTo(cx + unitX * half, cy + unitY * half);
       ctx.stroke();
     }
     ctx.restore();
@@ -248,17 +264,17 @@ export class PlanetSurfaceRenderer {
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.9;
     for (let i = 0; i < reeds; i++) {
-      const a = rng.float(0, Math.PI * 2);
-      const off = rng.float(-2, 10); // allow a few slightly inside
-      const px = Math.cos(a) * (rx + off);
-      const py = Math.sin(a) * (ry + off);
+      const angle = rng.float(0, Math.PI * 2);
+      const offset = rng.float(-2, 10); // allow a few slightly inside
+      const px = Math.cos(angle) * (rx + offset);
+      const py = Math.sin(angle) * (ry + offset);
       const blades = 3 + rng.int(0, 3);
-      for (let b = 0; b < blades; b++) {
-        const ang = a + rng.float(-0.3, 0.3);
+      for (let bladeIndex = 0; bladeIndex < blades; bladeIndex++) {
+        const bladeAngle = angle + rng.float(-0.3, 0.3);
         const len = rng.float(8, 18);
         ctx.beginPath();
         ctx.moveTo(px, py);
-        ctx.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len);
+        ctx.lineTo(px + Math.cos(bladeAngle) * len, py + Math.sin(bladeAngle) * len);
         ctx.stroke();
       }
     }
@@ -268,9 +284,9 @@ export class PlanetSurfaceRenderer {
     if (palms > 0) {
       ctx.save();
       for (let i = 0; i < palms; i++) {
-        const a = rng.float(0, Math.PI * 2);
-        const px = Math.cos(a) * (rx + rng.float(12, 30));
-        const py = Math.sin(a) * (ry + rng.float(12, 30));
+        const angleAround = rng.float(0, Math.PI * 2);
+        const px = Math.cos(angleAround) * (rx + rng.float(12, 30));
+        const py = Math.sin(angleAround) * (ry + rng.float(12, 30));
         const angle = rng.float(-0.4, 0.4);
         const height = rng.float(14, 26);
         // trunk
@@ -283,14 +299,14 @@ export class PlanetSurfaceRenderer {
         // fronds
         ctx.strokeStyle = "#2f7d2a";
         ctx.lineWidth = 2;
-        for (let f = -2; f <= 2; f++) {
-          const fang = angle + f * 0.35 + rng.float(-0.1, 0.1);
+        for (let frondIndex = -2; frondIndex <= 2; frondIndex++) {
+          const frondAngle = angle + frondIndex * 0.35 + rng.float(-0.1, 0.1);
           const len = rng.float(10, 16);
           ctx.beginPath();
           ctx.moveTo(px + Math.cos(angle) * height, py + Math.sin(angle) * height);
           ctx.lineTo(
-            px + Math.cos(angle) * height + Math.cos(fang) * len,
-            py + Math.sin(angle) * height + Math.sin(fang) * len,
+            px + Math.cos(angle) * height + Math.cos(frondAngle) * len,
+            py + Math.sin(angle) * height + Math.sin(frondAngle) * len,
           );
           ctx.stroke();
         }
@@ -341,55 +357,63 @@ export class PlanetSurfaceRenderer {
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
-    const c = canvas.getContext("2d");
-    if (!c) return canvas;
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) return canvas;
 
     // Base fill
-    if (biome === "desert") c.fillStyle = "#e9d8a6";
-    else if (biome === "rainforest") c.fillStyle = "#145a3a";
-    else if (biome === "archipelago") c.fillStyle = "#2e77b6";
-    else c.fillStyle = "#5aaa3e"; // fields
-    c.fillRect(0, 0, size, size);
+    if (biome === "desert") ctx2d.fillStyle = "#e9d8a6";
+    else if (biome === "rainforest") ctx2d.fillStyle = "#145a3a";
+    else if (biome === "archipelago") ctx2d.fillStyle = "#2e77b6";
+    else ctx2d.fillStyle = "#5aaa3e"; // fields
+    ctx2d.fillRect(0, 0, size, size);
 
     // Texture details
     if (biome === "desert") {
-      c.fillStyle = "#caa66a";
+      ctx2d.fillStyle = "#caa66a";
       for (let x = 0; x < size; x += 8) {
         const y = 20 + Math.sin(x * 0.35) * 2;
-        c.fillRect(x, y, 6, 2);
+        ctx2d.fillRect(x, y, 6, 2);
       }
-      c.globalAlpha = 0.06;
-      c.fillStyle = "#fff";
-      c.fillRect(0, 0, size, size);
-      c.globalAlpha = 1;
+      ctx2d.globalAlpha = 0.06;
+      ctx2d.fillStyle = "#fff";
+      ctx2d.fillRect(0, 0, size, size);
+      ctx2d.globalAlpha = 1;
     } else if (biome === "rainforest") {
-      c.globalAlpha = 0.25;
-      c.fillStyle = "#0f6d44";
+      ctx2d.globalAlpha = 0.25;
+      ctx2d.fillStyle = "#0f6d44";
       for (let i = 0; i < 12; i++) {
-        const r = 10 + ((i * 7) % 16);
-        c.beginPath();
-        c.ellipse((i * 11) % size, (i * 17) % size, r, r * 0.6, 0, 0, Math.PI * 2);
-        c.fill();
+        const radius = 10 + ((i * 7) % 16);
+        ctx2d.beginPath();
+        ctx2d.ellipse((i * 11) % size, (i * 17) % size, radius, radius * 0.6, 0, 0, Math.PI * 2);
+        ctx2d.fill();
       }
-      c.globalAlpha = 1;
+      ctx2d.globalAlpha = 1;
     } else if (biome === "fields") {
-      c.strokeStyle = "#2f7d2a";
-      c.globalAlpha = 0.3;
+      ctx2d.strokeStyle = "#2f7d2a";
+      ctx2d.globalAlpha = 0.3;
       for (let i = 0; i < size; i += 6) {
-        c.beginPath();
-        c.moveTo(i, size);
-        c.lineTo(i + 1, size - 8 - ((i * 3) % 4));
-        c.stroke();
+        ctx2d.beginPath();
+        ctx2d.moveTo(i, size);
+        ctx2d.lineTo(i + 1, size - 8 - ((i * 3) % 4));
+        ctx2d.stroke();
       }
-      c.globalAlpha = 1;
+      ctx2d.globalAlpha = 1;
     } else if (biome === "archipelago") {
-      c.fillStyle = "#e9d8a6";
+      ctx2d.fillStyle = "#e9d8a6";
       for (let i = 0; i < 4; i++) {
-        c.beginPath();
+        ctx2d.beginPath();
         const px = (i * 13) % size;
         const py = (i * 19) % size;
-        c.ellipse(px, py, 8 + (i % 3), 5 + ((i * 2) % 4), (i * 20 * Math.PI) / 180, 0, Math.PI * 2);
-        c.fill();
+        ctx2d.ellipse(
+          px,
+          py,
+          8 + (i % 3),
+          5 + ((i * 2) % 4),
+          (i * 20 * Math.PI) / 180,
+          0,
+          Math.PI * 2,
+        );
+        ctx2d.fill();
       }
     }
 

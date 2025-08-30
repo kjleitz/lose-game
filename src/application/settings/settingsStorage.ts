@@ -20,9 +20,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const settingsCodec = createJsonCodec<Settings>((u) => {
-  if (!isRecord(u)) throw new Error("Invalid Settings");
-  const rec = u;
+const settingsCodec = createJsonCodec<Settings>((raw) => {
+  if (!isRecord(raw)) throw new Error("Invalid Settings");
+  const rec = raw;
   const speedVal = rec["speed"];
   if (typeof speedVal !== "number" || !Number.isFinite(speedVal)) throw new Error("Invalid speed");
   const themeRaw = rec["spriteTheme"];
@@ -31,8 +31,8 @@ const settingsCodec = createJsonCodec<Settings>((u) => {
   const spriteTheme: SpriteTheme = themeRaw === "art-deco" ? "art-deco" : "classic";
   const spriteOverrides: Record<string, SpriteTheme> = {};
   if (isRecord(overridesRaw)) {
-    for (const [k, v] of Object.entries(overridesRaw)) {
-      spriteOverrides[k] = v === "art-deco" ? "art-deco" : "classic";
+    for (const [key, theme] of Object.entries(overridesRaw)) {
+      spriteOverrides[key] = theme === "art-deco" ? "art-deco" : "classic";
     }
   }
   let cloud: number | undefined;
@@ -48,8 +48,8 @@ const settingsCodec = createJsonCodec<Settings>((u) => {
   return withFoam;
 });
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function getStore(): NamespacedStore<Settings> {

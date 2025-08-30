@@ -22,8 +22,8 @@ export function createProjectile(origin: Pose2D, speed = 600): Projectile {
   };
 }
 
-export function stepProjectile(p: Projectile, dt: number): void {
-  p.x += p.vx * dt;
-  p.y += p.vy * dt;
-  p.ttl -= dt;
+export function stepProjectile(projectile: Projectile, dt: number): void {
+  projectile.x += projectile.vx * dt;
+  projectile.y += projectile.vy * dt;
+  projectile.ttl -= dt;
 }

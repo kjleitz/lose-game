@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import type { Action } from "../../application/input/ActionTypes";
 import { GameSessionECS } from "./GameSessionECS";
-import type { Action } from "../../engine/input/ActionTypes";
 
 function actionsSet(actions: Action[]): Set<Action> {
   return new Set(actions);

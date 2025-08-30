@@ -11,7 +11,7 @@ export default tseslint.config([
   // Ignore generated/build and vendored library code from linting
   globalIgnores([
     "dist",
-    "src/lib/ecs/**",
+    "src/lib/**",
     "e2e/**",
     "tests-examples/**",
     // Not part of the app TS project; avoid type-aware parse errors
@@ -102,12 +102,34 @@ export default tseslint.config([
           message: "Prefer named exports over default exports.",
         },
       ],
+
+      // Disallow one-letter identifiers (improves readability). Do not check properties.
+      // Allow a solitary underscore ("_") as a throwaway name.
+      "id-length": [
+        "error",
+        {
+          min: 2,
+          properties: "never",
+          exceptionPatterns: ["^_$"],
+          exceptions: ["i", "j", "k", "x", "y"],
+        },
+      ],
     },
   },
   {
     // Test files may use casts to create fakes or broken states
     files: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
+      // Allow short identifiers in tests for brevity
+      "id-length": [
+        "error",
+        {
+          min: 1,
+          properties: "never",
+          exceptionPatterns: ["^_$"],
+          exceptions: ["i", "j", "k", "x", "y"],
+        },
+      ],
       // Allow TS assertions in tests; keep other restrictions
       "no-restricted-syntax": [
         "error",

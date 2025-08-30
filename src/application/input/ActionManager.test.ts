@@ -1,6 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { createActionQueue, enqueueKeyEvent, consumeQueue } from "../../engine/input/ActionManager";
-import { createActionState } from "../../engine/input/ActionManager";
+import { describe, expect, it } from "vitest";
+
+import {
+  consumeQueue,
+  createActionQueue,
+  createActionState,
+  enqueueKeyEvent,
+} from "./ActionManager";
 
 describe("Action queue", () => {
   it("enqueues and consumes key events deterministically", () => {

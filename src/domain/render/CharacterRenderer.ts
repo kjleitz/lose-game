@@ -1,3 +1,7 @@
+import type { Action } from "../../application/input/ActionTypes";
+import type { Kinematics2D } from "../../shared/types/geometry";
+import { drawCharacter } from "./sprites";
+
 type CtxLike = Pick<
   CanvasRenderingContext2D,
   | "save"
@@ -80,6 +84,3 @@ export class CharacterRenderer {
     ctx.restore();
   }
 }
-import type { Kinematics2D } from "../../shared/types/geometry";
-import type { Action } from "../../engine/input/ActionTypes";
-import { drawCharacter } from "./sprites";

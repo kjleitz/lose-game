@@ -1,9 +1,9 @@
-import type { Action } from "../../../engine/input/ActionTypes";
+import type { Action } from "../../../application/input/ActionTypes";
+import { TIME } from "../../../config/time";
 import type { System, World } from "../../../lib/ecs";
 import { defineSystem } from "../../../lib/ecs";
-import { DroppedItem, Player, Position } from "../components";
 import type { Item } from "../../game/items/Item";
-import { TIME } from "../../../config/time";
+import { DroppedItem, Player, Position } from "../components";
 
 export interface PickupEvent {
   item: Item;

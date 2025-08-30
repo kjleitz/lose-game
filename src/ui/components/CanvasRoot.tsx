@@ -5,7 +5,7 @@ import type { GameController } from "../../application/GameAPI";
 import { GameApp } from "../../application/GameApp";
 import type { Item } from "../../domain/game/items/Item";
 import type { Planet } from "../../domain/game/planets";
-import type { Action } from "../../engine/input/ActionTypes";
+import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D, ViewSize } from "../../shared/types/geometry";
 import { Hud } from "../hud/Hud";
 import { SettingsModal } from "./SettingsModal";
@@ -66,29 +66,29 @@ export function CanvasRoot(): JSX.Element {
       if (disposed) return;
       controllerRef.current = ctrl;
       setSpeed(ctrl.getSpeed());
-      unsub = ctrl.bus.subscribe("tick", (e): void => {
-        const s = e.snapshot;
+      unsub = ctrl.bus.subscribe("tick", (event): void => {
+        const snapshot = event.snapshot;
         setHudState({
-          player: { x: s.player.x, y: s.player.y },
-          experience: s.player.experience,
-          health: s.player.health,
-          planets: s.planets,
+          player: { x: snapshot.player.x, y: snapshot.player.y },
+          experience: snapshot.player.experience,
+          health: snapshot.player.health,
+          planets: snapshot.planets,
         });
       });
-      unsubNotif = ctrl.bus.subscribe("notification", (e): void => {
-        setNotification(e.message);
+      unsubNotif = ctrl.bus.subscribe("notification", (event): void => {
+        setNotification(event.message);
       });
-      unsubInput = ctrl.bus.subscribe("inputChanged", (e): void => {
-        setHudActions(new Set(e.actions));
+      unsubInput = ctrl.bus.subscribe("inputChanged", (event): void => {
+        setHudActions(new Set(event.actions));
       });
-      unsubSpeed = ctrl.bus.subscribe("speedChanged", (e): void => {
-        setSpeed(e.value);
+      unsubSpeed = ctrl.bus.subscribe("speedChanged", (event): void => {
+        setSpeed(event.value);
       });
       ctrl.start();
     })();
 
-    const onEsc = (e: KeyboardEvent): void => {
-      if (e.code === "Escape") {
+    const onEsc = (event: KeyboardEvent): void => {
+      if (event.code === "Escape") {
         setPaused((prev) => {
           const next = !prev;
           if (next) controllerRef.current?.pause();
@@ -137,7 +137,7 @@ export function CanvasRoot(): JSX.Element {
         speedMultiplier={speed}
         inventory={controllerRef.current?.getInventory?.()}
         inventoryVisible={true}
-        onChangeSpeed={(n: number): void => controllerRef.current?.setSpeed(n)}
+        onChangeSpeed={(nextSpeed: number): void => controllerRef.current?.setSpeed(nextSpeed)}
         onOpenSettings={(): void => setSettingsOpen(true)}
         onToggleInventory={(): void => setInventoryVisible((prev) => prev)}
         onItemUse={handleItemUse}
@@ -160,7 +160,7 @@ export function CanvasRoot(): JSX.Element {
         open={settingsOpen}
         onClose={(): void => setSettingsOpen(false)}
         speed={speed}
-        onChangeSpeed={(n: number): void => controllerRef.current?.setSpeed(n)}
+        onChangeSpeed={(nextSpeed: number): void => controllerRef.current?.setSpeed(nextSpeed)}
       />
     </div>
   );

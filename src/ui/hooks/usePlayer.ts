@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Player } from "../../domain/game/player";
+
+import type { Action } from "../../application/input/ActionTypes";
 import type { PlayerState } from "../../domain/game/player";
-import type { Action } from "../../engine/input/ActionTypes";
+import { Player } from "../../domain/game/player";
 
 export interface UsePlayerResult {
   playerRef: React.MutableRefObject<Player>;

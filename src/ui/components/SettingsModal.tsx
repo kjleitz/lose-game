@@ -1,27 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react";
-import type { Action } from "../../engine/input/ActionTypes";
+import { useEffect, useMemo, useState } from "react";
+
+import type { Action } from "../../application/input/ActionTypes";
 import {
   getBindingsForAction,
   loadKeyBindingsFromStorage,
   resetKeyBindings,
   setKeyBinding,
-} from "../../engine/input/KeyBindings";
+} from "../../application/input/KeyBindings";
 import {
   getDefaultSettings,
   loadSettings,
-  updateSettings,
   type Settings,
   type SpriteTheme,
+  updateSettings,
 } from "../../application/settings/settingsStorage";
-import { setSpriteConfig, getSpriteUrlForKey } from "../../domain/render/sprites";
+import { getSpriteUrlForKey, setSpriteConfig } from "../../domain/render/sprites";
 import { setVisualConfig } from "../../domain/render/VisualConfig";
 
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
   speed: number;
-  onChangeSpeed: (n: number) => void;
+  onChangeSpeed: (nextSpeed: number) => void;
 }
 
 const ACTION_LABELS: Record<Action, string> = {
@@ -78,7 +79,8 @@ export function SettingsModal({
   });
   const SPRITE_FILES: Record<string, string> = useMemo(() => {
     const out: Record<string, string> = {};
-    for (const [k, v] of Object.entries(RAW_SPRITES)) if (typeof v === "string") out[k] = v;
+    for (const [keyPath, urlValue] of Object.entries(RAW_SPRITES))
+      if (typeof urlValue === "string") out[keyPath] = urlValue;
     return out;
   }, [RAW_SPRITES]);
 
@@ -90,22 +92,22 @@ export function SettingsModal({
   const catalog: SpriteCatalog = useMemo(() => {
     const variantMap = new Map<string, Set<string>>();
     const pathRe = /\/src\/assets\/sprites\/([^/]+)\/([^/]+)\.svg$/;
-    Object.keys(SPRITE_FILES).forEach((p) => {
-      const m = p.match(pathRe);
-      if (!m) return;
-      const key = m[1];
-      const rawVariant = m[2];
+    Object.keys(SPRITE_FILES).forEach((path) => {
+      const matchResult = path.match(pathRe);
+      if (!matchResult) return;
+      const key = matchResult[1];
+      const rawVariant = matchResult[2];
       // Collapse numbered frames e.g. art-deco-1 -> art-deco
       const variant = rawVariant.replace(/-\d+$/, "");
       if (!variantMap.has(key)) variantMap.set(key, new Set<string>());
       variantMap.get(key)!.add(variant);
     });
-    const keys = Array.from(variantMap.keys()).sort((a, b) => a.localeCompare(b));
+    const keys = Array.from(variantMap.keys()).sort((left, right) => left.localeCompare(right));
     const variants = new Map<string, string[]>();
-    for (const k of keys) {
+    for (const key of keys) {
       variants.set(
-        k,
-        Array.from(variantMap.get(k)!).sort((a, b) => a.localeCompare(b)),
+        key,
+        Array.from(variantMap.get(key)!).sort((left, right) => left.localeCompare(right)),
       );
     }
     return { keys, variants };
@@ -119,12 +121,12 @@ export function SettingsModal({
 
   const groups: Group[] = useMemo(() => {
     const pick = (pred: (k: string) => boolean): string[] => catalog.keys.filter(pred);
-    const g: Group[] = [];
+    const groupList: Group[] = [];
     const used = new Set<string>();
     const addGroup = (id: string, label: string, keys: string[]): void => {
       const unique = keys.filter((k) => catalog.keys.includes(k));
       unique.forEach((k) => used.add(k));
-      if (unique.length > 0) g.push({ id, label, keys: unique });
+      if (unique.length > 0) groupList.push({ id, label, keys: unique });
     };
     addGroup(
       "core",
@@ -157,8 +159,8 @@ export function SettingsModal({
       pick((k) => k.startsWith("item-")),
     );
     const leftovers = catalog.keys.filter((k) => !used.has(k));
-    if (leftovers.length) g.push({ id: "other", label: "Other", keys: leftovers });
-    return g;
+    if (leftovers.length) groupList.push({ id: "other", label: "Other", keys: leftovers });
+    return groupList;
   }, [catalog.keys]);
 
   useEffect((): void => {
@@ -167,10 +169,10 @@ export function SettingsModal({
 
   useEffect(() => {
     if (!open || !listeningAction) return;
-    const onKey = (e: KeyboardEvent): void => {
-      e.preventDefault();
-      e.stopPropagation();
-      setKeyBinding(listeningAction, e.code);
+    const onKey = (event: KeyboardEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+      setKeyBinding(listeningAction, event.code);
       setListeningAction(null);
     };
     window.addEventListener("keydown", onKey, { once: true });
@@ -179,40 +181,40 @@ export function SettingsModal({
 
   useEffect(() => {
     if (!open) return;
-    const s = loadSettings() ?? getDefaultSettings();
-    setSpriteTheme(s.spriteTheme);
-    setSpriteOverrides(s.spriteOverrides);
-    setCloudDensity(s.cloudDensity ?? 1);
-    setBirdDensity(s.birdDensity ?? 1);
-    setFoamDensity(s.foamDensity ?? 1);
+    const loaded = loadSettings() ?? getDefaultSettings();
+    setSpriteTheme(loaded.spriteTheme);
+    setSpriteOverrides(loaded.spriteOverrides);
+    setCloudDensity(loaded.cloudDensity ?? 1);
+    setBirdDensity(loaded.birdDensity ?? 1);
+    setFoamDensity(loaded.foamDensity ?? 1);
     setVisualConfig({
-      cloudDensity: s.cloudDensity ?? 1,
-      birdDensity: s.birdDensity ?? 1,
-      foamDensity: s.foamDensity ?? 1,
+      cloudDensity: loaded.cloudDensity ?? 1,
+      birdDensity: loaded.birdDensity ?? 1,
+      foamDensity: loaded.foamDensity ?? 1,
     });
     // initialize groups open state if not set
     if (Object.keys(openGroups).length === 0) {
-      const init: Record<string, boolean> = {};
-      for (const g of groups) init[g.id] = true;
-      setOpenGroups(init);
+      const initialGroups: Record<string, boolean> = {};
+      for (const group of groups) initialGroups[group.id] = true;
+      setOpenGroups(initialGroups);
     }
   }, [open, groups, openGroups]);
 
   function applySpriteChange(
     next: Partial<Pick<Settings, "spriteTheme" | "spriteOverrides">>,
   ): void {
-    const s = updateSettings(next);
-    setSpriteConfig({ defaultVariant: s.spriteTheme, overrides: s.spriteOverrides });
+    const updated = updateSettings(next);
+    setSpriteConfig({ defaultVariant: updated.spriteTheme, overrides: updated.spriteOverrides });
   }
 
   function applyVisualChange(
     next: Partial<Pick<Settings, "cloudDensity" | "birdDensity" | "foamDensity">>,
   ): void {
-    const s = updateSettings(next);
+    const updated = updateSettings(next);
     setVisualConfig({
-      cloudDensity: s.cloudDensity ?? 1,
-      birdDensity: s.birdDensity ?? 1,
-      foamDensity: s.foamDensity ?? 1,
+      cloudDensity: updated.cloudDensity ?? 1,
+      birdDensity: updated.birdDensity ?? 1,
+      foamDensity: updated.foamDensity ?? 1,
     });
   }
 
@@ -241,8 +243,8 @@ export function SettingsModal({
               max={5}
               step={0.25}
               value={speed}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                onChangeSpeed(parseFloat(e.target.value))
+              onChange={(event: React.ChangeEvent<HTMLInputElement>): void =>
+                onChangeSpeed(parseFloat(event.target.value))
               }
               className="w-full"
             />
@@ -261,10 +263,10 @@ export function SettingsModal({
                 max={2}
                 step={0.1}
                 value={cloudDensity}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-                  const v = parseFloat(e.target.value);
-                  setCloudDensity(v);
-                  applyVisualChange({ cloudDensity: v });
+                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                  const value = parseFloat(event.target.value);
+                  setCloudDensity(value);
+                  applyVisualChange({ cloudDensity: value });
                 }}
                 className="w-full"
               />
@@ -278,10 +280,10 @@ export function SettingsModal({
                 max={2}
                 step={0.1}
                 value={birdDensity}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-                  const v = parseFloat(e.target.value);
-                  setBirdDensity(v);
-                  applyVisualChange({ birdDensity: v });
+                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                  const value = parseFloat(event.target.value);
+                  setBirdDensity(value);
+                  applyVisualChange({ birdDensity: value });
                 }}
                 className="w-full"
               />
@@ -295,10 +297,10 @@ export function SettingsModal({
                 max={2}
                 step={0.1}
                 value={foamDensity}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-                  const v = parseFloat(e.target.value);
-                  setFoamDensity(v);
-                  applyVisualChange({ foamDensity: v });
+                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
+                  const value = parseFloat(event.target.value);
+                  setFoamDensity(value);
+                  applyVisualChange({ foamDensity: value });
                 }}
                 className="w-full"
               />
@@ -314,8 +316,8 @@ export function SettingsModal({
             <select
               className="bg-gray-900 text-xs text-white border border-gray-700 rounded px-2 py-1"
               value={spriteTheme}
-              onChange={(e): void => {
-                const value = e.target.value === "art-deco" ? "art-deco" : "classic";
+              onChange={(event): void => {
+                const value = event.target.value === "art-deco" ? "art-deco" : "classic";
                 setSpriteTheme(value);
                 applySpriteChange({ spriteTheme: value });
               }}
@@ -351,7 +353,7 @@ export function SettingsModal({
                         .replace(/^resource-/, "Resource: ")
                         .replace(/^creature-/, "Creature: ")
                         .replace(/-/g, " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase());
+                        .replace(/\b\w/g, (letter) => letter.toUpperCase());
                       const effectiveLabel = spriteOverrides[key]
                         ? `${resolvedTheme === "art-deco" ? "Art Deco" : "Classic"} (override)`
                         : `${resolvedTheme === "art-deco" ? "Art Deco" : "Classic"} (global)`;
@@ -401,14 +403,14 @@ export function SettingsModal({
                                   />
                                   <span className="hud-text text-[10px] opacity-80">Inherit</span>
                                 </button>
-                                {variants.map((v) => (
+                                {variants.map((variantName) => (
                                   <button
-                                    key={v}
+                                    key={variantName}
                                     type="button"
                                     className="flex flex-col items-center gap-1 p-2 bg-gray-900 border border-gray-700 rounded hover:bg-gray-800"
                                     onClick={(): void => {
                                       const value: SpriteTheme =
-                                        v === "art-deco" ? "art-deco" : "classic";
+                                        variantName === "art-deco" ? "art-deco" : "classic";
                                       const next: Record<string, SpriteTheme> = {
                                         ...spriteOverrides,
                                       };
@@ -419,14 +421,14 @@ export function SettingsModal({
                                     }}
                                   >
                                     <img
-                                      src={getSpriteUrlForKey(key, v)}
-                                      alt={`${pretty} ${v} preview`}
+                                      src={getSpriteUrlForKey(key, variantName)}
+                                      alt={`${pretty} ${variantName} preview`}
                                       width={36}
                                       height={36}
                                       className="w-9 h-9 bg-gray-800 rounded"
                                     />
                                     <span className="hud-text text-[10px] opacity-80">
-                                      {v.replace(/-/g, " ")}
+                                      {variantName.replace(/-/g, " ")}
                                     </span>
                                   </button>
                                 ))}

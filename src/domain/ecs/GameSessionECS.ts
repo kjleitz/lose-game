@@ -2,6 +2,10 @@ import type { Action } from "../../engine";
 import { type EntityBuilder, World } from "../../lib/ecs";
 import type { Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { Enemy } from "../game/enemies";
+import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
+import type { Item } from "../game/items/Item";
+import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
+import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Planet } from "../game/planets";
 import type { Player } from "../game/player";
 import type { EntityCounts, PlayerView } from "../game/views";
@@ -9,21 +13,17 @@ import type { Camera } from "../render/camera";
 import * as Components from "./components";
 import * as EntityFactories from "./entities/EntityFactories";
 import { createCollisionSystem } from "./systems/CollisionSystem";
-import { createEnemyAISystem } from "./systems/EnemyAISystem";
-import { createMovementSystem } from "./systems/MovementSystem";
-import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
-import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
-import { createProjectileSystem } from "./systems/ProjectileSystem";
-import type { PlanetSurface } from "../game/planet-surface/types";
-import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
-import { createWeaponSystem } from "./systems/WeaponSystem";
 import {
   createDroppedItemAgingSystem,
   createPickupSystem,
   type PickupEvent,
 } from "./systems/DroppedItemSystem";
-import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
-import type { Item } from "../game/items/Item";
+import { createEnemyAISystem } from "./systems/EnemyAISystem";
+import { createMovementSystem } from "./systems/MovementSystem";
+import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
+import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
+import { createProjectileSystem } from "./systems/ProjectileSystem";
+import { createWeaponSystem } from "./systems/WeaponSystem";
 
 export class GameSessionECS {
   private world = new World();
@@ -115,14 +115,14 @@ export class GameSessionECS {
   update(actions: Set<Action>, dt: number): void {
     // Handle landing/takeoff based on proximity and actions
     if (this.mode === "space") {
-      const near = this.findNearbyPlanetId();
-      if (near && actions.has("land")) {
+      const nearbyPlanetId = this.findNearbyPlanetId();
+      if (nearbyPlanetId && actions.has("land")) {
         // Store return position (player's current pos)
-        const p = this.getPlayer();
-        if (p) this.returnPosition = { x: p.x, y: p.y };
+        const playerView = this.getPlayer();
+        if (playerView) this.returnPosition = { x: playerView.x, y: playerView.y };
         this.mode = "planet";
-        this.landedPlanetId = near;
-        const planet = this.getPlanets().find((pl) => pl.id === near);
+        this.landedPlanetId = nearbyPlanetId;
+        const planet = this.getPlanets().find((pl) => pl.id === nearbyPlanetId);
         if (planet)
           this.planetSurface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
         // Spawn a few creatures near landing for planet mode
@@ -316,10 +316,10 @@ export class GameSessionECS {
   getDroppedItems(): DroppedItemShape[] {
     return this.world
       .query({ position: Components.Position, dropped: Components.DroppedItem })
-      .map((e) => {
-        const { position, dropped } = e.components;
+      .map((entity) => {
+        const { position, dropped } = entity.components;
         return {
-          id: `d_${e.entity}`,
+          id: `d_${entity.entity}`,
           item: dropped.item,
           quantity: dropped.quantity,
           x: position.x,
@@ -388,17 +388,17 @@ export class GameSessionECS {
       this.notification = null;
       return;
     }
-    const near = this.findNearbyPlanetId();
-    this.notification = near ? `Press L to land on ${near}` : null;
+    const nearbyPlanetId = this.findNearbyPlanetId();
+    this.notification = nearbyPlanetId ? `Press L to land on ${nearbyPlanetId}` : null;
   }
 
   private findNearbyPlanetId(): string | null {
     const player = this.getPlayer();
     if (!player) return null;
     const planets = this.getPlanets();
-    for (const p of planets) {
-      const dist = Math.hypot(player.x - p.x, player.y - p.y);
-      if (dist < p.radius + 60) return p.id;
+    for (const planet of planets) {
+      const dist = Math.hypot(player.x - planet.x, player.y - planet.y);
+      if (dist < planet.radius + 60) return planet.id;
     }
     return null;
   }
@@ -424,13 +424,13 @@ export class GameSessionECS {
     const RADIUS = 30;
     const { resources } = this.planetSurface;
     for (let i = resources.length - 1; i >= 0; i--) {
-      const r = resources[i];
-      const dist = Math.hypot(playerPos.x - r.x, playerPos.y - r.y);
+      const resource = resources[i];
+      const dist = Math.hypot(playerPos.x - resource.x, playerPos.y - resource.y);
       if (dist < RADIUS) {
         // Remove collected resource and award XP if available
         resources.splice(i, 1);
         if (xp) {
-          xp.current += r.amount;
+          xp.current += resource.amount;
           // Level progression can be added later
         }
       }
@@ -458,8 +458,9 @@ export class GameSessionECS {
       this.mode = "planet";
       this.landedPlanetId = data.planetId ?? null;
       if (this.landedPlanetId) {
-        const p = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
-        if (p) this.planetSurface = generatePlanetSurfaceFor({ id: p.id, radius: p.radius });
+        const planet = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
+        if (planet)
+          this.planetSurface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
       }
     } else {
       this.mode = "space";

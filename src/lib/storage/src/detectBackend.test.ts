@@ -1,10 +1,8 @@
-import { describe, it, expect } from "vitest";
-import {
-  detectBackend,
-  isLocalStorageAvailable,
-  LocalStorageBackend,
-  MemoryStorageBackend,
-} from "..";
+import { describe, expect, it } from "vitest";
+
+import { detectBackend } from "./detectBackend";
+import { isLocalStorageAvailable, LocalStorageBackend } from "./LocalStorageBackend";
+import { MemoryStorageBackend } from "./MemoryStorageBackend";
 
 describe("storage/detectBackend", () => {
   it("returns a functioning backend appropriate to the environment", () => {

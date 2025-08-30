@@ -1,22 +1,22 @@
-import { StarfieldRenderer } from "./StarfieldRenderer";
-import { PlanetRenderer } from "./PlanetRenderer";
-import { ShipRenderer } from "./ShipRenderer";
-import { EnemyRenderer } from "./EnemyRenderer";
-import { CreatureRenderer } from "./CreatureRenderer";
-import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
-import { CharacterRenderer } from "./CharacterRenderer";
-import { DroppedItemRenderer } from "./DroppedItemRenderer";
-import { CameraTransform } from "./CameraTransform";
+import type { Action } from "../../application/input/ActionTypes";
 import type { Planet } from "../../domain/game/planets";
-import type { Enemy } from "../game/enemies";
-import type { PlanetSurface } from "../game/planet-surface/types";
-import type { DroppedItem } from "../game/items/DroppedItemSystem";
-import type { Kinematics2D, Circle2D, ViewSize } from "../../shared/types/geometry";
-import type { Camera } from "./camera";
-import type { Action } from "../../engine/input/ActionTypes";
-import { drawProjectile } from "./sprites";
 import type { Biome } from "../../shared/types/Biome";
+import type { Circle2D, Kinematics2D, ViewSize } from "../../shared/types/geometry";
 import { createSeededRng, hashStringToInt } from "../../shared/utils";
+import type { Enemy } from "../game/enemies";
+import type { DroppedItem } from "../game/items/DroppedItemSystem";
+import type { PlanetSurface } from "../game/planet-surface/types";
+import type { Camera } from "./camera";
+import { CameraTransform } from "./CameraTransform";
+import { CharacterRenderer } from "./CharacterRenderer";
+import { CreatureRenderer } from "./CreatureRenderer";
+import { DroppedItemRenderer } from "./DroppedItemRenderer";
+import { EnemyRenderer } from "./EnemyRenderer";
+import { PlanetRenderer } from "./PlanetRenderer";
+import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
+import { ShipRenderer } from "./ShipRenderer";
+import { drawProjectile } from "./sprites";
+import { StarfieldRenderer } from "./StarfieldRenderer";
 import { getVisualConfig } from "./VisualConfig";
 
 // Legacy modes removed from renderer path; rely on session getters only
@@ -83,20 +83,25 @@ export class GameRenderer {
       { p: 0.8, opts: { starsPerCell: 6, minSize: 0.4, maxSize: 1.2 } },
     ];
     for (const layer of layers) {
-      const camL = { x: camera.x * layer.p, y: camera.y * layer.p, zoom: camera.zoom };
-      const [la, lb, lc, ld, le, lf] = CameraTransform.getTransform(
-        camL,
+      const camLayer = { x: camera.x * layer.p, y: camera.y * layer.p, zoom: camera.zoom };
+      const [m11L, m12L, m21L, m22L, dxL, dyL] = CameraTransform.getTransform(
+        camLayer,
         size.width,
         size.height,
         dpr,
       );
-      ctx.setTransform(la, lb, lc, ld, le, lf);
-      starfieldRenderer.render(ctx, camL, size.width, size.height, layer.opts);
+      ctx.setTransform(m11L, m12L, m21L, m22L, dxL, dyL);
+      starfieldRenderer.render(ctx, camLayer, size.width, size.height, layer.opts);
     }
 
     // World entities
-    const [a, b, c, d, e, f] = CameraTransform.getTransform(camera, size.width, size.height, dpr);
-    ctx.setTransform(a, b, c, d, e, f);
+    const [m11, m12, m21, m22, dx, dy] = CameraTransform.getTransform(
+      camera,
+      size.width,
+      size.height,
+      dpr,
+    );
+    ctx.setTransform(m11, m12, m21, m22, dx, dy);
 
     // Draw planets
     const planetRenderer = new PlanetRenderer();
@@ -111,9 +116,9 @@ export class GameRenderer {
     shipRenderer.render(ctx, player, actions, 48);
 
     // Draw projectiles with sprite
-    for (const p of projectiles) {
+    for (const projectile of projectiles) {
       const angle = 0; // space bullets are drawn without heading for now
-      drawProjectile(ctx, p.x, p.y, angle, p.radius * 2);
+      drawProjectile(ctx, projectile.x, projectile.y, angle, projectile.radius * 2);
     }
   }
 
@@ -135,8 +140,13 @@ export class GameRenderer {
     const planetSurfaceRenderer = new PlanetSurfaceRenderer();
 
     // Set up world transform for planet surface
-    const [a, b, c, d, e, f] = CameraTransform.getTransform(camera, size.width, size.height, dpr);
-    ctx.setTransform(a, b, c, d, e, f);
+    const [m11P, m12P, m21P, m22P, dxP, dyP] = CameraTransform.getTransform(
+      camera,
+      size.width,
+      size.height,
+      dpr,
+    );
+    ctx.setTransform(m11P, m12P, m21P, m22P, dxP, dyP);
 
     // Render planet surface (must be provided by mode or session)
     planetSurfaceRenderer.render(ctx, surface);
@@ -175,10 +185,10 @@ export class GameRenderer {
     // Draw projectiles provided by session (ECS path)
     if (gameSession && typeof gameSession.getProjectiles === "function") {
       // ECS path: render projectiles provided by session
-      const ecsProjectiles = gameSession.getProjectiles();
-      if (Array.isArray(ecsProjectiles) && ecsProjectiles.length > 0) {
-        for (const p of ecsProjectiles) {
-          drawProjectile(ctx, p.x, p.y, 0, p.radius * 2);
+      const sessionProjectiles = gameSession.getProjectiles();
+      if (Array.isArray(sessionProjectiles) && sessionProjectiles.length > 0) {
+        for (const projectile of sessionProjectiles) {
+          drawProjectile(ctx, projectile.x, projectile.y, 0, projectile.radius * 2);
         }
       }
     }
@@ -192,18 +202,23 @@ export class GameRenderer {
   ): void {
     const factor = 0.7;
     const camL = { x: camera.x * factor, y: camera.y * factor, zoom: camera.zoom };
-    const [a, b, c, d, e, f] = CameraTransform.getTransform(camL, size.width, size.height, dpr);
-    ctx.setTransform(a, b, c, d, e, f);
+    const [m11U, m12U, m21U, m22U, dxU, dyU] = CameraTransform.getTransform(
+      camL,
+      size.width,
+      size.height,
+      dpr,
+    );
+    ctx.setTransform(m11U, m12U, m21U, m22U, dxU, dyU);
 
-    const w = size.width;
-    const h = size.height;
-    const t = Date.now() * 0.001;
+    const widthPx = size.width;
+    const heightPx = size.height;
+    const timeSec = Date.now() * 0.001;
     ctx.save();
     ctx.globalAlpha = 0.08;
     ctx.fillStyle = "#ffffff";
     for (let i = 0; i < 6; i++) {
-      const y = (i + 1) * (h / 8) + Math.sin(t + i) * 10;
-      ctx.fillRect(-w, y, w * 3, 8);
+      const y = (i + 1) * (heightPx / 8) + Math.sin(timeSec + i) * 10;
+      ctx.fillRect(-widthPx, y, widthPx * 3, 8);
     }
     ctx.restore();
   }
@@ -218,11 +233,16 @@ export class GameRenderer {
   ): void {
     const factor = 0.6;
     const camL = { x: camera.x * factor, y: camera.y * factor, zoom: camera.zoom };
-    const [a, b, c, d, e, f] = CameraTransform.getTransform(camL, size.width, size.height, dpr);
-    ctx.setTransform(a, b, c, d, e, f);
+    const [m11S, m12S, m21S, m22S, dxS, dyS] = CameraTransform.getTransform(
+      camL,
+      size.width,
+      size.height,
+      dpr,
+    );
+    ctx.setTransform(m11S, m12S, m21S, m22S, dxS, dyS);
 
-    const w = size.width;
-    const h = size.height;
+    const widthPx = size.width;
+    const heightPx = size.height;
     const seed = hashStringToInt(planetId);
     const rng = createSeededRng(seed);
 
@@ -233,12 +253,12 @@ export class GameRenderer {
     const cfg = getVisualConfig();
     const baseClouds = biome === "rainforest" ? 10 : 6;
     const cloudCount = Math.max(0, Math.floor(baseClouds * cfg.cloudDensity));
-    const t = Date.now() * 0.0003;
+    const timeMs = Date.now() * 0.0003;
     for (let i = 0; i < cloudCount; i++) {
-      const baseX = (rng.int(0, w) + i * 123) % (w * 2);
-      const baseY = (rng.int(0, Math.floor(h / 2)) + i * 47) % Math.floor(h * 0.6);
-      const drift = (t * (20 + (i % 5))) % (w * 2);
-      const x = -w + baseX + drift;
+      const baseX = (rng.int(0, widthPx) + i * 123) % (widthPx * 2);
+      const baseY = (rng.int(0, Math.floor(heightPx / 2)) + i * 47) % Math.floor(heightPx * 0.6);
+      const drift = (timeMs * (20 + (i % 5))) % (widthPx * 2);
+      const x = -widthPx + baseX + drift;
       const y = baseY * 0.5;
       ctx.beginPath();
       ctx.ellipse(x, y, 80, 35, 0, 0, Math.PI * 2);
@@ -260,14 +280,14 @@ export class GameRenderer {
     const baseFlocks = biome === "rainforest" || biome === "fields" ? 3 : 1;
     const birdFlocks = Math.max(0, Math.floor(baseFlocks * cfg.birdDensity));
     for (let i = 0; i < birdFlocks; i++) {
-      const baseX = (rng.int(0, w) + i * 177) % (w * 2);
-      const baseY = (rng.int(0, Math.floor(h / 2)) + i * 59) % Math.floor(h * 0.5);
-      const drift = (t * 120 + i * 60) % (w * 2);
-      const x = -w + baseX + drift;
+      const baseX = (rng.int(0, widthPx) + i * 177) % (widthPx * 2);
+      const baseY = (rng.int(0, Math.floor(heightPx / 2)) + i * 59) % Math.floor(heightPx * 0.5);
+      const drift = (timeMs * 120 + i * 60) % (widthPx * 2);
+      const x = -widthPx + baseX + drift;
       const y = 40 + baseY * 0.6;
       for (let bI = 0; bI < 5; bI++) {
         const bx = x + bI * 16;
-        const by = y + Math.sin(t * 8 + bI) * 3;
+        const by = y + Math.sin(timeMs * 8 + bI) * 3;
         ctx.beginPath();
         ctx.moveTo(bx - 4, by);
         ctx.lineTo(bx, by + 3);

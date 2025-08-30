@@ -46,7 +46,8 @@ export function setKeyBinding(action: Action, code: string): void {
 
 export function getBindingsForAction(action: Action): string[] {
   const out: string[] = [];
-  for (const [code, a] of Object.entries(KEY_TO_ACTION)) if (a === action) out.push(code);
+  for (const [code, mappedAction] of Object.entries(KEY_TO_ACTION))
+    if (mappedAction === action) out.push(code);
   return out;
 }
 
@@ -73,10 +74,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const keyMapCodec = createJsonCodec<Record<string, Action>>((u) => {
-  if (!isRecord(u)) throw new Error("Invalid key bindings map");
+const keyMapCodec = createJsonCodec<Record<string, Action>>((raw) => {
+  if (!isRecord(raw)) throw new Error("Invalid key bindings map");
   const out: Record<string, Action> = {};
-  for (const [code, act] of Object.entries(u)) {
+  for (const [code, act] of Object.entries(raw)) {
     if (typeof act !== "string" || !isAction(act)) throw new Error("Invalid binding value");
     out[code] = act;
   }

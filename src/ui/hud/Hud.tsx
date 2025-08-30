@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import type { PlayerInventory } from "../../domain/game/inventory/PlayerInventory";
 import type { Item } from "../../domain/game/items/Item";
 import type { Planet } from "../../domain/game/planets";
-import type { Action } from "../../engine/input/ActionTypes";
+import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D } from "../../shared/types/geometry";
 import { InventoryPanel } from "./components/InventoryPanel";
 import { Notification } from "./components/Notification";

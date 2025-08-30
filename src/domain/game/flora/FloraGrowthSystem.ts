@@ -166,7 +166,9 @@ export class FloraGrowthSystem {
   }
 
   private updatePlantSize(plant: FloraInstance): void {
-    const stage = plant.species.growth.stages.find((s) => s.id === plant.currentStage);
+    const stage = plant.species.growth.stages.find(
+      (stageEntry) => stageEntry.id === plant.currentStage,
+    );
     if (!stage) return;
 
     const baseSize = plant.species.growth.maxSize;
@@ -496,7 +498,7 @@ export class FloraGrowthSystem {
     offspring.environmentalFactors.set("light", parent.environmentalFactors.get("light") ?? 0.5);
 
     // Inherit social network loosely (start fresh by default)
-    offspring.diseases = parent.diseases.map((d) => ({ ...d }));
+    offspring.diseases = parent.diseases.map((disease) => ({ ...disease }));
 
     return offspring;
   }

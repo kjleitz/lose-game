@@ -31,9 +31,9 @@ export class RadarService {
   }
 
   getEdgeArrow(angle: number): RadarArrow {
-    const r = this.RADAR_SIZE / 2 - 6;
-    const cx = this.RADAR_SIZE / 2 + Math.cos(angle) * r;
-    const cy = this.RADAR_SIZE / 2 + Math.sin(angle) * r;
+    const radius = this.RADAR_SIZE / 2 - 6;
+    const cx = this.RADAR_SIZE / 2 + Math.cos(angle) * radius;
+    const cy = this.RADAR_SIZE / 2 + Math.sin(angle) * radius;
     const size = 12;
     const tipX = cx + Math.cos(angle) * size;
     const tipY = cy + Math.sin(angle) * size;

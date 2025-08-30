@@ -1,24 +1,24 @@
 import { GameSessionECS } from "../domain/ecs/GameSessionECS";
 import type { Enemy } from "../domain/game/enemies";
-import type { Planet } from "../domain/game/planets";
 import { PlayerInventoryManager } from "../domain/game/inventory/PlayerInventory";
+import { ItemFactory } from "../domain/game/items/ItemFactory";
+import type { Planet } from "../domain/game/planets";
 import type { Camera } from "../domain/render/camera";
 import { GameRenderer } from "../domain/render/GameRenderer";
-import type { Action } from "../engine/input/ActionTypes";
-import { InputManager } from "../engine/input/InputManager";
-import { setKeyBinding } from "../engine/input/KeyBindings";
+import { setSpriteConfig } from "../domain/render/sprites";
 import type { Circle2D, Kinematics2D, ViewSize } from "../shared/types/geometry";
 import { GameLoop } from "./game/loop";
-import { loadSettings, getDefaultSettings, updateSettings } from "./settings/settingsStorage";
-import { setSpriteConfig } from "../domain/render/sprites";
-import {
-  loadSessionState,
-  saveSessionState,
-  type InventoryEntry,
-} from "./persistence/sessionStorage";
-import { ItemFactory } from "../domain/game/items/ItemFactory";
 import type { GameController, GameOptions, GameSnapshot } from "./GameAPI";
 import { SimpleGameBus } from "./GameBus";
+import type { Action } from "./input/ActionTypes";
+import { InputManager } from "./input/InputManager";
+import { setKeyBinding } from "./input/KeyBindings";
+import {
+  type InventoryEntry,
+  loadSessionState,
+  saveSessionState,
+} from "./persistence/sessionStorage";
+import { getDefaultSettings, loadSettings, updateSettings } from "./settings/settingsStorage";
 
 function defaultKinematics(): Kinematics2D {
   return { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
@@ -45,25 +45,25 @@ export class GameApp {
     };
     if (options.initialWorld?.planets) {
       ecsConfig.planets = options.initialWorld.planets.map(
-        (p): Planet => ({
-          id: p.id,
-          x: p.x,
-          y: p.y,
-          radius: p.radius,
-          color: p.color ?? "#8888ff",
-          design: p.design ?? "solid",
+        (planetIn): Planet => ({
+          id: planetIn.id,
+          x: planetIn.x,
+          y: planetIn.y,
+          radius: planetIn.radius,
+          color: planetIn.color ?? "#8888ff",
+          design: planetIn.design ?? "solid",
         }),
       );
     }
     if (options.initialWorld?.enemies) {
       ecsConfig.enemies = options.initialWorld.enemies.map(
-        (e): Enemy => ({
-          id: e.id,
-          x: e.x,
-          y: e.y,
-          radius: e.radius,
-          health: e.health,
-          angle: e.angle,
+        (enemyIn): Enemy => ({
+          id: enemyIn.id,
+          x: enemyIn.x,
+          y: enemyIn.y,
+          radius: enemyIn.radius,
+          health: enemyIn.health,
+          angle: enemyIn.angle,
           vx: 0,
           vy: 0,
           visionRadius: 700,
@@ -153,16 +153,16 @@ export class GameApp {
 
     // Derive a snapshot for HUD per frame
     const getSnapshot = (): GameSnapshot => {
-      const p = session.getPlayer();
-      const player: Kinematics2D & { health: number; experience: number } = p
+      const playerView = session.getPlayer();
+      const player: Kinematics2D & { health: number; experience: number } = playerView
         ? {
-            x: p.x,
-            y: p.y,
-            vx: p.vx,
-            vy: p.vy,
-            angle: p.angle,
-            health: p.health,
-            experience: p.experience,
+            x: playerView.x,
+            y: playerView.y,
+            vx: playerView.vx,
+            vy: playerView.vy,
+            angle: playerView.angle,
+            health: playerView.health,
+            experience: playerView.experience,
           }
         : { ...defaultKinematicsWithHealth(), experience: 0 };
       const camera = session.getCamera();
@@ -181,13 +181,13 @@ export class GameApp {
           color: pl.color,
           design: pl.design,
         })),
-        enemies: enemies.map((e) => ({
-          id: e.id,
-          x: e.x,
-          y: e.y,
-          angle: e.angle,
-          health: e.health,
-          radius: e.radius,
+        enemies: enemies.map((enemy) => ({
+          id: enemy.id,
+          x: enemy.x,
+          y: enemy.y,
+          angle: enemy.angle,
+          health: enemy.health,
+          radius: enemy.radius,
         })),
         projectiles: projectiles.map((pr): Circle2D => ({ x: pr.x, y: pr.y, radius: pr.radius })),
         stats: { fps, entityCount },
@@ -233,19 +233,19 @@ export class GameApp {
         // Periodically persist session state (position, mode, inventory)
         const now = performance.now();
         if (now - lastSavedAt >= SAVE_INTERVAL_MS) {
-          const p = session.getPlayer();
-          if (p) {
+          const playerView = session.getPlayer();
+          if (playerView) {
             const mode = session.getCurrentModeType();
             const modeData = session.getModeSnapshot();
             const inv: InventoryEntry[] = hudInventory
               .getSlots()
-              .filter((s) => s.item !== null && s.quantity > 0)
-              .map((s) => {
-                const item = s.item!;
-                return { type: item.type, quantity: s.quantity };
+              .filter((slot) => slot.item !== null && slot.quantity > 0)
+              .map((slot) => {
+                const item = slot.item!;
+                return { type: item.type, quantity: slot.quantity };
               });
             saveSessionState({
-              player: { x: p.x, y: p.y },
+              player: { x: playerView.x, y: playerView.y },
               mode,
               planetId: modeData.planetId,
               inventory: inv,

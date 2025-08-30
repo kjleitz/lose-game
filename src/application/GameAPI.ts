@@ -1,9 +1,9 @@
-import type { Action } from "../engine/input/ActionTypes";
-import type { ViewSize, Circle2D, Kinematics2D } from "../shared/types/geometry";
-import type { Camera } from "../domain/render/camera";
+import type { Enemy } from "../domain/game/enemies";
 import type { PlayerInventory } from "../domain/game/inventory/PlayerInventory";
 import type { Planet } from "../domain/game/planets";
-import type { Enemy } from "../domain/game/enemies";
+import type { Camera } from "../domain/render/camera";
+import type { Circle2D, Kinematics2D, ViewSize } from "../shared/types/geometry";
+import type { Action } from "./input/ActionTypes";
 
 export interface GameOptions {
   size: ViewSize;

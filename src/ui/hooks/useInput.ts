@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { InputManager } from "../../engine/input";
-import type { ActionState } from "../../engine/input/ActionTypes";
+
+import { InputManager } from "../../application/input";
+import type { ActionState } from "../../application/input/ActionTypes";
 
 export interface UseInputResult {
   actions: ActionState;
@@ -12,11 +13,11 @@ export function useInput(): UseInputResult {
   const [actions, setActions] = useState(managerRef.current.actions);
 
   useEffect(() => {
-    const onDown = (e: KeyboardEvent): void => {
-      managerRef.current.enqueueKeyDown(e.code);
+    const onDown = (event: KeyboardEvent): void => {
+      managerRef.current.enqueueKeyDown(event.code);
     };
-    const onUp = (e: KeyboardEvent): void => {
-      managerRef.current.enqueueKeyUp(e.code);
+    const onUp = (event: KeyboardEvent): void => {
+      managerRef.current.enqueueKeyUp(event.code);
     };
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);

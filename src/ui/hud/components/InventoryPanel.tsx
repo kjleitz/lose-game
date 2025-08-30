@@ -142,7 +142,7 @@ export function InventoryPanel({
 
   // Fill grid with slots or null for empty positions
   for (let i = 0; i < rows * columns; i++) {
-    const slot = slots.find((s) => s.id === `slot_${i}`);
+    const slot = slots.find((slotEntry) => slotEntry.id === `slot_${i}`);
     slotGrid.push(slot || null);
   }
 

@@ -98,8 +98,8 @@ export class DroppedItemSystem {
 
     // Take a snapshot of candidate IDs first to avoid skipping items
     const candidateIds = Array.from(this.droppedItems.values())
-      .filter((d) => Math.hypot(d.x - playerPos.x, d.y - playerPos.y) <= this.PICKUP_RANGE)
-      .map((d) => d.id);
+      .filter((item) => Math.hypot(item.x - playerPos.x, item.y - playerPos.y) <= this.PICKUP_RANGE)
+      .map((item) => item.id);
 
     for (const id of candidateIds) {
       const result = this.tryPickupItem(player, id);

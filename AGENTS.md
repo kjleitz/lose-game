@@ -25,8 +25,9 @@ You MUST read `docs/rules.md` before starting ANY task. If I make it clear that 
 - `npm run preview` — serve build locally
 - `npm run test` — run Vitest (watch in dev)
 - `npm run coverage` — Vitest with coverage
+- `npm run format` — format with Prettier
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run lint` — ESLint; `npm run format` — Prettier
+- `npm run lint` — ESLint
 
 ## Coding Style & Conventions
 

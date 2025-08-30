@@ -21,27 +21,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const sessionCodec = createJsonCodec<SessionState>((u) => {
-  if (!isRecord(u)) throw new Error("Invalid SessionState");
-  const r = u;
-  const player = r["player"];
+const sessionCodec = createJsonCodec<SessionState>((raw) => {
+  if (!isRecord(raw)) throw new Error("Invalid SessionState");
+  const record = raw;
+  const player = record["player"];
   if (!isRecord(player)) throw new Error("Invalid player");
   const x = player["x"];
   const y = player["y"];
   if (typeof x !== "number" || typeof y !== "number") throw new Error("Invalid player coords");
-  const modeVal = r["mode"];
+  const modeVal = record["mode"];
   if (modeVal !== "space" && modeVal !== "planet") throw new Error("Invalid mode");
-  const planetId = r["planetId"];
-  const inv = r["inventory"];
+  const planetId = record["planetId"];
+  const inv = record["inventory"];
   let inventory: InventoryEntry[] | undefined;
   if (Array.isArray(inv)) {
     const out: InventoryEntry[] = [];
     for (const entry of inv) {
       if (!isRecord(entry)) continue;
-      const t = entry["type"];
-      const q = entry["quantity"];
-      if (typeof t === "string" && typeof q === "number" && Number.isFinite(q)) {
-        out.push({ type: t, quantity: q });
+      const typeVal = entry["type"];
+      const quantityVal = entry["quantity"];
+      if (
+        typeof typeVal === "string" &&
+        typeof quantityVal === "number" &&
+        Number.isFinite(quantityVal)
+      ) {
+        out.push({ type: typeVal, quantity: quantityVal });
       }
     }
     inventory = out;

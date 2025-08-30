@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { GameRenderer } from "./GameRenderer";
-import type { PlanetSurface } from "../game/planet-surface/types";
+import { describe, expect, it } from "vitest";
+
+import type { Action } from "../../application/input/ActionTypes";
 import type { Planet } from "../../domain/game/planets";
-import type { Enemy } from "../game/enemies";
 import type { Circle2D } from "../../shared/types/geometry";
-import type { Action } from "../../engine/input/ActionTypes";
+import type { Enemy } from "../game/enemies";
+import type { PlanetSurface } from "../game/planet-surface/types";
+import { GameRenderer } from "./GameRenderer";
 
 describe("GameRenderer", () => {
   it("can be instantiated", () => {

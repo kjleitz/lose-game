@@ -1,3 +1,5 @@
+import type { Action } from "../../application/input/ActionTypes";
+import type { Kinematics2D } from "../../shared/types/geometry";
 import { drawShipTriangle, drawThruster } from "./sprites";
 
 export class ShipRenderer {
@@ -16,5 +18,3 @@ export class ShipRenderer {
     drawShipTriangle(ctx, player.x, player.y, player.angle, size);
   }
 }
-import type { Kinematics2D } from "../../shared/types/geometry";
-import type { Action } from "../../engine/input/ActionTypes";

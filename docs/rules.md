@@ -32,3 +32,12 @@ These are the guiding principles for development in this repo. Keep them short, 
   - Do not duplicate structural types (e.g., `PlanetSurface`) in renderers or systems; import the canonical type.
 
 > Direct quote for emphasis: "GET RID OF THE LEGACY STUFF. Things SHOULD NOT hang around JUST TO SATISFY TESTS. Tests are there to validate your application. Your application is NOT THERE TO VALIDATE THE TESTS."
+
+## Style and Naming
+
+- No one-letter identifiers. Use descriptive variable, parameter, and function names for readability.
+- Allowed exceptions: loop indices `i`/`j`/`k` and coordinates `x`/`y`.
+- ESLint enforces `id-length` with min 2, excluding properties; `_` is allowed as a throwaway placeholder.
+- Tests are allowed to use short identifiers when it meaningfully improves brevity (e.g., tiny helpers); the linter permits this only in `*.test.ts[x]` files.
+- Vendored or internal library code under `src/lib/**` is ignored by the linter; keep local app code clean.
+- For canvas transforms, avoid `a..f`—prefer descriptive names (e.g., `m11`, `m12`, `dx`, `dy`).

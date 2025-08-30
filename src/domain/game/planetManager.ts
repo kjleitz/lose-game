@@ -27,8 +27,8 @@ export class PlanetManager {
         screenH: size.height,
         center,
       });
-      const existingKeys = new Set(this.planets.map((p) => p.id));
-      const uniquePlanets = newPlanets.filter((p: Planet) => !existingKeys.has(p.id));
+      const existingKeys = new Set(this.planets.map((planet) => planet.id));
+      const uniquePlanets = newPlanets.filter((planet: Planet) => !existingKeys.has(planet.id));
       this.planets = [...this.planets, ...uniquePlanets];
       this.generatedRegions.add(regionKey);
     }

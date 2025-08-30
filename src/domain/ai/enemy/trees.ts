@@ -1,5 +1,5 @@
-import { Selector, Sequence, Action } from "../bt";
-import type { Node } from "../bt";
+import { Selector, Sequence, Action } from "../../../lib/behavior-tree";
+import type { Node } from "../../../lib/behavior-tree";
 import type { EnemyBlackboard } from "./EnemyBlackboard";
 import {
   isAlive,

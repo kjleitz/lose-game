@@ -6,3 +6,7 @@ npx --no-install lint-staged
 
 echo "Running tests..."
 npm run test -- --run
+
+echo "Running formatter..."
+npm run format
+

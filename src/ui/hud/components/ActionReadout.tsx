@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Action } from "../../../engine/input/ActionTypes";
+import type { Action } from "../../../application/input/ActionTypes";
 
 interface ActionReadoutProps {
   actions: Set<Action>;

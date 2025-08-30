@@ -239,16 +239,18 @@ export class PlayerInventoryManager implements PlayerInventory {
     // Sort based on mode
     switch (mode) {
       case "category":
-        itemSlots.sort((a, b) => this.compareByCategory(a, b));
+        itemSlots.sort((left, right) => this.compareByCategory(left, right));
         break;
       case "name":
-        itemSlots.sort((a, b) => a.item!.name.localeCompare(b.item!.name));
+        itemSlots.sort((left, right) => left.item!.name.localeCompare(right.item!.name));
         break;
       case "value":
-        itemSlots.sort((a, b) => b.item!.stats.value - a.item!.stats.value);
+        itemSlots.sort((left, right) => right.item!.stats.value - left.item!.stats.value);
         break;
       case "weight":
-        itemSlots.sort((a, b) => a.item!.properties.weight - b.item!.properties.weight);
+        itemSlots.sort(
+          (left, right) => left.item!.properties.weight - right.item!.properties.weight,
+        );
         break;
     }
 
@@ -408,8 +410,8 @@ export class PlayerInventoryManager implements PlayerInventory {
     return { success: true };
   }
 
-  private compareByCategory(a: InventorySlot, b: InventorySlot): number {
-    if (!a.item || !b.item) return 0;
+  private compareByCategory(slotLeft: InventorySlot, slotRight: InventorySlot): number {
+    if (!slotLeft.item || !slotRight.item) return 0;
 
     const categoryOrder = [
       "tools",
@@ -422,8 +424,8 @@ export class PlayerInventoryManager implements PlayerInventory {
       "misc",
     ];
 
-    const categoryA = this.getItemCategory(a.item);
-    const categoryB = this.getItemCategory(b.item);
+    const categoryA = this.getItemCategory(slotLeft.item);
+    const categoryB = this.getItemCategory(slotRight.item);
 
     const indexA = categoryOrder.indexOf(categoryA);
     const indexB = categoryOrder.indexOf(categoryB);
@@ -469,10 +471,10 @@ export class PlayerInventoryManager implements PlayerInventory {
     }
 
     // Get slots in order by their ID (slot_0, slot_1, etc.)
-    const orderedSlots = Array.from(this._slots.values()).sort((a, b) => {
-      const aNum = parseInt(a.id.split("_")[1]);
-      const bNum = parseInt(b.id.split("_")[1]);
-      return aNum - bNum;
+    const orderedSlots = Array.from(this._slots.values()).sort((left, right) => {
+      const leftIndex = parseInt(left.id.split("_")[1]);
+      const rightIndex = parseInt(right.id.split("_")[1]);
+      return leftIndex - rightIndex;
     });
 
     // Reassign items to slots in order

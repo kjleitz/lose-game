@@ -1,5 +1,5 @@
 import type { Item, ItemCondition } from "../items/Item";
-import type { PlayerInventoryManager, InventorySlot } from "./PlayerInventory";
+import type { InventorySlot, PlayerInventoryManager } from "./PlayerInventory";
 
 export class InventoryService {
   private inventory: PlayerInventoryManager;
@@ -10,7 +10,7 @@ export class InventoryService {
 
   // Item condition management
   updateItemCondition(slotId: string, newCondition: ItemCondition): boolean {
-    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
+    const slot = this.inventory.getSlots().find((slotEntry) => slotEntry.id === slotId);
     if (!slot || !slot.item) {
       return false;
     }
@@ -75,7 +75,7 @@ export class InventoryService {
 
   // Tool durability management
   damageItem(slotId: string, damage: number): boolean {
-    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
+    const slot = this.inventory.getSlots().find((slotEntry) => slotEntry.id === slotId);
     if (!slot?.item?.properties.durability) {
       return false;
     }
@@ -95,7 +95,7 @@ export class InventoryService {
   }
 
   repairItem(slotId: string, repairAmount: number): boolean {
-    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
+    const slot = this.inventory.getSlots().find((slotEntry) => slotEntry.id === slotId);
     if (!slot?.item?.properties.durability) {
       return false;
     }
@@ -212,8 +212,10 @@ export class InventoryService {
 
   // Quick slot management
   assignToQuickSlot(slotId: string, quickSlotId: string): boolean {
-    const slot = this.inventory.getSlots().find((s) => s.id === slotId);
-    const quickSlot = this.inventory.getQuickslots().find((qs) => qs.id === quickSlotId);
+    const slot = this.inventory.getSlots().find((slotEntry) => slotEntry.id === slotId);
+    const quickSlot = this.inventory
+      .getQuickslots()
+      .find((quickSlotEntry) => quickSlotEntry.id === quickSlotId);
 
     if (!slot?.item || !quickSlot) {
       return false;
@@ -224,7 +226,9 @@ export class InventoryService {
   }
 
   useQuickSlot(quickSlotId: string): { success: boolean; item?: Item; reason?: string } {
-    const quickSlot = this.inventory.getQuickslots().find((qs) => qs.id === quickSlotId);
+    const quickSlot = this.inventory
+      .getQuickslots()
+      .find((quickSlotEntry) => quickSlotEntry.id === quickSlotId);
 
     if (!quickSlot?.item) {
       return { success: false, reason: "Quick slot is empty" };

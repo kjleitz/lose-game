@@ -13,7 +13,7 @@ export function SpeedControl({
   min = 0.25,
   max = 5,
 }: SpeedControlProps): JSX.Element {
-  const clamp = (n: number): number => Math.min(max, Math.max(min, n));
+  const clamp = (nextValue: number): number => Math.min(max, Math.max(min, nextValue));
   const step = 0.25;
   return (
     <div className="flex items-center gap-2 select-none">

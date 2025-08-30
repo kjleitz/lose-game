@@ -1,4 +1,4 @@
-import type { Action } from "../../../engine/input/ActionTypes";
+import type { Action } from "../../../application/input/ActionTypes";
 import type { System, World } from "../../../lib/ecs";
 import { defineSystem } from "../../../lib/ecs";
 import { Player, Position, Rotation, Velocity, WeaponCooldown } from "../components";

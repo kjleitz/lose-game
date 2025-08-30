@@ -26,13 +26,13 @@ export function hashStringToInt(value: string): number {
 
 export function createSeededRng(seed: number): SeededRng {
   // Mulberry32 PRNG
-  let s = seed >>> 0;
+  let state = seed >>> 0;
   const next = (): number => {
-    s += 0x6d2b79f5;
-    let t = s;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    state += 0x6d2b79f5;
+    let temp = state;
+    temp = Math.imul(temp ^ (temp >>> 15), temp | 1);
+    temp ^= temp + Math.imul(temp ^ (temp >>> 7), temp | 61);
+    return ((temp ^ (temp >>> 14)) >>> 0) / 4294967296;
   };
   return {
     next,
