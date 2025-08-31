@@ -8,7 +8,7 @@ function actionsSet(actions: Action[]): Set<Action> {
 }
 
 describe("Planet terrain collision system", () => {
-  it("pushes player out of overlapping terrain feature", () => {
+  it("pushes player out of overlapping terrain feature", async () => {
     const session = new GameSessionECS();
     session.restoreMode({ mode: "planet", planetId: "planet_1" });
     // Land at landing site
@@ -28,10 +28,22 @@ describe("Planet terrain collision system", () => {
     expect(p).toBeTruthy();
     if (!p) return;
 
-    const dx = p.x - 0;
-    const dy = p.y - 0;
-    const dist = Math.hypot(dx, dy);
+    // New assertion: player should not overlap any of the feature's colliders
+    // (rocks are now contoured with multiple circles instead of one big circle).
+    const { getTerrainColliders } = await import("./collision/terrain-colliders");
+    const colliders = getTerrainColliders({
+      id: "rock-overlap",
+      x: 0,
+      y: 0,
+      type: "rock",
+      size: 20,
+    });
     const playerRadius = 16; // from EntityFactories collider
-    expect(dist).toBeGreaterThanOrEqual(playerRadius + 20 - 0.001);
+    for (const c of colliders) {
+      const dx = p.x - c.cx;
+      const dy = p.y - c.cy;
+      const d = Math.hypot(dx, dy);
+      expect(d).toBeGreaterThanOrEqual(playerRadius + c.r - 0.002);
+    }
   });
 });
