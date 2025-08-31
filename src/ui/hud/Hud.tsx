@@ -5,9 +5,9 @@ import type { Item } from "../../domain/game/items/Item";
 import type { Planet } from "../../domain/game/planets";
 import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D } from "../../shared/types/geometry";
-import { InventoryPanel } from "./components/InventoryPanel";
-import { Notification } from "./components/Notification";
-import { Radar } from "./components/Radar";
+import { InventoryPanel } from "./panels/InventoryPanel";
+import { Notification } from "./widgets/Notification";
+import { Radar } from "./widgets/Radar";
 import { ControlsPanel } from "./panels/ControlsPanel";
 import { StatusPanel } from "./panels/StatusPanel";
 

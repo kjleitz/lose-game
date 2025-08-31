@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { Failer } from "./Failer";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("Failer", () => {
   it("converts Success to Failure and preserves Running", () => {

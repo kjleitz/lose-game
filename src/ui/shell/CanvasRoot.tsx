@@ -8,8 +8,8 @@ import type { Planet } from "../../domain/game/planets";
 import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D, ViewSize } from "../../shared/types/geometry";
 import { Hud } from "../hud/Hud";
-import { SettingsModal } from "./SettingsModal";
-import { PauseMenu } from "./PauseMenu";
+import { SettingsModal } from "../overlays/dialogs/SettingsModal";
+import { PauseMenu } from "../overlays/menus/PauseMenu";
 import { deleteAllGameData } from "../../application/persistence/deleteData";
 
 function useCanvasSize(): ViewSize {
@@ -113,12 +113,10 @@ export function CanvasRoot(): JSX.Element {
 
   function handleItemUse(item: Item): void {
     console.log("Using item:", item.name);
-    // TODO: Implement item use logic based on item type
   }
 
   function handleItemDrop(item: Item, quantity: number): void {
     console.log("Dropping item:", item.name, "quantity:", quantity);
-    // TODO: Implement item dropping logic
   }
 
   return (

@@ -12,11 +12,11 @@ export interface Component<T extends object> extends ComponentBase {
 export type ComponentData<C> = C extends Component<infer T> ? T : never;
 
 // Constructor/descriptor used to create components and identify their type
-export type ComponentConstructor<T extends object> = {
+export interface ComponentConstructor<T extends object> {
   readonly __componentType: symbol;
   create(data: T): Component<T>;
   getDefaultFactory(): (() => T) | undefined;
-};
+}
 
 export interface EntityComponents {
   [key: symbol]: ComponentBase;
@@ -34,14 +34,14 @@ export interface QueryResultNamed<M extends ComponentMap> {
   components: ComponentDataMap<M>;
 }
 
-export type QueryResultNamedWithOptional<M extends ComponentMap, O extends ComponentMap> = {
+export interface QueryResultNamedWithOptional<M extends ComponentMap, O extends ComponentMap> {
   entity: EntityId;
   components: ComponentDataMap<M> & {
     [K in keyof O]?: O[K] extends ComponentConstructor<infer U> ? U : never;
   };
-};
+}
 
-export interface SystemDefinition<M extends ComponentMap, O extends ComponentMap = {}> {
+export interface SystemDefinition<M extends ComponentMap, O extends ComponentMap = ComponentMap> {
   withComponents<U extends ComponentMap>(components: U): SystemDefinition<U, O>;
   withOptionalComponents<U extends ComponentMap>(components: U): SystemDefinition<M, U>;
   execute(fn: (entities: QueryResultNamedWithOptional<M, O>[]) => void): System<M, O>;

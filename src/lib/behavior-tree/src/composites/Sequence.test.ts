@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { Sequence } from "./Sequence";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("Sequence", () => {
   it("short-circuits on Failure and Running", () => {

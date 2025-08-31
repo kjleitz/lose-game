@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { Parallel } from "./Parallel";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("Parallel", () => {
   it("defaults: all success => Success; any failure => Failure; else Running", () => {

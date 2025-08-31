@@ -15,7 +15,6 @@ interface InventoryPanelProps {
 }
 
 function ItemIcon({ item }: { item: Item }): JSX.Element {
-  // Simple colored squares based on item type for now
   const getItemColor = (item: Item): string => {
     switch (item.baseType) {
       case "tool":
@@ -135,12 +134,10 @@ export function InventoryPanel({
   const maxWeight = inventory.maxWeight;
   const maxSlots = inventory.maxSlots;
 
-  // Organize slots into a grid (4 columns)
   const columns = 4;
   const rows = Math.ceil(maxSlots / columns);
   const slotGrid: (InventorySlot | null)[] = [];
 
-  // Fill grid with slots or null for empty positions
   for (let i = 0; i < rows * columns; i++) {
     const slot = slots.find((slotEntry) => slotEntry.id === `slot_${i}`);
     slotGrid.push(slot || null);
@@ -164,7 +161,6 @@ export function InventoryPanel({
         )}
       </header>
 
-      {/* Inventory Stats */}
       <div className="mb-3 text-sm">
         <div className="flex justify-between text-gray-300">
           <span>Weight:</span>
@@ -181,7 +177,6 @@ export function InventoryPanel({
         </div>
       </div>
 
-      {/* Inventory Grid */}
       <div
         className="grid gap-2 max-h-64 overflow-y-auto"
         style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
@@ -205,7 +200,6 @@ export function InventoryPanel({
         )}
       </div>
 
-      {/* Quick Actions */}
       <div className="mt-3 pt-3 border-t border-gray-600">
         <div className="flex gap-2 text-xs">
           <button

@@ -18,7 +18,7 @@ Tests
 
 Useful test patterns
 
-- Run a single file: `vitest run src/ui/components/Hud.test.tsx`.
+- Run a single file: `vitest run src/ui/hud/Hud.test.tsx`.
 - Focus a test: temporarily use `it.only(...)` locally; CI forbids `.only`.
 - JSDOM quirks: mock canvas per ADR‑0004; avoid accessing layout APIs.
 

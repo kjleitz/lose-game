@@ -14,10 +14,10 @@ export function Parallel<BB>(
     tick(bb: BB, dt: number): Status {
       let success = 0;
       let failure = 0;
-      for (const c of children) {
-        const s = c.tick(bb, dt);
-        if (s === "Success") success += 1;
-        else if (s === "Failure") failure += 1;
+      for (const childNode of children) {
+        const status = childNode.tick(bb, dt);
+        if (status === "Success") success += 1;
+        else if (status === "Failure") failure += 1;
       }
       if (success >= successThreshold) return "Success";
       if (failure >= failureThreshold) return "Failure";

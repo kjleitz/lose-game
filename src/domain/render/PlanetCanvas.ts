@@ -1,4 +1,4 @@
-import type { Planet } from "../../domain/game/planets";
+import type { Planet } from "../game/planets";
 
 type Minimal2DContext = Pick<
   CanvasRenderingContext2D,

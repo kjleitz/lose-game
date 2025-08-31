@@ -9,7 +9,6 @@ export interface PlanetSvgProps {
 }
 
 export function PlanetSvg({ planet, x, y, r }: PlanetSvgProps): JSX.Element {
-  // Render main body
   const overlays: JSX.Element[] = [];
   if (planet.design === "ringed") {
     overlays.push(

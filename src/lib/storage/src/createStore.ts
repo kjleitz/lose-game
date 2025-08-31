@@ -73,9 +73,9 @@ export function createStore<T>(options: CreateStoreOptions<T>): NamespacedStore<
   function getAll(): Record<string, T> {
     const result: Record<string, T> = {};
     for (const k of keys()) {
-      const v = get(k);
-      if (v !== null) {
-        result[k] = v;
+      const value = get(k);
+      if (value !== null) {
+        result[k] = value;
       }
     }
     return result;

@@ -6,8 +6,8 @@ export function Succeeder<BB>(name: string, child: Node<BB>): Node<BB> {
   return {
     id,
     tick(bb: BB, dt: number): Status {
-      const s = child.tick(bb, dt);
-      return s === "Running" ? "Running" : "Success";
+      const status = child.tick(bb, dt);
+      return status === "Running" ? "Running" : "Success";
     },
   };
 }

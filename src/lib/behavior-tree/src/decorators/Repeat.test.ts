@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { Repeat } from "./Repeat";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("Repeat", () => {
   it("returns Running until child completes N times, then Success", () => {

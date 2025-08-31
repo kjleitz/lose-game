@@ -37,7 +37,7 @@
   - New `src/application/GameBus.ts`: Typed pub/sub for game→HUD and HUD→game messages.
 - UI (optional)
   - React HUD reads from the bus and issues commands through the controller.
-  - `src/ui/components/CanvasRoot.tsx` only mounts a canvas element and bootstraps `GameApp`.
+  - `src/ui/shell/CanvasRoot.tsx` only mounts a canvas element and bootstraps `GameApp`.
 
 ## Data Flow
 

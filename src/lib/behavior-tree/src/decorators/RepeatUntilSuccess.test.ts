@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { RepeatUntilSuccess } from "./RepeatUntilSuccess";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("RepeatUntilSuccess", () => {
   it("runs until success or max attempts", () => {

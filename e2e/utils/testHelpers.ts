@@ -1,14 +1,14 @@
 // Shared Playwright test utilities for Lose Game
 // e2e/utils/testHelpers.ts
 
-import { Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 
-export async function startGame(page: Page) {
+export async function startGame(page: Page): Promise<void> {
   await page.goto("/");
   await page.waitForSelector('[data-testid="game-root"]');
 }
 
-export async function getHudPanel(page: Page, panelTestId: string) {
+export function getHudPanel(page: Page, panelTestId: string): Locator {
   return page.locator(`[data-testid="${panelTestId}"]`);
 }
 

@@ -212,21 +212,3 @@ function createEnemy(world: World, x: number, y: number) {
     .addComponent(Sprite, { texture: "enemy.png", scale: 1 });
 }
 ```
-
-## Installation as Internal Package
-
-To use this ECS system in your project:
-
-```bash
-# From your project root
-npm install ./lib/ecs
-
-# Or add to package.json dependencies
-"@lose-game/ecs": "file:./lib/ecs"
-```
-
-Then import and use:
-
-```typescript
-import { World, defineComponent, defineSystem } from "@lose-game/ecs";
-```

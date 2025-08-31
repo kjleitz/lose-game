@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useEffect, useRef } from "react";
-import { GameLoop } from "../../application/game/loop";
+import { GameLoop } from "../../../application/game/loop";
 
 export function GameLoopProvider({
   update,

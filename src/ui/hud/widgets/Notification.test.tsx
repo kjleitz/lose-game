@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Notification } from "../hud/components/Notification";
+import { Notification } from "./Notification";
 
 describe("Notification", () => {
   it("renders the message when provided", () => {

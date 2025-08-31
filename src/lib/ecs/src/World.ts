@@ -9,6 +9,26 @@ import type {
   QueryResultNamedWithOptional,
 } from "./types.js";
 import { Entity } from "./Entity.js";
+import { isComponent } from "./Component.js";
+
+function hasAllRequiredKeys<M extends ComponentMap>(
+  obj: Record<string, object>,
+  required: M,
+): obj is QueryResultNamed<M>["components"] {
+  for (const key in required) {
+    if (!(key in obj)) return false;
+  }
+  return true;
+}
+
+function conformsToOptional<M extends ComponentMap, O extends ComponentMap>(
+  obj: Record<string, object>,
+  required: M,
+  _optional: O,
+): obj is QueryResultNamedWithOptional<M, O>["components"] {
+  // We only need to ensure required keys exist; optional keys are by definition optional
+  return hasAllRequiredKeys(obj, required);
+}
 
 export class World {
   private nextEntityId: EntityId = 1;
@@ -77,7 +97,9 @@ export class World {
     componentConstructor: ComponentConstructor<T>,
   ): Component<T> | undefined {
     const entityComponents = this.components.get(entityId);
-    return entityComponents?.get(componentConstructor.__componentType) as Component<T> | undefined;
+    const comp = entityComponents?.get(componentConstructor.__componentType);
+    if (!comp) return undefined;
+    return isComponent(comp, componentConstructor) ? comp : undefined;
   }
 
   query<M extends ComponentMap>(components: M): QueryResultNamed<M>[] {
@@ -119,8 +141,10 @@ export class World {
         }
       }
 
-      // Single localized assertion: we have populated all keys from M
-      results.push({ entity: entityId, components: comps as QueryResultNamed<M>["components"] });
+      if (!hasAllRequiredKeys(comps, components)) {
+        throw new Error("World.query produced incomplete component set");
+      }
+      results.push({ entity: entityId, components: comps });
     }
 
     return results;
@@ -181,10 +205,10 @@ export class World {
         }
       }
 
-      results.push({
-        entity: entityId,
-        components: comps as QueryResultNamedWithOptional<M, O>["components"],
-      });
+      if (!conformsToOptional(comps, required, optional)) {
+        throw new Error("World.queryOptional produced incomplete component set");
+      }
+      results.push({ entity: entityId, components: comps });
     }
 
     return results;

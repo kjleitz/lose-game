@@ -24,12 +24,12 @@ export class FloraTemplates {
   }
 
   getSpeciesByCategory(category: FloraCategory): FloraSpecies[] {
-    return Array.from(this.templates.values()).filter(species => species.category === category);
+    return Array.from(this.templates.values()).filter((species) => species.category === category);
   }
 
   getSpeciesForBiome(biome: string): FloraSpecies[] {
-    return Array.from(this.templates.values()).filter(species => 
-      species.habitat.biomes.includes(biome)
+    return Array.from(this.templates.values()).filter((species) =>
+      species.habitat.biomes.includes(biome),
     );
   }
 
@@ -55,7 +55,7 @@ export class FloraTemplates {
         stages: [
           {
             id: "seedling",
-            name: "Seedling", 
+            name: "Seedling",
             duration: 24,
             requirements: { minAge: 0, environmentalFactors: new Map() },
             appearance: { size: 0.1, color: "#90EE90", sprite: "oak_seedling" },
@@ -65,7 +65,7 @@ export class FloraTemplates {
           {
             id: "sapling",
             name: "Sapling",
-            duration: 120, 
+            duration: 120,
             requirements: { minAge: 24, environmentalFactors: new Map() },
             appearance: { size: 0.3, color: "#228B22", sprite: "oak_sapling" },
             harvestYield: 0.3,
@@ -81,7 +81,7 @@ export class FloraTemplates {
             reproduction: false,
           },
           {
-            id: "mature", 
+            id: "mature",
             name: "Mature Tree",
             duration: 480,
             requirements: { minAge: 384, environmentalFactors: new Map() },
@@ -91,7 +91,7 @@ export class FloraTemplates {
           },
           {
             id: "elder",
-            name: "Elder Tree", 
+            name: "Elder Tree",
             duration: -1,
             requirements: { minAge: 864, environmentalFactors: new Map() },
             appearance: { size: 1.2, color: "#006400", sprite: "oak_elder" },
@@ -110,7 +110,7 @@ export class FloraTemplates {
         baseColor: "#006400",
         seasonalColors: new Map([
           ["spring", "#32CD32"],
-          ["summer", "#006400"], 
+          ["summer", "#006400"],
           ["autumn", "#FF6347"],
           ["winter", "#8B4513"],
         ]),
@@ -254,7 +254,7 @@ export class FloraTemplates {
         seasonalColors: new Map([
           ["spring", "#90EE90"],
           ["summer", "#DC143C"],
-          ["autumn", "#8B0000"], 
+          ["autumn", "#8B0000"],
           ["winter", "#696969"],
         ]),
         textures: ["berry_leaves", "berries"],
@@ -308,9 +308,7 @@ export class FloraTemplates {
       reproduction: {
         method: ReproductionMethod.SEEDS,
         frequency: 2,
-        requirements: [
-          { type: "health", value: 0.6 },
-        ],
+        requirements: [{ type: "health", value: 0.6 }],
         offspring: {
           count: [2, 8],
           dispersalDistance: 20,
@@ -378,7 +376,7 @@ export class FloraTemplates {
           },
           {
             id: "seeding",
-            name: "Going to Seed", 
+            name: "Going to Seed",
             duration: 8,
             requirements: { minAge: 26, environmentalFactors: new Map() },
             appearance: { size: 0.8, color: "#8B4513", sprite: "herb_seeding" },
@@ -459,9 +457,7 @@ export class FloraTemplates {
       reproduction: {
         method: ReproductionMethod.SEEDS,
         frequency: 3,
-        requirements: [
-          { type: "health", value: 0.5 },
-        ],
+        requirements: [{ type: "health", value: 0.5 }],
         offspring: {
           count: [3, 12],
           dispersalDistance: 15,
@@ -482,7 +478,7 @@ export class FloraTemplates {
 
     // Grass
     this.templates.set("common_grass", {
-      id: "common_grass", 
+      id: "common_grass",
       name: "Common Grass",
       category: FloraCategory.GRASS,
       habitat: {

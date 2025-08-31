@@ -45,7 +45,7 @@ Space Mode (Ship) ─── [Press L near planet] ───> Planet Mode (Charac
 
 - `src/domain/game/GameSession.ts` - Mode manager and coordinator
 - `src/domain/game/player.ts` - Player entity with mode-specific physics
-- `src/ui/components/CanvasRenderer.tsx` - Canvas management
+- `src/ui/shell/CanvasRoot.tsx` - Canvas shell and management
 - `src/application/game/input.ts` - Input system with mode-aware actions
 
 ## Future Architecture Vision

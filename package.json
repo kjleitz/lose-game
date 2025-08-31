@@ -18,7 +18,6 @@
     "checks": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {
-    "@lose-game/ecs": "file:lib/ecs",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "simplex-noise": "^4.0.3"

@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { Selector } from "./Selector";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("Selector", () => {
   it("short-circuits on Success and Running", () => {

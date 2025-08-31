@@ -8,8 +8,8 @@ export function Repeat<BB>(name: string, child: Node<BB>, times: number): Node<B
     id,
     tick(bb: BB, dt: number): Status {
       if (count >= times) return "Success";
-      const s = child.tick(bb, dt);
-      if (s === "Running") return "Running";
+      const status = child.tick(bb, dt);
+      if (status === "Running") return "Running";
       count += 1;
       return count >= times ? "Success" : "Running";
     },

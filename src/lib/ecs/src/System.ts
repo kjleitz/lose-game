@@ -3,11 +3,13 @@ import type {
   System,
   ComponentMap,
   QueryResultNamedWithOptional,
+  ComponentConstructor,
 } from "./types.js";
 import type { World } from "./World.js";
 
-export function defineSystem(world: World): SystemDefinition<{}> {
-  return new SystemDefinitionImpl(world, {}, {} as {});
+export function defineSystem(world: World): SystemDefinition<ComponentMap> {
+  const emptyMap: Record<string, ComponentConstructor<object>> = {};
+  return new SystemDefinitionImpl(world, emptyMap, emptyMap);
 }
 
 class SystemDefinitionImpl<M extends ComponentMap, O extends ComponentMap>

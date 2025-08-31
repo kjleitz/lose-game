@@ -9,12 +9,12 @@ export function MemSequence<BB>(name: string, children: Node<BB>[]): Node<BB> {
     id,
     tick(bb: BB, dt: number): Status {
       while (index < children.length) {
-        const s = children[index].tick(bb, dt);
-        if (s === "Success") {
+        const status = children[index].tick(bb, dt);
+        if (status === "Success") {
           index += 1;
           continue;
         }
-        if (s === "Running") return "Running";
+        if (status === "Running") return "Running";
         // Failure: reset
         index = 0;
         return "Failure";

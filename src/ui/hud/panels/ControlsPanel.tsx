@@ -1,10 +1,10 @@
 import type { JSX } from "react";
 
 import type { Action } from "../../../application/input/ActionTypes";
-import { SpeedControl } from "../../components/SpeedControl";
-import { ActionReadout } from "../components/ActionReadout";
-import { PauseIndicator } from "../components/PauseIndicator";
-import { SettingsButton } from "../components/SettingsButton";
+import { SpeedControl } from "../../controls/composites/SpeedControl";
+import { ActionReadout } from "../widgets/ActionReadout";
+import { PauseIndicator } from "../widgets/PauseIndicator";
+import { SettingsButton } from "../widgets/SettingsButton";
 
 interface ControlsPanelProps {
   actions: Set<Action>;

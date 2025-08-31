@@ -1,4 +1,4 @@
-import { drawPlanetCanvas } from "../../ui/components/PlanetCanvas";
+import { drawPlanetCanvas } from "./PlanetCanvas";
 import type { Planet } from "../game/planets";
 
 export class PlanetRenderer {

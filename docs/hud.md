@@ -19,20 +19,20 @@ Panels
 
 Components
 
-- `src/ui/hud/components/HealthBar.tsx` — HP bar (`hud-health-panel`).
-- `src/ui/hud/components/ExperienceBar.tsx` — XP bar (wrap has `hud-score-panel`; inner has `hud-experience-panel`).
-- `src/ui/hud/components/ActionReadout.tsx` — Joins active actions or shows "idle".
-- `src/ui/hud/components/PauseIndicator.tsx` — Shows "paused".
-- `src/ui/hud/components/SettingsButton.tsx` — HUD settings trigger.
-- `src/ui/hud/components/Notification.tsx` — Top‑center messages.
-- `src/ui/hud/components/Radar.tsx` — Minimap using `RadarService`.
+- `src/ui/hud/widgets/HealthBar.tsx` — HP bar (`hud-health-panel`).
+- `src/ui/hud/widgets/ExperienceBar.tsx` — XP bar (wrap has `hud-score-panel`; inner has `hud-experience-panel`).
+- `src/ui/hud/widgets/ActionReadout.tsx` — Joins active actions or shows "idle".
+- `src/ui/hud/widgets/PauseIndicator.tsx` — Shows "paused".
+- `src/ui/hud/widgets/SettingsButton.tsx` — HUD settings trigger.
+- `src/ui/hud/widgets/Notification.tsx` — Top‑center messages.
+- `src/ui/hud/widgets/Radar.tsx` — Minimap using `RadarService`.
 
 Conventions
 
 - Small, pure components with clear, typed props.
 - Stable `data-testid` for E2E and component tests.
 - Styling via Tailwind HUD tokens (`hud-*`), see `tailwind.config.ts` and `src/index.css`.
-- Planets and other world visuals are part of the environment (not HUD) and live under `src/ui/components` and `src/domain/**`.
+- Planets and other world visuals are part of the environment (not HUD) and live under `src/ui/icons` (SVG icons) and `src/domain/**` (canvas renderers).
 
 Related
 

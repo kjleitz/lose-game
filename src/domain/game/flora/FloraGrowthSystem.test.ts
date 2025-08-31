@@ -48,7 +48,7 @@ describe("FloraGrowthSystem", () => {
     it("should update plant age over time", () => {
       const oakSpecies = templates.getSpecies("oak_tree")!;
       const plant = new FloraInstanceImpl("oak_1", { x: 10, y: 20 }, oakSpecies);
-      
+
       // Set up optimal growing conditions
       plant.environmentalFactors.set("temperature", 0.5);
       plant.environmentalFactors.set("moisture", 0.6);
@@ -112,7 +112,7 @@ describe("FloraGrowthSystem", () => {
       badPlant.lastGrowthUpdate = initialAge;
 
       // Simulate 1 hour of growth
-      vi.spyOn(Date, 'now').mockReturnValue(initialAge + 3600000);
+      vi.spyOn(Date, "now").mockReturnValue(initialAge + 3600000);
       growthSystem.update(3600); // 1 hour
 
       expect(goodPlant.age).toBeGreaterThan(badPlant.age);
@@ -128,7 +128,7 @@ describe("FloraGrowthSystem", () => {
 
       // Set extremely hot temperature (outside habitat range)
       plant.environmentalFactors.set("temperature", 1.0); // Max temp for oak is 0.8
-      
+
       growthSystem.addPlant(plant);
       growthSystem.update(10); // 10 seconds of damage
 
@@ -264,7 +264,7 @@ describe("FloraGrowthSystem", () => {
       growthSystem.addPlant(plant);
 
       const initialPlantCount = growthSystem.getAllPlants().length;
-      
+
       // Run update cycles
       for (let i = 0; i < 100; i++) {
         growthSystem.update(1);

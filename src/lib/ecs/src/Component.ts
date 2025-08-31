@@ -1,6 +1,6 @@
 import type { Component, ComponentConstructor } from "./types.js";
 
-export function defineComponent<T extends object = {}>(
+export function defineComponent<T extends object = object>(
   defaultFactory?: () => T,
 ): ComponentConstructor<T> {
   const componentType = Symbol("component");

@@ -7,8 +7,8 @@ export function Selector<BB>(name: string, children: Node<BB>[]): Node<BB> {
     id,
     tick(bb: BB, dt: number): Status {
       for (const child of children) {
-        const s = child.tick(bb, dt);
-        if (s !== "Failure") return s;
+        const status = child.tick(bb, dt);
+        if (status !== "Failure") return status;
       }
       return "Failure";
     },

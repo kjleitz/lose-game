@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import { HealthBar } from "../components/HealthBar";
-import { ExperienceBar } from "../components/ExperienceBar";
+import { HealthBar } from "../widgets/HealthBar";
+import { ExperienceBar } from "../widgets/ExperienceBar";
 
 export function StatusPanel({
   health,

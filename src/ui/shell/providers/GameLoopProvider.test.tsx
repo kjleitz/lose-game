@@ -7,7 +7,7 @@ const mockStart = vi.fn();
 const mockStop = vi.fn();
 const ctorSpy = vi.fn();
 
-vi.mock("../../application/game/loop", () => {
+vi.mock("../../../application/game/loop", () => {
   return {
     GameLoop: vi.fn().mockImplementation((opts) => {
       ctorSpy(opts);
@@ -34,7 +34,7 @@ describe("GameLoopProvider", () => {
     );
     expect(screen.getByTestId("child")).toHaveTextContent("Hello");
     expect(ctorSpy).toHaveBeenCalledTimes(1);
-    const passed = ctorSpy.mock.calls[0][0] as any;
+    const passed = ctorSpy.mock.calls[0][0] as unknown as { update: unknown; render: unknown };
     expect(passed.update).toBe(update);
     expect(passed.render).toBe(renderCb);
     expect(mockStart).toHaveBeenCalledTimes(1);

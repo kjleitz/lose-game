@@ -9,20 +9,9 @@ import js from "@eslint/js";
 
 export default tseslint.config([
   // Ignore generated/build and vendored library code from linting
-  globalIgnores([
-    "dist",
-    "src/lib/**",
-    "e2e/**",
-    "tests-examples/**",
-    // Not part of the app TS project; avoid type-aware parse errors
-    "playwright.config.ts",
-    "tailwind.config.ts",
-    "vitest.config.ts",
-    "vite.config.ts",
-    "node_modules/**",
-  ]),
+  globalIgnores(["**/examples/**", "**/example.*"]),
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["src/**/*.{ts,tsx}", "e2e/**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,

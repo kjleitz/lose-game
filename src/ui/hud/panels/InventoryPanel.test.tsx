@@ -8,7 +8,6 @@ describe("InventoryPanel", (): void => {
   const createTestInventory = (): PlayerInventoryManager => {
     const inventory = new PlayerInventoryManager(12, 50);
 
-    // Create mock items manually
     const tool: Item = {
       id: "test-tool-1",
       type: "knife",
@@ -96,25 +95,19 @@ describe("InventoryPanel", (): void => {
 
     const grid = screen.getByTestId("inventory-grid");
     expect(grid).toBeInTheDocument();
-
-    // Should have items and empty slots
     expect(screen.getAllByTestId(/inventory-slot-/).length).toBeGreaterThan(0);
   });
 
   it("should show item quantities for stackable items", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
-
-    // Health potions should show quantity of 3
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 
   it("should call onToggle when close button clicked", (): void => {
     const inventory = createTestInventory();
     const onToggle = vi.fn();
-
     render(<InventoryPanel inventory={inventory} visible={true} onToggle={onToggle} />);
-
     fireEvent.click(screen.getByTestId("inventory-close-button"));
     expect(onToggle).toHaveBeenCalled();
   });
@@ -122,18 +115,14 @@ describe("InventoryPanel", (): void => {
   it("should call onItemUse when use button clicked", (): void => {
     const inventory = createTestInventory();
     const onItemUse = vi.fn();
-
     render(<InventoryPanel inventory={inventory} visible={true} onItemUse={onItemUse} />);
 
-    // Find a slot with an item and hover to show actions
     const itemSlot = screen
       .getAllByTestId(/inventory-slot-/)
       .find((slot) => !slot.getAttribute("data-testid")?.includes("empty"));
 
     if (itemSlot) {
       fireEvent.mouseEnter(itemSlot);
-
-      // Wait for actions to appear and click use
       const useButton = screen.queryByTestId("use-item-button");
       if (useButton) {
         fireEvent.click(useButton);
@@ -145,18 +134,14 @@ describe("InventoryPanel", (): void => {
   it("should call onItemDrop when drop button clicked", (): void => {
     const inventory = createTestInventory();
     const onItemDrop = vi.fn();
-
     render(<InventoryPanel inventory={inventory} visible={true} onItemDrop={onItemDrop} />);
 
-    // Find a slot with an item and hover to show actions
     const itemSlot = screen
       .getAllByTestId(/inventory-slot-/)
       .find((slot) => !slot.getAttribute("data-testid")?.includes("empty"));
 
     if (itemSlot) {
       fireEvent.mouseEnter(itemSlot);
-
-      // Wait for actions to appear and click drop
       const dropButton = screen.queryByTestId("drop-item-button");
       if (dropButton) {
         fireEvent.click(dropButton);
@@ -178,7 +163,6 @@ describe("InventoryPanel", (): void => {
   it("should be hidden when visible is false", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={false} />);
-
     const panel = screen.getByText("Inventory").closest("div");
     expect(panel).toHaveClass("opacity-0", "pointer-events-none");
   });
@@ -187,14 +171,12 @@ describe("InventoryPanel", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
 
-    // Find tool slot and hover to show details
     const slots = screen
       .getAllByTestId(/inventory-slot-/)
       .filter((slot) => !slot.getAttribute("data-testid")?.includes("empty"));
 
     for (const slot of slots) {
       fireEvent.mouseEnter(slot);
-      // Check if durability info appears
       if (screen.queryByText(/Durability:/)) {
         expect(screen.getByText(/80\/100/)).toBeInTheDocument();
         break;

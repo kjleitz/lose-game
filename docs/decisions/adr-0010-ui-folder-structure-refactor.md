@@ -1,140 +1,122 @@
-# ADR-0010: UI Folder Structure Refactor
+# ADR-0010: UI Architecture and Folder Structure
 
-**Status:** Proposed  
-**Date:** 2025-08-29  
-**Decision Makers:** Development Team
+Status: Proposed
+Date: 2025-08-30
+Decision Makers: Development Team
+Supersedes: Prior draft of ADR-0010 (folder refactor)
 
 ## Context
 
-The current `/src/ui/` folder structure has grown organically without clear organization principles, leading to several maintainability issues:
+The current `/src/ui/` has overlapping categories and ambiguous buckets that make navigation and refactoring harder:
 
-### Current Problems:
+- Top-level `components/` sits beside `hud/` and `app/`, but also duplicates categories inside `hud/` (e.g., `components/` vs `panels/`).
+- Non-React utilities (e.g., canvas rendering) live under UI.
+- Tests are not consistently colocated.
+- Deep relative imports appear because there are no clear public boundaries per UI area.
 
-1. **Misplaced Test Files**
-   - `Hud.test.tsx`, `Radar.test.tsx`, `Notification.test.tsx` in `/components/` but actual components are in `/hud/`
-   - `HudPanel.test.tsx` in `/components/` but should be with panel components
-   - Tests separated from their corresponding components
-
-2. **Non-Component Files in UI Layer**
-   - `PlanetCanvas.ts` is a canvas drawing utility function, not a React component
-   - Canvas rendering utilities don't belong in the UI component folder
-   - Should be moved to `/src/domain/render/` or similar
-
-3. **Deep Import Paths**
-   - Many files use imports like `../../../application/input/ActionTypes`
-   - Cross-directory imports create tight coupling
-   - Difficult to refactor without breaking multiple files
-
-4. **Mixed Responsibilities in `/components/`**
-   - Contains application-level components (`CanvasRoot`, `GameLoopProvider`)
-   - Contains modal components (`SettingsModal`, `PauseMenu`)
-   - Contains reusable controls (`SpeedControl`)
-   - Contains domain-specific components (`PlanetSvg`)
-   - No clear hierarchy of component types
+This ADR replaces the previous proposal with a structure that sets clear roles, avoids generic buckets, and scales with the game’s HUD-first UI.
 
 ## Decision
 
-Restructure `/src/ui/` to follow clear separation of concerns:
+Adopt a role- and feature-oriented UI structure. No top-level `components/` bucket. Each area exposes a small public surface via an `index.ts` barrel to keep imports shallow without aliases.
 
 ```
 src/ui/
-├── app/                    # Application-level components
-│   ├── CanvasRoot.tsx
-│   ├── CanvasRoot.test.tsx
-│   ├── GameLoopProvider.tsx
-│   └── GameLoopProvider.test.tsx
-├── components/             # Reusable UI components
-│   ├── modals/
-│   │   ├── SettingsModal.tsx
-│   │   ├── PauseMenu.tsx
-│   │   └── PauseMenu.test.tsx
-│   ├── controls/
-│   │   └── SpeedControl.tsx
-│   └── game/               # Game-specific reusable components
-│       ├── PlanetSvg.tsx
-│       └── PlanetSvg.test.tsx
-├── hud/                    # HUD system (maintain current structure)
-│   ├── Hud.tsx
-│   ├── Hud.test.tsx
-│   ├── components/
-│   └── panels/
-└── hooks/                  # Custom hooks (maintain current structure)
+├─ shell/                 # App shell for React UI around the canvas
+│  ├─ AppShell.tsx        # Layout, global chrome
+│  ├─ CanvasRoot.tsx      # Hosts the HTML5 canvas
+│  └─ providers/          # Context/providers e.g., GameLoopProvider
+├─ hud/                   # In-game HUD system (feature)
+│  ├─ HudRoot.tsx         # Composition point for HUD
+│  ├─ layout/             # Grid/anchors/positioning helpers
+│  ├─ panels/             # Dockable/grouped surfaces (InventoryPanel, MapPanel)
+│  ├─ widgets/            # Atomic HUD widgets (Radar, XP bar, meters)
+│  ├─ hooks/
+│  └─ index.ts            # Public HUD exports
+├─ overlays/              # Cross-screen overlays
+│  ├─ dialogs/            # Modal dialogs (SettingsDialog)
+│  ├─ menus/              # Menus (PauseMenu)
+│  └─ toasts/             # Ephemeral notifications
+├─ controls/              # Reusable UI controls (not HUD-specific)
+│  ├─ primitives/         # Button, Slider, Toggle, etc.
+│  └─ composites/         # Control groups (SpeedControl, KeyBindingField)
+├─ hooks/                 # Cross-cutting UI hooks
+├─ icons/                 # SVG/icon components (optional)
+├─ theme/                 # UI tokens (z-index, sizes), Tailwind helpers
+└─ index.ts               # Optional UI-wide barrel
 ```
+
+Notes:
+
+- Keep rendering/canvas utilities under `src/domain/render/` (not under UI).
+- Prefer colocated tests (`*.test.tsx`) beside their components.
+- Use barrels (`index.ts`) per area to keep imports short without path aliases.
 
 ## Rationale
 
-1. **Clear Separation of Concerns:**
-   - `/app/` for application entry points and providers
-   - `/components/` for reusable UI components, organized by type
-   - `/hud/` maintains its current good organization
-   - `/hooks/` remains unchanged (already well-organized)
+- Clarity: Removes the ambiguous `components/` bucket; every item lives in a feature or role folder.
+- HUD cohesion: HUD contains all of its parts (widgets, panels, layout, hooks) without sibling duplication.
+- Separation: Overlays (dialogs/menus/toasts) are distinct from HUD so game-state UI and navigation UI evolve independently.
+- Reuse: Reusable inputs live in `controls/` with clear granularity (`primitives` vs `composites`).
+- Scalability: Area barrels define stable public surfaces, reducing deep imports and easing refactors.
 
-2. **Component Hierarchy:**
-   - Application-level components isolated in `/app/`
-   - Reusable components grouped by function (modals, controls, game-specific)
-   - Domain-specific components (HUD) maintain their structure
+## Mapping (representative)
 
-3. **Test Organization:**
-   - Tests colocated with components
-   - Remove duplicate test files
-   - Consistent test placement patterns
+- `src/ui/components/SettingsModal.tsx` → `src/ui/overlays/dialogs/SettingsModal.tsx`
+- `src/ui/hud/components/ExperienceBar.tsx` → `src/ui/hud/widgets/ExperienceBar.tsx`
+- `src/ui/hud/components/Notification.tsx` → If HUD-only: `src/ui/hud/widgets/Notification.tsx`; if global: `src/ui/overlays/toasts/Notification.tsx`
+- `CanvasRoot.tsx` (if present under `components/`) → `src/ui/shell/CanvasRoot.tsx`
+- `GameLoopProvider.tsx` (if present under `components/`) → `src/ui/shell/providers/GameLoopProvider.tsx`
+- `SpeedControl.tsx` (if present) → `src/ui/controls/composites/SpeedControl.tsx`
+- `PlanetCanvas.ts` (non-React) → `src/domain/render/PlanetCanvas.ts`
 
-4. **Import Path Improvement:**
-   - Shorter relative paths within UI layer
-   - More predictable component locations
-   - Easier refactoring
+Tests follow their components (e.g., `ExperienceBar.test.tsx` beside `ExperienceBar.tsx`).
+
+## Boundary & Import Rules
+
+- UI must not import ECS internals. Prefer selectors/services exposed from `application` or stable facades under `domain`.
+- No path aliases. Use area barrels to shorten relative imports (e.g., `import { HudRoot } from "../hud"`).
+- Shared visual primitives live in `controls/primitives`; if something isn’t widely reused, keep it with its feature.
 
 ## Implementation Plan
 
-### Phase 1: Fix Misplaced Files (High Priority)
+Phase 0 — Create folders and barrels
 
-- Move test files to correct locations alongside their components:
-  - `Hud.test.tsx` → `/src/ui/hud/`
-  - `Radar.test.tsx` → `/src/ui/hud/components/`
-  - `Notification.test.tsx` → `/src/ui/hud/components/`
-  - `HudPanel.test.tsx` → `/src/ui/hud/panels/` (rename appropriately)
-- Move `PlanetCanvas.ts` to `/src/domain/render/` (not a UI component)
-- Fix broken test references
+- Add `src/ui/shell`, `src/ui/hud/{widgets,panels,layout,hooks}`, `src/ui/overlays/{dialogs,menus,toasts}`, `src/ui/controls/{primitives,composites}` and `index.ts` barrels per area.
 
-### Phase 2: Restructure Directories (Medium Priority)
+Phase 1 — Move obvious files (no renames in code)
 
-- Create new directory structure (`/app/`, `/components/modals/`, `/components/controls/`)
-- Move React components to appropriate locations
-- Update imports within UI layer
+- Move HUD leaf components from `hud/components` → `hud/widgets`.
+- Move `SettingsModal` → `overlays/dialogs/SettingsDialog` (rename file, keep export name temporarily to minimize churn).
+- Move `PauseMenu` (if present) → `overlays/menus/PauseMenu`.
+- Move shared controls (e.g., `SpeedControl`) → `controls/composites`.
+- Move non-React canvas utilities (e.g., `PlanetCanvas.ts`) → `domain/render`.
+- Colocate tests.
 
-### Phase 3: Update External References (Low Priority)
+Phase 2 — Update imports to use barrels
 
-- Update imports from other layers (`/application/`, `/domain/`)
-- Can be done incrementally as files are modified
+- Add `index.ts` per area (hud, overlays, controls, shell). Export only stable components.
+- Update imports within `src/ui` to consume area barrels.
+
+Phase 3 — Tighten boundaries
+
+- Replace any deep imports from `application`/`domain` with imports from stable facades.
+- Document any remaining exceptions and create follow-up issues.
 
 ## Consequences
 
-### Positive:
-
-- **Maintainability:** Clear component organization
-- **Developer Experience:** Easier to find and understand components
-- **Testing:** Consistent test placement and no duplicates
-- **Refactoring:** Shorter import paths, less coupling
-
-### Negative:
-
-- **Migration Effort:** Requires updating imports across codebase
-- **Temporary Disruption:** May break some imports during transition
-- **Learning Curve:** Team needs to learn new structure
-
-### Risks:
-
-- **Breaking Changes:** Imports will need updating
-- **Merge Conflicts:** Active branches may conflict during migration
+- Positive: Clear ownership per area, fewer ambiguous folders, simpler imports, easier onboarding.
+- Neutral: Some file renames (e.g., `SettingsModal` → `SettingsDialog`) may touch tests and snapshots.
+- Negative: Short-lived churn updating imports and resolving merge conflicts during migration.
 
 ## Alternatives Considered
 
-1. **Keep Current Structure:** Rejected due to growing maintenance burden
-2. **Flat Structure:** Rejected as it doesn't scale with component growth
-3. **Feature-Based Organization:** Rejected as UI components are shared across features
+- Keep `components/` at the top level — rejected (category overlap and ambiguity).
+- Strict feature-slice for all UI — rejected (HUD and overlays share primitives; role+feature mix is more pragmatic here).
+- Flat directory — rejected (does not scale for HUD-heavy UI).
 
-## Notes
+## Validation
 
-This ADR addresses technical debt that has accumulated in the UI layer. The proposed structure follows React community conventions and will improve long-term maintainability.
-
-The implementation can be done incrementally, starting with removing duplicates and fixing immediate issues, then gradually moving components to their new locations.
+- Vitest should pass with colocated tests after moves.
+- Lint passes with no path aliases and updated import paths.
+- Manual smoke test: HUD renders (widgets and panels), overlays open/close, providers initialize.

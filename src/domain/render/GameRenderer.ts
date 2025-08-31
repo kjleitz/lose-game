@@ -27,9 +27,22 @@ interface MinimalGameSession {
   getProjectiles?: () => Array<Circle2D>;
   getDroppedItems?: () => DroppedItem[];
   getEnemies?: () => Enemy[];
+  // Optional: richer projectile info for space lasers
+  getProjectilesDetailed?: () => Array<{
+    id: number;
+    x: number;
+    y: number;
+    radius: number;
+    vx: number;
+    vy: number;
+  }>;
 }
 
 export class GameRenderer {
+  // Track short trails for space projectiles (by entity id)
+  private spaceProjectileTrails: Map<number, Array<{ x: number; y: number; t: number }>> =
+    new Map();
+
   render(
     ctx: CanvasRenderingContext2D,
     player: Kinematics2D,
@@ -71,6 +84,7 @@ export class GameRenderer {
     actions: Set<Action>,
     size: ViewSize,
     dpr: number,
+    gameSession?: MinimalGameSession | null,
   ): void {
     // Black space background
     ctx.fillStyle = "#000";
@@ -115,10 +129,85 @@ export class GameRenderer {
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
 
-    // Draw projectiles with sprite
-    for (const projectile of projectiles) {
-      const angle = 0; // space bullets are drawn without heading for now
-      drawProjectile(ctx, projectile.x, projectile.y, angle, projectile.radius * 2);
+    // Draw projectiles as bright red lasers with a short trail in space
+    const now = Date.now();
+    const detailed =
+      gameSession && typeof gameSession.getProjectilesDetailed === "function"
+        ? gameSession.getProjectilesDetailed()
+        : null;
+
+    if (detailed && detailed.length > 0) {
+      const TRAIL_MS = 140;
+      for (const proj of detailed) {
+        // Update trail buffer
+        let trail = this.spaceProjectileTrails.get(proj.id);
+        if (!trail) {
+          trail = [];
+          this.spaceProjectileTrails.set(proj.id, trail);
+        }
+        trail.push({ x: proj.x, y: proj.y, t: now });
+        // Prune old points
+        while (trail.length > 0 && now - trail[0].t > TRAIL_MS) trail.shift();
+
+        // Draw trail as a fading line behind projectile
+        if (trail.length > 1) {
+          ctx.save();
+          const start = trail[trail.length - 1];
+          const end = trail[0];
+          const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+          grad.addColorStop(0, "rgba(255, 80, 80, 0.9)");
+          grad.addColorStop(1, "rgba(255, 0, 0, 0)");
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = Math.max(3, proj.radius * 2);
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          for (let i = trail.length - 1; i >= 0; i--) {
+            const tp = trail[i];
+            if (i === trail.length - 1) ctx.moveTo(tp.x, tp.y);
+            else ctx.lineTo(tp.x, tp.y);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Laser core: short oriented capsule in direction of motion
+        const speed = Math.hypot(proj.vx, proj.vy) || 1;
+        const dirX = proj.vx / speed;
+        const dirY = proj.vy / speed;
+        const coreLen = 18; // short laser segment
+        const tailX = proj.x - dirX * coreLen;
+        const tailY = proj.y - dirY * coreLen;
+        ctx.save();
+        // Slight additive look
+        const prevOp = ctx.globalCompositeOperation;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = "#ff3b3b";
+        ctx.lineWidth = Math.max(3, proj.radius * 2.2);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(proj.x, proj.y);
+        ctx.stroke();
+        ctx.globalCompositeOperation = prevOp;
+        ctx.restore();
+      }
+      // Remove trails for projectiles no longer present
+      const liveIds = new Set(detailed.map((proj) => proj.id));
+      for (const key of this.spaceProjectileTrails.keys()) {
+        if (!liveIds.has(key)) this.spaceProjectileTrails.delete(key);
+      }
+    } else {
+      // Fallback: draw bigger red dots if we don't have velocity/id
+      for (const proj of projectiles) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = "#ff5555";
+        const sizePx = Math.max(8, proj.radius * 3);
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, sizePx * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
   }
 
@@ -154,6 +243,8 @@ export class GameRenderer {
     // Beneath-water parallax (archipelago-only), subtle and below entities
     if (surface && surface.biome === "archipelago") {
       this.renderUnderwaterParallax(ctx, camera, size, dpr);
+      // Restore world transform after parallax layer
+      ctx.setTransform(m11P, m12P, m21P, m22P, dxP, dyP);
     }
 
     // Death effects omitted in ECS path for now
@@ -180,6 +271,8 @@ export class GameRenderer {
     if (surface) {
       const biome: Biome = surface.biome ?? "fields";
       this.renderSkyParallax(ctx, camera, size, dpr, biome, surface.planetId);
+      // Restore world transform before rendering world-anchored elements again
+      ctx.setTransform(m11P, m12P, m21P, m22P, dxP, dyP);
     }
 
     // Draw projectiles provided by session (ECS path)
@@ -188,7 +281,18 @@ export class GameRenderer {
       const sessionProjectiles = gameSession.getProjectiles();
       if (Array.isArray(sessionProjectiles) && sessionProjectiles.length > 0) {
         for (const projectile of sessionProjectiles) {
-          drawProjectile(ctx, projectile.x, projectile.y, 0, projectile.radius * 2);
+          // Improve visibility: render with a minimum on-screen size and a soft glow
+          const drawSize = Math.max(8, projectile.radius * 3);
+          // Soft halo behind the projectile for readability
+          ctx.save();
+          ctx.globalAlpha = 0.6;
+          ctx.fillStyle = "#ffff66";
+          ctx.beginPath();
+          ctx.arc(projectile.x, projectile.y, drawSize * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          drawProjectile(ctx, projectile.x, projectile.y, 0, drawSize);
         }
       }
     }

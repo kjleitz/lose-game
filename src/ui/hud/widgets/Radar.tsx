@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { Planet } from "../../../domain/game/planets";
-import { PlanetSvg } from "../../components/PlanetSvg";
+import { PlanetSvg } from "../../icons/PlanetSvg";
 import { RadarService } from "../../../domain/services/RadarService";
 import type { Point2D } from "../../../shared/types/geometry";
 

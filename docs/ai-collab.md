@@ -28,5 +28,5 @@ Validation
 
 Common tasks
 
-- Add HUD subcomponent → place under `src/ui/hud/components`, export via a panel if needed; add a unit test.
+- Add HUD subcomponent → place under `src/ui/hud/widgets` (or `panels` if it’s a grouped surface), export via area index if needed; add a unit test.
 - New domain system → place under `src/domain/<area>`; provide pure functions or small classes; test deterministically.

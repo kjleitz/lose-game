@@ -9,12 +9,12 @@ export function MemSelector<BB>(name: string, children: Node<BB>[]): Node<BB> {
     id,
     tick(bb: BB, dt: number): Status {
       while (index < children.length) {
-        const s = children[index].tick(bb, dt);
-        if (s === "Failure") {
+        const status = children[index].tick(bb, dt);
+        if (status === "Failure") {
           index += 1;
           continue;
         }
-        if (s === "Running") return "Running";
+        if (status === "Running") return "Running";
         // Success: reset
         index = 0;
         return "Success";

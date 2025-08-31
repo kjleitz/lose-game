@@ -1,6 +1,10 @@
 import { createStore, detectBackend, createJsonCodec } from "..";
 
-interface Settings { music: boolean; sfx: boolean; volume: number }
+interface Settings {
+  music: boolean;
+  sfx: boolean;
+  volume: number;
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);

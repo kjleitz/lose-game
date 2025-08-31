@@ -11,12 +11,12 @@ export function RepeatUntilFailure<BB>(
   return {
     id,
     tick(bb: BB, dt: number): Status {
-      const s = child.tick(bb, dt);
-      if (s === "Failure") {
+      const status = child.tick(bb, dt);
+      if (status === "Failure") {
         attempts = 0;
         return "Failure";
       }
-      if (s === "Running") return "Running";
+      if (status === "Running") return "Running";
       attempts += 1;
       if (typeof maxAttempts === "number" && attempts >= maxAttempts) {
         attempts = 0;

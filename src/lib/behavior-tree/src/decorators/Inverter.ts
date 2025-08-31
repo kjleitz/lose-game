@@ -6,10 +6,10 @@ export function Inverter<BB>(name: string, child: Node<BB>): Node<BB> {
   return {
     id,
     tick(bb: BB, dt: number): Status {
-      const s = child.tick(bb, dt);
-      if (s === "Success") return "Failure";
-      if (s === "Failure") return "Success";
-      return s;
+      const status = child.tick(bb, dt);
+      if (status === "Success") return "Failure";
+      if (status === "Failure") return "Success";
+      return status;
     },
   };
 }

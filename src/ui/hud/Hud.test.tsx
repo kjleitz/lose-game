@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Hud } from "../hud/Hud";
+import { Hud } from "./Hud";
 
 describe("Hud", () => {
   it("renders notification text and radar SVG", () => {
@@ -16,7 +16,6 @@ describe("Hud", () => {
       />,
     );
     expect(screen.getByText("Test notification")).toBeInTheDocument();
-    // Radar renders an SVG element
     expect(container.querySelector("svg")).not.toBeNull();
   });
 });

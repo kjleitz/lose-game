@@ -11,12 +11,12 @@ export function RepeatUntilSuccess<BB>(
   return {
     id,
     tick(bb: BB, dt: number): Status {
-      const s = child.tick(bb, dt);
-      if (s === "Success") {
+      const status = child.tick(bb, dt);
+      if (status === "Success") {
         attempts = 0;
         return "Success";
       }
-      if (s === "Running") return "Running";
+      if (status === "Running") return "Running";
       attempts += 1;
       if (typeof maxAttempts === "number" && attempts >= maxAttempts) {
         attempts = 0;

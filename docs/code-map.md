@@ -10,16 +10,20 @@ Top‑level
 
 UI
 
-- `src/ui/components/`
+- `src/ui/shell/`
   - `CanvasRoot.tsx` — mounts canvas + HUD; wires hooks and providers.
-  - `CanvasRenderer.tsx` — canvas element + delegates to domain renderers.
-  - `GameLoopProvider.tsx` — requestAnimationFrame loop, calls `update`/`render`.
-  - `PlanetSvg.tsx` — planet vector renderer for HUD radar.
-  - `SettingsModal.tsx`, `SpeedControl.tsx` — common UI.
+  - `providers/GameLoopProvider.tsx` — requestAnimationFrame loop lifecycle.
 - `src/ui/hud/`
   - `Hud.tsx` — unified HUD overlay.
-  - `components/` — `HealthBar`, `ExperienceBar`, `ActionReadout`, `PauseIndicator`, `SettingsButton`, `Notification`, `Radar`.
-  - `panels/` — `StatusPanel`, `ControlsPanel`.
+  - `widgets/` — `HealthBar`, `ExperienceBar`, `ActionReadout`, `PauseIndicator`, `SettingsButton`, `Notification`, `Radar`.
+  - `panels/` — `StatusPanel`, `ControlsPanel`, `InventoryPanel`.
+- `src/ui/overlays/`
+  - `dialogs/SettingsModal.tsx` — settings dialog.
+  - `menus/PauseMenu.tsx` — pause menu overlay.
+- `src/ui/controls/`
+  - `composites/SpeedControl.tsx` — reusable control.
+- `src/ui/icons/`
+  - `PlanetSvg.tsx` — planet vector renderer for HUD radar.
 - `src/ui/hooks/`
   - `usePlayer.ts` — Player instance + position state + persistence.
   - `usePlanets.ts` — planet list + region generation.

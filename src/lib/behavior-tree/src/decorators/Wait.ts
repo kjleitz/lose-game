@@ -13,11 +13,11 @@ export function Wait<BB>(name: string, child: Node<BB>, durationSeconds: number)
         elapsed += dt;
         if (elapsed < durationSeconds) return "Running";
       }
-      const s = child.tick(bb, dt);
-      if (s === "Running") return "Running";
+      const status = child.tick(bb, dt);
+      if (status === "Running") return "Running";
       // Reset timer on terminal child status so it can be reused
       elapsed = 0;
-      return s;
+      return status;
     },
   };
 }

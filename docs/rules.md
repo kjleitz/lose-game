@@ -31,6 +31,10 @@ These are the guiding principles for development in this repo. Keep them short, 
 - PRs that add duplicate logic must include a removal plan (owner + date). Prefer extracting shared helpers over duplication.
   - Do not duplicate structural types (e.g., `PlanetSurface`) in renderers or systems; import the canonical type.
 
+## Tooling Discipline
+
+- Do not change ESLint rules unless explicitly instructed. Fix code and types to satisfy the existing configuration.
+
 > Direct quote for emphasis: "GET RID OF THE LEGACY STUFF. Things SHOULD NOT hang around JUST TO SATISFY TESTS. Tests are there to validate your application. Your application is NOT THERE TO VALIDATE THE TESTS."
 
 ## Style and Naming
@@ -39,5 +43,15 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Allowed exceptions: loop indices `i`/`j`/`k` and coordinates `x`/`y`.
 - ESLint enforces `id-length` with min 2, excluding properties; `_` is allowed as a throwaway placeholder.
 - Tests are allowed to use short identifiers when it meaningfully improves brevity (e.g., tiny helpers); the linter permits this only in `*.test.ts[x]` files.
-- Vendored or internal library code under `src/lib/**` is ignored by the linter; keep local app code clean.
 - For canvas transforms, avoid `a..f`—prefer descriptive names (e.g., `m11`, `m12`, `dx`, `dy`).
+
+## UI Structure & Conventions
+
+- No top-level `components/` bucket under `src/ui/`. Organize by role and feature:
+  - `src/ui/shell` for app shell, layout, providers (e.g., `CanvasRoot`, `GameLoopProvider`).
+  - `src/ui/hud` for the in-game HUD with `widgets/`, `panels/`, `layout/`, and `hooks/` subfolders.
+  - `src/ui/overlays` for dialogs, menus, and toasts not tied to HUD layout.
+  - `src/ui/controls` for reusable UI primitives and composites (buttons, sliders, field groups).
+- Colocate tests next to components (`*.test.tsx`).
+- Use `index.ts` barrels per area to keep imports shallow; do not introduce path aliases.
+- Non-React utilities (e.g., canvas rendering) live under `src/domain/render/`, not `src/ui`.

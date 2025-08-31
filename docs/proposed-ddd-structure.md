@@ -42,7 +42,7 @@ This proposal restructures the project to better align with DDD principles, impr
    - Add modules for data access, persistence, or external APIs as needed.
 
 4. **UI Layer**
-   - Move React components to `src/ui/components/`.
+   - Move React UI to role-based areas under `src/ui/` (`shell`, `hud`, `overlays`, `controls`, `icons`).
    - Move hooks to `src/ui/hooks/`.
    - Keep UI logic separate from domain/application logic.
 
@@ -53,7 +53,7 @@ This proposal restructures the project to better align with DDD principles, impr
 
 - `src/game/GameSession.ts` → `src/domain/game/GameSession.ts`
 - `src/domain/render/ShipRenderer.ts` → `src/domain/render/ShipRenderer.ts` (no change)
-- `src/ui/CanvasRenderer.tsx` → `src/ui/components/CanvasRenderer.tsx`
+- `src/ui/CanvasRenderer.tsx` → consolidated into `src/ui/shell/CanvasRoot.tsx` and domain renderers
 - `src/ui/hooks/usePlayer.ts` → `src/ui/hooks/usePlayer.ts` (no change)
 - `src/assets/react.svg` → `src/infrastructure/assets/react.svg`
 - `src/engine/loop.ts` → `src/application/game/loop.ts`

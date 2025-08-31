@@ -313,6 +313,35 @@ export class GameSessionECS {
       });
   }
 
+  // Detailed projectile view for renderers that want heading/trails in space mode
+  getProjectilesDetailed(): Array<{
+    id: number;
+    x: number;
+    y: number;
+    radius: number;
+    vx: number;
+    vy: number;
+  }> {
+    return this.world
+      .query({
+        position: Components.Position,
+        collider: Components.Collider,
+        projectile: Components.Projectile,
+        velocity: Components.Velocity,
+      })
+      .map((proj) => {
+        const { position, collider, velocity } = proj.components;
+        return {
+          id: proj.entity,
+          x: position.x,
+          y: position.y,
+          radius: collider.radius,
+          vx: velocity.dx,
+          vy: velocity.dy,
+        };
+      });
+  }
+
   getDroppedItems(): DroppedItemShape[] {
     return this.world
       .query({ position: Components.Position, dropped: Components.DroppedItem })

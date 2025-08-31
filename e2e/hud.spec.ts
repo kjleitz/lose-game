@@ -10,13 +10,13 @@ test.describe("HUD", () => {
 
   test("should display score panel", async ({ page }) => {
     await startGame(page);
-    const scorePanel = await getHudPanel(page, "hud-score-panel");
+    const scorePanel = getHudPanel(page, "hud-score-panel");
     await expect(scorePanel).toBeVisible();
   });
 
   test("should display health panel", async ({ page }) => {
     await startGame(page);
-    const healthPanel = await getHudPanel(page, "hud-health-panel");
+    const healthPanel = getHudPanel(page, "hud-health-panel");
     await expect(healthPanel).toBeVisible();
   });
 
@@ -33,7 +33,7 @@ test.describe("HUD", () => {
     // Replace with actual event for your game
     // Wait for score to update
     await page.waitForTimeout(500); // Adjust as needed
-    const scorePanel = await getHudPanel(page, "hud-score-panel");
+    const scorePanel = getHudPanel(page, "hud-score-panel");
     await expect(scorePanel).not.toHaveText("0");
   });
 });

@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { MemSelector } from "./MemSelector";
 import { Action } from "../nodes/Action";
 
-interface BB {}
+interface BB {
+  [key: string]: unknown;
+}
 
 describe("MemSelector", () => {
   it("resumes from running child and eventually succeeds", () => {

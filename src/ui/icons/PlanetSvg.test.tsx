@@ -37,7 +37,6 @@ describe("PlanetSvg", () => {
         <PlanetSvg planet={{ ...basePlanet, design: "striped" }} x={0} y={0} r={10} />
       </svg>,
     );
-    // Should have more than one circle (main + stripes)
     expect(container.querySelectorAll("circle").length).toBeGreaterThan(1);
   });
 
@@ -47,7 +46,6 @@ describe("PlanetSvg", () => {
         <PlanetSvg planet={{ ...basePlanet, design: "spotted" }} x={0} y={0} r={10} />
       </svg>,
     );
-    // Should have more than one circle (main + spots)
     expect(container.querySelectorAll("circle").length).toBeGreaterThan(1);
   });
 });
