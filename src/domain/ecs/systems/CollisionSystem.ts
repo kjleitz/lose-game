@@ -38,6 +38,8 @@ export function createCollisionSystem(world: World): System {
 
   const targets = [...playerEntities, ...enemyEntities];
 
+  // Loot quantity multiplier is read when rolling drops via PlayerModifiers.
+
   // Check projectile vs target collisions
   projectileEntities.forEach((projectile) => {
     const { position: projPos, collider: projCollider, damage: projDamage } = projectile.components;
@@ -64,7 +66,7 @@ export function createCollisionSystem(world: World): System {
           if (world.hasComponent(target.entity, LootDropTable)) {
             const ent = new ECSEntity(target.entity, world);
             const dt = ent.getComponent(LootDropTable);
-            const drops = dt ? rollDrops(dt) : [];
+            const drops = dt ? rollDrops(dt, getLootQuantityMult(world, playerEntities)) : [];
             for (const drop of drops) {
               const offsetX = (Math.random() - 0.5) * 20;
               const offsetY = (Math.random() - 0.5) * 20;
@@ -93,7 +95,10 @@ export function createCollisionSystem(world: World): System {
     .execute((): void => {});
 }
 
-function rollDrops(dropTable: DropTableType): Array<{ item: Item; quantity: number }> {
+function rollDrops(
+  dropTable: DropTableType,
+  quantityMult = 1,
+): Array<{ item: Item; quantity: number }> {
   const drops: Array<{ item: Item; quantity: number }> = [];
   const consider = (entry: DropEntry): void => {
     if (!entry.itemType) return;
@@ -101,13 +106,27 @@ function rollDrops(dropTable: DropTableType): Array<{ item: Item; quantity: numb
       const qty =
         Math.floor(Math.random() * (entry.maxQuantity - entry.minQuantity + 1)) + entry.minQuantity;
       const item = createItemFromType(entry.itemType);
-      if (item && qty > 0) drops.push({ item, quantity: qty });
+      const scaledQty = Math.max(1, Math.floor(qty * quantityMult));
+      if (item && scaledQty > 0) drops.push({ item, quantity: scaledQty });
     }
   };
   for (const entry of dropTable.guaranteed || []) consider(entry);
   for (const entry of dropTable.possible || []) consider(entry);
   for (const entry of dropTable.rare || []) consider(entry);
   return drops;
+}
+
+// Helper to read PlayerModifiers. Imported here to avoid circular deps, we define a local accessor.
+import { PlayerModifiers } from "../components";
+function getLootQuantityMult(
+  world: World,
+  players: Array<ReturnType<World["query"]>[number]>,
+): number {
+  if (players.length === 0) return 1;
+  const pid = players[0].entity;
+  const ent = new ECSEntity(pid, world);
+  const mods = ent.getComponent(PlayerModifiers);
+  return mods ? mods.lootQuantityMult : 1;
 }
 
 function createItemFromType(itemType: string): Item | null {

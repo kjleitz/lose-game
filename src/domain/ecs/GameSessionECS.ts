@@ -1,5 +1,5 @@
 import type { Action } from "../../engine";
-import { type EntityBuilder, World } from "../../lib/ecs";
+import { type EntityBuilder, World, Entity } from "../../lib/ecs";
 import type { Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { Enemy } from "../game/enemies";
 import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
@@ -20,10 +20,15 @@ import {
 } from "./systems/DroppedItemSystem";
 import { createEnemyAISystem } from "./systems/EnemyAISystem";
 import { createMovementSystem } from "./systems/MovementSystem";
+import { createPerkEffectsSystem } from "./systems/PerkEffectsSystem";
 import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
 import { createWeaponSystem } from "./systems/WeaponSystem";
+import { createLevelUpSystem, type LevelUpEvent } from "./systems/LevelUpSystem";
+import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
+import { perkDefinitions } from "../leveling/perksConfig";
+import type { PerkId } from "../leveling/types";
 
 export class GameSessionECS {
   private world = new World();
@@ -33,6 +38,8 @@ export class GameSessionECS {
   private landedPlanetId: string | null = null;
   private planetSurface: PlanetSurface | undefined;
   private pickupEvents: PickupEvent[] = [];
+  private levelUpEvents: LevelUpEvent[] = [];
+  private perkRequests: PerkUnlockRequest[] = [];
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -159,11 +166,30 @@ export class GameSessionECS {
     }
 
     // Create and run systems in order
+    const perkEffectsSystem = createPerkEffectsSystem(this.world);
     const playerControlSystem = createPlayerControlSystem(this.world, actions, dt, this.mode);
     const weaponSystem = createWeaponSystem(this.world, actions);
     const enemyAISystem = createEnemyAISystem(this.world, dt);
     const movementSystem = createMovementSystem(this.world, dt);
     const projectileSystem = createProjectileSystem(this.world, dt);
+    const levelUpSystem = createLevelUpSystem(this.world, (ev) => {
+      this.levelUpEvents.push(ev);
+      // Set a simple notification; HUD may show a toast separately
+      this.notification = `Level Up! Reached level ${ev.newLevel}`;
+    });
+    const perkSystem = createPerkUnlockSystem(
+      this.world,
+      this.perkRequests,
+      perkDefinitions,
+      (res) => {
+        if (res.success) {
+          this.notification = "Perk unlocked!";
+        } else {
+          // Only notify on explicit failures if helpful; keep simple for now
+          // this.notification = `Perk unlock failed: ${res.reason ?? "unknown"}`;
+        }
+      },
+    );
     const collisionSystem = createCollisionSystem(this.world);
     const dropAgingSystem = createDroppedItemAgingSystem(this.world, dt);
     const pickupSystem = createPickupSystem(this.world, actions, (ev): void => {
@@ -171,6 +197,8 @@ export class GameSessionECS {
     });
 
     // Run systems in order
+    // Recompute modifiers then apply player controls
+    perkEffectsSystem.run();
     playerControlSystem.run();
     weaponSystem.run();
     enemyAISystem.run();
@@ -184,6 +212,10 @@ export class GameSessionECS {
     collisionSystem.run();
     dropAgingSystem.run();
     pickupSystem.run();
+    // Level-up after any XP-changing actions this frame
+    levelUpSystem.run();
+    // Process any perk unlock requests
+    perkSystem.run();
 
     // Update camera to follow player
     this.updateCameraFollowPlayer();
@@ -192,6 +224,11 @@ export class GameSessionECS {
     if (this.mode === "planet") {
       this.collectNearbyResources();
     }
+
+    // Re-check for level-ups in case resource collection granted XP
+    levelUpSystem.run();
+    // Re-run perk system in case points changed (not necessary but safe)
+    perkSystem.run();
 
     // Update proximity notification for planets
     this.updateNotifications();
@@ -225,6 +262,8 @@ export class GameSessionECS {
 
     const player = players[0];
     const { position, velocity, rotation, health, experience } = player.components;
+    const ent = new Entity(player.entity, this.world);
+    const perk = ent.getComponent(Components.PlayerPerkPoints);
     return {
       x: position.x,
       y: position.y,
@@ -233,6 +272,11 @@ export class GameSessionECS {
       angle: rotation.angle,
       health: health.current,
       experience: experience.current,
+      level: experience.level,
+      xpToNextLevel: experience.toNextLevel,
+      perkPoints: perk ? perk.unspent : 0,
+      // expose unlocked perks to HUD/UI
+      perks: ent.getComponent(Components.Perks)?.unlocked ?? {},
     };
   }
 
@@ -363,6 +407,18 @@ export class GameSessionECS {
     const out = [...this.pickupEvents];
     this.pickupEvents = [];
     return out;
+  }
+
+  getAndClearLevelUpEvents(): LevelUpEvent[] {
+    const out = [...this.levelUpEvents];
+    this.levelUpEvents = [];
+    return out;
+  }
+
+  requestUnlockPerk(perkId: PerkId): void {
+    const players = this.world.query({ player: Components.Player });
+    if (players.length === 0) return;
+    this.perkRequests.push({ entityId: players[0].entity, perkId });
   }
 
   // Mode management (simplified for now)

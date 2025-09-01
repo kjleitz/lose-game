@@ -4,6 +4,7 @@ import type { Planet } from "../domain/game/planets";
 import type { Camera } from "../domain/render/camera";
 import type { Circle2D, Kinematics2D, ViewSize } from "../shared/types/geometry";
 import type { Action } from "./input/ActionTypes";
+import type { PerkId } from "../domain/leveling/types";
 
 export interface GameOptions {
   size: ViewSize;
@@ -18,7 +19,14 @@ export interface GameOptions {
 }
 
 export interface GameSnapshot {
-  player: Kinematics2D & { health: number; experience: number };
+  player: Kinematics2D & {
+    health: number;
+    experience: number;
+    level: number;
+    xpToNextLevel: number;
+    perkPoints: number;
+    perks: Record<string, number>;
+  };
   camera: Camera;
   planets: Array<Planet>;
   enemies: Array<Pick<Enemy, "id" | "x" | "y" | "angle" | "health" | "radius">>;
@@ -72,4 +80,5 @@ export interface GameController {
   rebind(action: Action, code: string): void;
   // Optional extras exposed by some controllers
   getInventory?: () => PlayerInventory;
+  unlockPerk?: (perkId: PerkId) => void;
 }

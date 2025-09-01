@@ -9,6 +9,7 @@ import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D, ViewSize } from "../../shared/types/geometry";
 import { Hud } from "../hud/Hud";
 import { SettingsModal } from "../overlays/dialogs/SettingsModal";
+import { PerkModal } from "../overlays/dialogs/PerkModal";
 import { PauseMenu } from "../overlays/menus/PauseMenu";
 import { deleteAllGameData } from "../../application/persistence/deleteData";
 
@@ -33,17 +34,24 @@ export function CanvasRoot(): JSX.Element {
   const [paused, setPaused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [perksOpen, setPerksOpen] = useState(false);
   const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hudState, setHudState] = useState<{
     player: Point2D;
     experience: number;
+    level: number;
+    xpToNextLevel: number;
+    perkPoints: number;
     health: number;
     planets: Planet[];
   }>(() => ({
     player: { x: 0, y: 0 },
     experience: 0,
+    level: 1,
+    xpToNextLevel: 100,
+    perkPoints: 0,
     health: 100,
     planets: [],
   }));
@@ -71,6 +79,9 @@ export function CanvasRoot(): JSX.Element {
         setHudState({
           player: { x: snapshot.player.x, y: snapshot.player.y },
           experience: snapshot.player.experience,
+          level: snapshot.player.level,
+          xpToNextLevel: snapshot.player.xpToNextLevel,
+          perkPoints: snapshot.player.perkPoints,
           health: snapshot.player.health,
           planets: snapshot.planets,
         });
@@ -125,6 +136,9 @@ export function CanvasRoot(): JSX.Element {
       <Hud
         player={hudState.player}
         experience={hudState.experience}
+        level={hudState.level}
+        xpToNextLevel={hudState.xpToNextLevel}
+        perkPoints={hudState.perkPoints}
         health={hudState.health}
         planets={hudState.planets}
         screenW={size.width}
@@ -135,6 +149,7 @@ export function CanvasRoot(): JSX.Element {
         speedMultiplier={speed}
         inventory={controllerRef.current?.getInventory?.()}
         inventoryVisible={true}
+        onOpenPerks={(): void => setPerksOpen(true)}
         onChangeSpeed={(nextSpeed: number): void => controllerRef.current?.setSpeed(nextSpeed)}
         onOpenSettings={(): void => setSettingsOpen(true)}
         onToggleInventory={(): void => setInventoryVisible((prev) => prev)}
@@ -159,6 +174,14 @@ export function CanvasRoot(): JSX.Element {
         onClose={(): void => setSettingsOpen(false)}
         speed={speed}
         onChangeSpeed={(nextSpeed: number): void => controllerRef.current?.setSpeed(nextSpeed)}
+      />
+      <PerkModal
+        open={perksOpen}
+        onClose={(): void => setPerksOpen(false)}
+        level={hudState.level}
+        perkPoints={hudState.perkPoints}
+        unlocked={controllerRef.current?.getSnapshot().player.perks ?? {}}
+        onUnlock={(perkId): void => controllerRef.current?.unlockPerk?.(perkId)}
       />
     </div>
   );

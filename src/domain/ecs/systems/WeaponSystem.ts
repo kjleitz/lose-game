@@ -13,14 +13,15 @@ import {
   Velocity,
   WeaponCooldown,
 } from "../components";
+import { PlayerModifiers } from "../components";
 
 export function createWeaponSystem(world: World, actions: Set<Action>): System {
   return defineSystem(world)
     .withComponents({ position: Position, rotation: Rotation, player: Player })
-    .withOptionalComponents({ weaponCooldown: WeaponCooldown })
+    .withOptionalComponents({ weaponCooldown: WeaponCooldown, mods: PlayerModifiers })
     .execute((entities): void => {
       entities.forEach(({ components }) => {
-        const { position, rotation, weaponCooldown } = components;
+        const { position, rotation, weaponCooldown, mods } = components;
 
         // Check if player wants to fire and weapon is ready
         const canFire = weaponCooldown === undefined || weaponCooldown.remaining <= 0;
@@ -30,8 +31,12 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
         if (wantsToFire && canFire) {
           // Create projectile
           const speed = 600;
-          const dirX = Math.cos(rotation.angle);
-          const dirY = Math.sin(rotation.angle);
+          const baseSpread = 0.12; // ~7 degrees
+          const spread = baseSpread * (mods?.projectileSpreadMult ?? 1);
+          const jitter = (Math.random() * 2 - 1) * spread;
+          const fireAngle = rotation.angle + jitter;
+          const dirX = Math.cos(fireAngle);
+          const dirY = Math.sin(fireAngle);
           const spawnDistance = 28;
 
           world

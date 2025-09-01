@@ -4,7 +4,11 @@ import type { Planet } from "./planets";
 
 export interface PlayerView extends Kinematics2D {
   health: number;
-  experience: number;
+  experience: number; // current XP toward next level
+  level: number;
+  xpToNextLevel: number;
+  perkPoints: number;
+  perks: Record<string, number>;
 }
 
 export type EnemyView = Enemy;

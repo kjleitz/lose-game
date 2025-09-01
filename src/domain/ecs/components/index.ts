@@ -73,6 +73,27 @@ export const PlayerExperience = defineComponent<{
   toNextLevel: number;
 }>();
 
+export const PlayerPerkPoints = defineComponent<{
+  unspent: number;
+}>();
+
+export const Perks = defineComponent<{
+  // map of perk id to current unlocked tier (0 if locked, omitted if not started)
+  unlocked: Record<string, number>;
+}>();
+
+export const PlayerModifiers = defineComponent<{
+  turnSpeedMult: number; // scales ship turn speed
+  accelMult: number; // scales ship acceleration
+  maxSpeedMult: number; // scales ship max speed
+  dragReduction: number; // subtract from drag factor (e.g., 0.01 -> 0.97 from 0.98)
+  walkSpeedMult: number; // scales planet walk speed
+  runSpeedMult: number; // scales planet run speed
+  frictionMult: number; // scales planet friction
+  projectileSpreadMult: number; // multiplies base projectile spread (lower is better accuracy)
+  lootQuantityMult: number; // multiplies loot quantities from drops
+}>();
+
 // Game modes
 export const SpaceMode = defineComponent<Record<string, never>>(() => ({}));
 export const PlanetMode = defineComponent<{

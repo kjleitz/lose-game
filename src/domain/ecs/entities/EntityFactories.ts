@@ -5,6 +5,7 @@ import type { Player as OldPlayer } from "../../game/player";
 import type { Projectile as OldProjectile } from "../../game/projectiles";
 import * as Components from "../components";
 import { DamageType } from "../../game/damage/DamageableEntity";
+import { xpRequired } from "../../leveling/xp";
 
 export function createPlayerEntity(world: World, player: OldPlayer): EntityBuilder {
   return world
@@ -23,15 +24,28 @@ export function createPlayerEntity(world: World, player: OldPlayer): EntityBuild
       currentWeight: 0, // TODO: Get actual weight from inventory
       items: [], // TODO: Get actual items from inventory
     })
+    .addComponent(Components.PlayerPerkPoints, { unspent: 0 })
+    .addComponent(Components.Perks, { unlocked: {} })
     .addComponent(Components.PlayerExperience, {
       current: player.state.experience || 0,
       level: 1,
-      toNextLevel: 100,
+      toNextLevel: xpRequired(1),
     })
     .addComponent(Components.Collider, { radius: 16 })
     .addComponent(Components.Sprite, { color: "#00ff00", scale: 1.0 })
     .addComponent(Components.SpaceMode)
-    .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 });
+    .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 })
+    .addComponent(Components.PlayerModifiers, {
+      turnSpeedMult: 1,
+      accelMult: 1,
+      maxSpeedMult: 1,
+      dragReduction: 0,
+      walkSpeedMult: 1,
+      runSpeedMult: 1,
+      frictionMult: 1,
+      projectileSpreadMult: 1,
+      lootQuantityMult: 1,
+    });
 }
 
 export function createEnemyEntity(world: World, enemy: OldEnemy): EntityBuilder {
@@ -127,15 +141,28 @@ export function createBasicPlayer(world: World, x = 0, y = 0): EntityBuilder {
       currentWeight: 0,
       items: [],
     })
+    .addComponent(Components.PlayerPerkPoints, { unspent: 0 })
+    .addComponent(Components.Perks, { unlocked: {} })
     .addComponent(Components.PlayerExperience, {
       current: 0,
       level: 1,
-      toNextLevel: 100,
+      toNextLevel: xpRequired(1),
     })
     .addComponent(Components.Collider, { radius: 16 })
     .addComponent(Components.Sprite, { color: "#00ff00", scale: 1.0 })
     .addComponent(Components.SpaceMode)
-    .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 });
+    .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 })
+    .addComponent(Components.PlayerModifiers, {
+      turnSpeedMult: 1,
+      accelMult: 1,
+      maxSpeedMult: 1,
+      dragReduction: 0,
+      walkSpeedMult: 1,
+      runSpeedMult: 1,
+      frictionMult: 1,
+      projectileSpreadMult: 1,
+      lootQuantityMult: 1,
+    });
 }
 
 export function createBasicEnemy(world: World, id: string, x: number, y: number): EntityBuilder {

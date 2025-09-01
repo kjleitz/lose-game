@@ -55,3 +55,16 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Colocate tests next to components (`*.test.tsx`).
 - Use `index.ts` barrels per area to keep imports shallow; do not introduce path aliases.
 - Non-React utilities (e.g., canvas rendering) live under `src/domain/render/`, not `src/ui`.
+
+## TypeScript Discipline
+
+- Strict TypeScript only. Do not weaken types to “make it work”. Fix types first.
+- Never use `any`. If you think you need `any`, revisit the design. Prefer precise types; use `unknown` if necessary and narrow explicitly.
+- Do not use `@ts-ignore` or `@ts-expect-error` as band-aids. Address the root cause.
+- Avoid casting (`as T` or double-cast `as unknown as T`). Casting hides bugs and is only acceptable in rare, justified cases with prior maintainer approval.
+- Be skeptical of `satisfies`. If it seems required, reevaluate the types or API. Only use with explicit reviewer approval and rationale.
+- Interfaces over anonymous types when naming enriches clarity and reuse.
+- No path aliases; always use relative ES module imports.
+- Formatting and style: 2-space indent, semicolons on, double quotes.
+
+> Core mantra: “Fix your types first.” If types are too complicated, simplify the code.

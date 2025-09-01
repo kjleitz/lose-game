@@ -154,7 +154,14 @@ export class GameApp {
     // Derive a snapshot for HUD per frame
     const getSnapshot = (): GameSnapshot => {
       const playerView = session.getPlayer();
-      const player: Kinematics2D & { health: number; experience: number } = playerView
+      const player: Kinematics2D & {
+        health: number;
+        experience: number;
+        level: number;
+        xpToNextLevel: number;
+        perkPoints: number;
+        perks: Record<string, number>;
+      } = playerView
         ? {
             x: playerView.x,
             y: playerView.y,
@@ -163,15 +170,34 @@ export class GameApp {
             angle: playerView.angle,
             health: playerView.health,
             experience: playerView.experience,
+            level: playerView.level,
+            xpToNextLevel: playerView.xpToNextLevel,
+            perkPoints: playerView.perkPoints,
+            perks: playerView.perks,
           }
-        : { ...defaultKinematicsWithHealth(), experience: 0 };
+        : {
+            ...defaultKinematicsWithHealth(),
+            experience: 0,
+            level: 1,
+            xpToNextLevel: 100,
+            perkPoints: 0,
+            perks: {},
+          };
       const camera = session.getCamera();
       const planets = session.getPlanets();
       const enemies = session.getEnemies();
       const projectiles = session.getProjectiles();
       const entityCount = session.getEntityCount();
       return {
-        player: { ...player, experience: player.experience ?? 0, health: player.health ?? 100 },
+        player: {
+          ...player,
+          experience: player.experience ?? 0,
+          health: player.health ?? 100,
+          level: player.level ?? 1,
+          xpToNextLevel: player.xpToNextLevel ?? 100,
+          perkPoints: player.perkPoints ?? 0,
+          perks: player.perks ?? {},
+        },
         camera,
         planets: planets.map((pl) => ({
           id: pl.id,
@@ -331,6 +357,9 @@ export class GameApp {
       },
       getInventory(): PlayerInventoryManager {
         return hudInventory;
+      },
+      unlockPerk(perkId) {
+        session.requestUnlockPerk(perkId);
       },
     };
 

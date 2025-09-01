@@ -14,6 +14,9 @@ import { StatusPanel } from "./panels/StatusPanel";
 interface HudProps {
   player: Point2D;
   experience?: number;
+  level?: number;
+  xpToNextLevel?: number;
+  perkPoints?: number;
   health?: number;
   planets: Planet[];
   screenW: number;
@@ -27,6 +30,7 @@ interface HudProps {
   onChangeSpeed?: (n: number) => void;
   onOpenSettings?: () => void;
   onToggleInventory?: () => void;
+  onOpenPerks?: () => void;
   onItemUse?: (item: Item) => void;
   onItemDrop?: (item: Item, quantity: number) => void;
 }
@@ -34,6 +38,9 @@ interface HudProps {
 export function Hud({
   player,
   experience = 0,
+  level = 1,
+  xpToNextLevel = 100,
+  perkPoints = 0,
   health = 100,
   planets,
   screenW,
@@ -47,6 +54,7 @@ export function Hud({
   onChangeSpeed,
   onOpenSettings,
   onToggleInventory,
+  onOpenPerks,
   onItemUse,
   onItemDrop,
 }: HudProps): JSX.Element {
@@ -55,7 +63,14 @@ export function Hud({
       <Radar player={player} planets={planets} screenW={screenW} screenH={screenH} />
       <Notification message={notification} />
       <div className="absolute left-4 bottom-4 pointer-events-auto z-20" style={{ minWidth: 180 }}>
-        <StatusPanel health={health} experience={experience} />
+        <StatusPanel
+          health={health}
+          experience={experience}
+          level={level}
+          xpToNextLevel={xpToNextLevel}
+          perkPoints={perkPoints}
+          onOpenPerks={onOpenPerks}
+        />
       </div>
       <div className="absolute right-4 top-4 z-20">
         <ControlsPanel

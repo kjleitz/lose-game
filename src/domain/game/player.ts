@@ -29,7 +29,7 @@ export class Player {
     this.updateSpace(dt, actions, visitedPlanet);
   }
 
-  updateSpace(dt: number, actions: Set<Action>, visitedPlanet?: boolean): void {
+  updateSpace(dt: number, actions: Set<Action>, _visitedPlanet?: boolean): void {
     const TURN_SPEED = 2.5;
     const BASE_THRUST = 280; // base ship thrust (units/sec^2)
     const DRAG = 0.98;
@@ -57,10 +57,7 @@ export class Player {
     if (Math.abs(this.state.vx) + Math.abs(this.state.vy) > 500) {
       this.state.health = Math.max(0, (this.state.health ?? 100) - Math.floor(1 * dt * 10));
     }
-    // Increment experience if visiting a planet
-    if (visitedPlanet) {
-      this.state.experience = (this.state.experience ?? 0) + 10;
-    }
+    // Experience is managed in ECS; legacy increment removed.
   }
 
   updatePlanet(dt: number, actions: Set<Action>): void {

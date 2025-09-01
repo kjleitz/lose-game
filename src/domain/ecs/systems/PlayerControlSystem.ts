@@ -1,7 +1,14 @@
 import type { Action } from "../../../application/input/ActionTypes";
 import type { System, World } from "../../../lib/ecs";
 import { defineSystem } from "../../../lib/ecs";
-import { Player, Position, Rotation, Velocity, WeaponCooldown } from "../components";
+import {
+  Player,
+  Position,
+  Rotation,
+  Velocity,
+  WeaponCooldown,
+  PlayerModifiers,
+} from "../components";
 
 export function createPlayerControlSystem(
   world: World,
@@ -11,23 +18,24 @@ export function createPlayerControlSystem(
 ): System {
   const BASE_ACCELERATION = 200;
   const BASE_MAX_SPEED = 150;
-  const TURN_SPEED = 3;
+  const BASE_TURN_SPEED = 3;
   const WALK_SPEED = 200;
   const RUN_SPEED = 350;
   const FRICTION = 0.85;
 
   return defineSystem(world)
     .withComponents({ position: Position, velocity: Velocity, rotation: Rotation, player: Player })
-    .withOptionalComponents({ weaponCooldown: WeaponCooldown })
+    .withOptionalComponents({ weaponCooldown: WeaponCooldown, mods: PlayerModifiers })
     .execute((entities): void => {
       entities.forEach(({ components }) => {
-        const { velocity, rotation, weaponCooldown } = components;
+        const { velocity, rotation, weaponCooldown, mods } = components;
 
         if (mode === "planet") {
           // Top-down walking controls
           let moveX = 0;
           let moveY = 0;
-          const speed = actions.has("boost") ? RUN_SPEED : WALK_SPEED;
+          const base = actions.has("boost") ? RUN_SPEED : WALK_SPEED;
+          const speed = base * (mods?.walkSpeedMult ?? 1);
 
           if (actions.has("thrust")) moveY -= 1; // up
           if (actions.has("turnLeft")) moveX -= 1; // left
@@ -43,22 +51,25 @@ export function createPlayerControlSystem(
             rotation.angle = Math.atan2(moveY, moveX);
           } else {
             // No input: gradually stop
-            velocity.dx *= FRICTION;
-            velocity.dy *= FRICTION;
+            const friction = FRICTION * (mods?.frictionMult ?? 1);
+            velocity.dx *= friction;
+            velocity.dy *= friction;
           }
         } else {
           // Space (ship) controls
           if (actions.has("turnLeft")) {
-            rotation.angle -= TURN_SPEED * dt;
+            const turn = BASE_TURN_SPEED * (mods?.turnSpeedMult ?? 1);
+            rotation.angle -= turn * dt;
           }
           if (actions.has("turnRight")) {
-            rotation.angle += TURN_SPEED * dt;
+            const turn = BASE_TURN_SPEED * (mods?.turnSpeedMult ?? 1);
+            rotation.angle += turn * dt;
           }
 
           if (actions.has("thrust")) {
             const boost = actions.has("boost") ? 1.75 : 1;
-            const ACCELERATION = BASE_ACCELERATION * boost;
-            const MAX_SPEED = BASE_MAX_SPEED * boost;
+            const ACCELERATION = BASE_ACCELERATION * boost * (mods?.accelMult ?? 1);
+            const MAX_SPEED = BASE_MAX_SPEED * boost * (mods?.maxSpeedMult ?? 1);
             const thrustX = Math.cos(rotation.angle) * ACCELERATION * dt;
             const thrustY = Math.sin(rotation.angle) * ACCELERATION * dt;
 
@@ -73,9 +84,10 @@ export function createPlayerControlSystem(
           }
 
           // Apply drag
-          const DRAG = 0.98;
-          velocity.dx *= DRAG;
-          velocity.dy *= DRAG;
+          const baseDrag = 0.98;
+          const drag = Math.max(0.9, Math.min(0.999, baseDrag - (mods?.dragReduction ?? 0)));
+          velocity.dx *= drag;
+          velocity.dy *= drag;
         }
 
         // Update weapon cooldown
