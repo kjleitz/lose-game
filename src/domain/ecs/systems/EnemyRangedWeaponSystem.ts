@@ -14,6 +14,7 @@ import {
   Collider,
   Sprite,
   Faction,
+  JustFired,
 } from "../components";
 import { Entity as ECSEntity } from "../../../lib/ecs";
 
@@ -77,7 +78,8 @@ export function createEnemyRangedWeaponSystem(world: World, dt: number): System 
             .addComponent(Damage, { amount: ranged.damage })
             .addComponent(Collider, { radius: 2 })
             .addComponent(Sprite, { color: projColor, scale: 0.5 })
-            .addComponent(Faction, { team: faction });
+            .addComponent(Faction, { team: faction })
+            .addComponent(JustFired, { team: faction });
 
           ranged.remaining = ranged.cooldown;
         }

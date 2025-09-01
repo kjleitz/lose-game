@@ -13,6 +13,7 @@ import {
   Velocity,
   WeaponCooldown,
   Faction,
+  JustFired,
 } from "../components";
 import { PlayerModifiers } from "../components";
 import { Entity as ECSEntity } from "../../../lib/ecs";
@@ -57,7 +58,8 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
             .addComponent(Damage, { amount: 25 })
             .addComponent(Collider, { radius: 2 })
             .addComponent(Sprite, { color: "#ffff00", scale: 0.5 })
-            .addComponent(Faction, { team: shooterFaction ?? "player" });
+            .addComponent(Faction, { team: shooterFaction ?? "player" })
+            .addComponent(JustFired, { team: shooterFaction ?? "player" });
 
           // Set weapon cooldown if component exists
           if (weaponCooldown) {

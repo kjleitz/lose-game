@@ -19,6 +19,7 @@ import {
   saveSessionState,
 } from "./persistence/sessionStorage";
 import { getDefaultSettings, loadSettings, updateSettings } from "./settings/settingsStorage";
+import { AudioService } from "../infrastructure/audio/AudioService";
 
 function defaultKinematics(): Kinematics2D {
   return { x: 0, y: 0, vx: 0, vy: 0, angle: 0 };
@@ -75,6 +76,7 @@ export class GameApp {
       );
     }
     const session = new GameSessionECS(ecsConfig);
+    const audio = new AudioService();
     // Restore last session state (e.g., player position)
     const last = loadSessionState();
     if (last) {
@@ -282,6 +284,12 @@ export class GameApp {
         // Bridge picked-up items to HUD inventory
         const picked = session.getAndClearPickupEvents();
         for (const ev of picked) hudInventory.addItem(ev.item, ev.quantity);
+        // Play SFX events emitted by session
+        const sfx = session.getAndClearSfxEvents();
+        for (const ev of sfx) {
+          if (ev.type === "shoot") audio.playShoot(ev.team);
+          else if (ev.type === "hit") audio.playHit();
+        }
         // Emit HUD hint changes (including clears) and transient toasts
         const current = session.getNotification();
         if (current !== lastNotification) {

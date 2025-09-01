@@ -29,6 +29,7 @@ import { createProjectileSystem } from "./systems/ProjectileSystem";
 import { createWeaponSystem } from "./systems/WeaponSystem";
 import { createHitFlashSystem } from "./systems/HitFlashSystem";
 import { createMeleeStrikeAnimSystem } from "./systems/MeleeStrikeAnimSystem";
+import { createSfxEventCollectorSystem, type SfxEvent } from "./systems/SfxEventCollectorSystem";
 import { createLevelUpSystem, type LevelUpEvent } from "./systems/LevelUpSystem";
 import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
 import { perkDefinitions } from "../leveling/perksConfig";
@@ -45,6 +46,7 @@ export class GameSessionECS {
   private levelUpEvents: LevelUpEvent[] = [];
   private perkRequests: PerkUnlockRequest[] = [];
   private toastEvents: string[] = [];
+  private sfxEvents: SfxEvent[] = [];
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -200,6 +202,9 @@ export class GameSessionECS {
     );
     const collisionSystem = createCollisionSystem(this.world);
     const dropAgingSystem = createDroppedItemAgingSystem(this.world, dt);
+    const sfxSystem = createSfxEventCollectorSystem(this.world, (ev) => {
+      this.sfxEvents.push(ev);
+    });
     const pickupSystem = createPickupSystem(this.world, actions, (ev): void => {
       this.pickupEvents.push(ev);
     });
@@ -226,6 +231,7 @@ export class GameSessionECS {
     hitFlashSystem.run();
     meleeAnimSystem.run();
     collisionSystem.run();
+    sfxSystem.run();
     dropAgingSystem.run();
     pickupSystem.run();
     // Level-up after any XP-changing actions this frame
@@ -458,6 +464,12 @@ export class GameSessionECS {
   getAndClearToastEvents(): string[] {
     const out = [...this.toastEvents];
     this.toastEvents = [];
+    return out;
+  }
+
+  getAndClearSfxEvents(): SfxEvent[] {
+    const out = [...this.sfxEvents];
+    this.sfxEvents = [];
     return out;
   }
 

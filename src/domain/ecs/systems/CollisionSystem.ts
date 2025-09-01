@@ -11,7 +11,7 @@ import {
   Position,
   Projectile,
 } from "../components";
-import { Faction, HitFlash } from "../components";
+import { Faction, HitFlash, ImpactEvent } from "../components";
 import type { DropEntry, DropTable as DropTableType } from "../../game/damage/DamageableEntity";
 import type { Item } from "../../game/items/Item";
 import { BaseItemType, ItemQuality, ItemRarity } from "../../game/items/Item";
@@ -74,6 +74,11 @@ export function createCollisionSystem(world: World): System {
           HitFlash,
           HitFlash.create({ remaining: flashDur, duration: flashDur }),
         );
+        // Emit an impact event entity for SFX systems
+        world
+          .createEntity()
+          .addComponent(Position, { x: targetPos.x, y: targetPos.y })
+          .addComponent(ImpactEvent);
 
         if (targetHealth.current <= 0) {
           // Spawn drops if entity has a drop table

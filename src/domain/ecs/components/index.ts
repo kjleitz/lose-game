@@ -21,6 +21,9 @@ export const Projectile = defineComponent<Record<string, never>>(() => ({}));
 // Faction/team alignment for friendly-fire rules
 export const Faction = defineComponent<{ team: "player" | "enemy" | "neutral" }>();
 
+// Fire event marker for SFX system
+export const JustFired = defineComponent<{ team: "player" | "enemy" | "neutral" }>();
+
 // Game mechanics
 export const Health = defineComponent<{ current: number; max: number }>();
 export const Damage = defineComponent<{ amount: number }>();
@@ -152,3 +155,6 @@ export const HitFlash = defineComponent<{
   remaining: number;
   duration: number;
 }>();
+
+// Impact event entity for SFX on collision
+export const ImpactEvent = defineComponent<Record<string, never>>(() => ({}));
