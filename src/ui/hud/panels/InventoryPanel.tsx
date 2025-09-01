@@ -5,6 +5,7 @@ import type {
   InventorySlot,
 } from "../../../domain/game/inventory/PlayerInventory";
 import type { Item } from "../../../domain/game/items/Item";
+import { Panel, Button } from "../../controls";
 
 interface InventoryPanelProps {
   inventory?: PlayerInventory;
@@ -73,13 +74,13 @@ function InventorySlotComponent({
       <ItemIcon item={slot.item} />
 
       {slot.quantity > 1 && (
-        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 rounded-full min-w-4 h-4 flex items-center justify-center font-bold">
+        <span className="absolute -top-1 -right-1 bg-hud-accent text-black text-xs px-1 rounded-full min-w-4 h-4 flex items-center justify-center font-bold">
           {slot.quantity}
         </span>
       )}
 
       {showActions && (
-        <div className="absolute top-full left-0 mt-1 bg-gray-900 border border-gray-600 rounded p-2 min-w-32 z-50 shadow-lg">
+        <div className="absolute top-full left-0 mt-1 bg-hud-bg/90 border border-hud-accent/30 rounded p-2 min-w-32 z-50 shadow-lg">
           <div className="text-white text-sm mb-2">
             <div className="font-bold">{slot.item.name}</div>
             <div className="text-gray-400 text-xs">{slot.item.description}</div>
@@ -93,23 +94,19 @@ function InventorySlotComponent({
 
           <div className="flex flex-col gap-1">
             {onItemUse && (
-              <button
-                className="bg-green-600 hover:bg-green-500 px-2 py-1 rounded text-xs text-white transition-colors"
-                onClick={(): void => onItemUse(slot.item!)}
-                data-testid="use-item-button"
-              >
+              <Button onClick={(): void => onItemUse(slot.item!)} data-testid="use-item-button">
                 Use
-              </button>
+              </Button>
             )}
 
             {onItemDrop && (
-              <button
-                className="bg-red-600 hover:bg-red-500 px-2 py-1 rounded text-xs text-white transition-colors"
+              <Button
+                variant="danger"
                 onClick={(): void => onItemDrop(slot.item!, 1)}
                 data-testid="drop-item-button"
               >
                 Drop
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -144,34 +141,34 @@ export function InventoryPanel({
   }
 
   return (
-    <div
-      className={`fixed left-4 top-4 bg-gray-900 border-2 border-gray-600 rounded-lg p-4 shadow-xl transition-all duration-300 ${visible ? "opacity-100 transform scale-100" : "opacity-0 transform scale-95 pointer-events-none"}`}
+    <Panel
+      className={`fixed left-4 top-4 p-4 transition-all duration-300 ${visible ? "opacity-100 transform scale-100" : "opacity-0 transform scale-95 pointer-events-none"}`}
     >
       <header className="flex justify-between items-center mb-3">
-        <h3 className="text-white font-bold text-lg">Inventory</h3>
+        <h3 className="hud-text text-sm">Inventory</h3>
 
         {onToggle && (
-          <button
-            className="text-gray-400 hover:text-white text-xl"
+          <Button
+            className="px-2 py-0.5 text-sm"
             onClick={onToggle}
             data-testid="inventory-close-button"
           >
             ×
-          </button>
+          </Button>
         )}
       </header>
 
       <div className="mb-3 text-sm">
         <div className="flex justify-between text-gray-300">
           <span>Weight:</span>
-          <span className={totalWeight > maxWeight * 0.8 ? "text-yellow-400" : "text-white"}>
+          <span className={totalWeight > maxWeight * 0.8 ? "text-hud-warning" : "text-white"}>
             {totalWeight.toFixed(1)} / {maxWeight}
           </span>
         </div>
 
         <div className="flex justify-between text-gray-300">
           <span>Slots:</span>
-          <span className={slots.length > maxSlots * 0.8 ? "text-yellow-400" : "text-white"}>
+          <span className={slots.length > maxSlots * 0.8 ? "text-hud-warning" : "text-white"}>
             {slots.length} / {maxSlots}
           </span>
         </div>
@@ -200,19 +197,18 @@ export function InventoryPanel({
         )}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-600">
+      <div className="mt-3 pt-3 hud-divider">
         <div className="flex gap-2 text-xs">
-          <button
-            className="bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-white transition-colors"
+          <Button
             onClick={(): void => inventory.sortInventory("category")}
             data-testid="sort-items-button"
           >
             Sort
-          </button>
+          </Button>
 
-          <div className="text-gray-400 flex items-center">Press I to toggle</div>
+          <div className="hud-text text-[11px] opacity-70 flex items-center">Press I to toggle</div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

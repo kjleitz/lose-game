@@ -56,6 +56,14 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Use `index.ts` barrels per area to keep imports shallow; do not introduce path aliases.
 - Non-React utilities (e.g., canvas rendering) live under `src/domain/render/`, not `src/ui`.
 
+### HUD/Menu Visual Consistency
+
+- Use one shared visual style for all HUD panels and UI menus.
+  - The canonical style is the top-right HUD panel look.
+  - Implement via the shared `hud-panel` utility class (see `src/index.css`) which sets the font (`font-hud`), background, border, rounding, and shadow.
+  - All HUD panels and overlay menus/dialogs must wrap content in a `div.hud-panel` and only add spacing/positioning (e.g., `p-4`, `w-[...]`, `left-*`, `top-*`) as needed.
+  - Headings and labels should use `hud-text` for accent coloring and tracking.
+
 ## TypeScript Discipline
 
 - Strict TypeScript only. Do not weaken types to “make it work”. Fix types first.

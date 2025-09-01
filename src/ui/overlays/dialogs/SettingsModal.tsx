@@ -17,6 +17,7 @@ import {
 } from "../../../application/settings/settingsStorage";
 import { getSpriteUrlForKey, setSpriteConfig } from "../../../domain/render/sprites";
 import { setVisualConfig } from "../../../domain/render/VisualConfig";
+import { Panel, Button } from "../../controls";
 
 interface SettingsModalProps {
   open: boolean;
@@ -125,155 +126,152 @@ export function SettingsModal({
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="bg-[#0b0b0b] border border-gray-700 rounded shadow-xl w-[720px] p-4 space-y-4">
+      <Panel className="w-[720px] max-w-[90vw] max-h-[80vh] p-4 flex flex-col">
         <header className="flex items-center justify-between">
           <h2 className="hud-text text-sm">Settings</h2>
-          <button
-            type="button"
-            className="px-3 py-1 text-xs bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-            onClick={onClose}
-          >
-            Close
-          </button>
+          <Button onClick={onClose}>Close</Button>
         </header>
 
-        <section className="space-y-2">
-          <h3 className="hud-text text-xs opacity-80">Game Speed</h3>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={0.25}
-              max={5}
-              step={0.25}
-              value={speed}
-              onChange={(evt): void => onChangeSpeed(parseFloat(evt.target.value))}
-            />
-            <span className="hud-text text-xs opacity-80">{speed.toFixed(2)}x</span>
-          </div>
-        </section>
+        <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+          <section className="space-y-2">
+            <h3 className="hud-text text-xs opacity-80">Game Speed</h3>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0.25}
+                max={5}
+                step={0.25}
+                value={speed}
+                onChange={(evt): void => onChangeSpeed(parseFloat(evt.target.value))}
+              />
+              <span className="hud-text text-xs opacity-80">{speed.toFixed(2)}x</span>
+            </div>
+          </section>
 
-        <section className="space-y-2">
-          <h3 className="hud-text text-xs opacity-80">Key Bindings</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {ACTION_LIST.map((action) => {
-              const bindings = getBindingsForAction(action);
-              return (
-                <button
-                  key={action}
-                  type="button"
-                  className={`px-2 py-1 text-xs rounded border ${listeningAction === action ? "border-white bg-gray-700" : "border-gray-600 bg-gray-800 hover:bg-gray-700"}`}
-                  onClick={(): void => setListeningAction(action)}
-                  onKeyDown={(evt): void => {
-                    if (listeningAction !== action) return;
-                    setKeyBinding(action, evt.code);
-                    setListeningAction(null);
-                  }}
-                >
-                  <div className="hud-text text-left">
-                    <div className="text-[11px] opacity-80">{ACTION_LABELS[action]}</div>
-                    <div className="text-xs">{bindings.join(", ") || "(none)"}</div>
+          <section className="space-y-2">
+            <h3 className="hud-text text-xs opacity-80">Key Bindings</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {ACTION_LIST.map((action) => {
+                const bindings = getBindingsForAction(action);
+                return (
+                  <Button
+                    key={action}
+                    className={
+                      listeningAction === action ? "border-hud-accent bg-hud-bg" : undefined
+                    }
+                    onClick={(): void => setListeningAction(action)}
+                    onKeyDown={(evt): void => {
+                      if (listeningAction !== action) return;
+                      setKeyBinding(action, evt.code);
+                      setListeningAction(null);
+                    }}
+                  >
+                    <div className="hud-text text-left">
+                      <div className="text-[11px] opacity-80">{ACTION_LABELS[action]}</div>
+                      <div className="text-xs">{bindings.join(", ") || "(none)"}</div>
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
+            <div>
+              <Button onClick={(): void => resetKeyBindings()}>Reset Bindings</Button>
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="hud-text text-xs opacity-80">Sprites</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {catalog.keys.map((key) => (
+                <div key={key} className="border border-hud-accent/20 rounded p-2">
+                  <div className="hud-text text-xs mb-1">{key}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {catalog.variants.get(key)?.map((variant) => {
+                      const url = getSpriteUrlForKey(key, variant);
+                      return (
+                        <Button
+                          key={`${key}-${variant}`}
+                          className={
+                            spriteOverrides[key] === variant
+                              ? "border-hud-accent bg-hud-bg"
+                              : undefined
+                          }
+                          onClick={(): void => {
+                            const nextVariant: SpriteTheme =
+                              variant === "art-deco" ? "art-deco" : "classic";
+                            setSpriteOverrides((prev) => ({ ...prev, [key]: nextVariant }));
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`${key}-${variant}`}
+                            className="w-6 h-6 inline mr-1"
+                          />
+                          {variant}
+                        </Button>
+                      );
+                    })}
                   </div>
-                </button>
-              );
-            })}
-          </div>
-          <div>
-            <button
-              type="button"
-              className="px-2 py-1 text-xs bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-              onClick={(): void => resetKeyBindings()}
-            >
-              Reset Bindings
-            </button>
-          </div>
-        </section>
-
-        <section className="space-y-2">
-          <h3 className="hud-text text-xs opacity-80">Sprites</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {catalog.keys.map((key) => (
-              <div key={key} className="border border-gray-700 rounded p-2">
-                <div className="hud-text text-xs mb-1">{key}</div>
-                <div className="flex flex-wrap gap-2">
-                  {catalog.variants.get(key)?.map((variant) => {
-                    const url = getSpriteUrlForKey(key, variant);
-                    return (
-                      <button
-                        key={`${key}-${variant}`}
-                        className={`px-2 py-1 text-xs rounded border ${spriteOverrides[key] === variant ? "border-white bg-gray-700" : "border-gray-600 bg-gray-800 hover:bg-gray-700"}`}
-                        onClick={(): void => {
-                          const nextVariant: SpriteTheme =
-                            variant === "art-deco" ? "art-deco" : "classic";
-                          setSpriteOverrides((prev) => ({ ...prev, [key]: nextVariant }));
-                        }}
-                      >
-                        <img src={url} alt={`${key}-${variant}`} className="w-6 h-6 inline mr-1" />
-                        {variant}
-                      </button>
-                    );
-                  })}
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
-        <section className="space-y-2">
-          <h3 className="hud-text text-xs opacity-80">Visuals</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="hud-text text-xs flex items-center gap-2">
-              Cloud density
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.1}
-                value={cloudDensity}
-                onChange={(evt): void => {
-                  const value = parseFloat(evt.target.value);
-                  setCloudDensity(value);
-                  updateSettings({ cloudDensity: value });
-                  setVisualConfig({ cloudDensity: value });
-                }}
-              />
-            </label>
-            <label className="hud-text text-xs flex items-center gap-2">
-              Bird density
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.1}
-                value={birdDensity}
-                onChange={(evt): void => {
-                  const value = parseFloat(evt.target.value);
-                  setBirdDensity(value);
-                  updateSettings({ birdDensity: value });
-                }}
-              />
-            </label>
-            <label className="hud-text text-xs flex items-center gap-2">
-              Foam density
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.1}
-                value={foamDensity}
-                onChange={(evt): void => {
-                  const value = parseFloat(evt.target.value);
-                  setFoamDensity(value);
-                  updateSettings({ foamDensity: value });
-                }}
-              />
-            </label>
-          </div>
-        </section>
+          <section className="space-y-2">
+            <h3 className="hud-text text-xs opacity-80">Visuals</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <label className="hud-text text-xs flex items-center gap-2">
+                Cloud density
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={cloudDensity}
+                  onChange={(evt): void => {
+                    const value = parseFloat(evt.target.value);
+                    setCloudDensity(value);
+                    updateSettings({ cloudDensity: value });
+                    setVisualConfig({ cloudDensity: value });
+                  }}
+                />
+              </label>
+              <label className="hud-text text-xs flex items-center gap-2">
+                Bird density
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={birdDensity}
+                  onChange={(evt): void => {
+                    const value = parseFloat(evt.target.value);
+                    setBirdDensity(value);
+                    updateSettings({ birdDensity: value });
+                  }}
+                />
+              </label>
+              <label className="hud-text text-xs flex items-center gap-2">
+                Foam density
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={foamDensity}
+                  onChange={(evt): void => {
+                    const value = parseFloat(evt.target.value);
+                    setFoamDensity(value);
+                    updateSettings({ foamDensity: value });
+                  }}
+                />
+              </label>
+            </div>
+          </section>
+        </div>
 
         <footer className="flex items-center justify-between">
-          <button
-            type="button"
-            className="px-3 py-1 text-xs bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
+          <Button
             onClick={(): void => {
               const defaults = getDefaultSettings();
               setSpriteTheme(defaults.spriteTheme);
@@ -285,10 +283,10 @@ export function SettingsModal({
             }}
           >
             Reset All
-          </button>
+          </Button>
           <div />
         </footer>
-      </div>
+      </Panel>
     </div>
   );
 }

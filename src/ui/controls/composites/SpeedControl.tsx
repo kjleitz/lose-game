@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { Button } from "../primitives/Button";
 
 interface SpeedControlProps {
   value: number;
@@ -19,27 +20,9 @@ export function SpeedControl({
     <div className="flex items-center gap-2 select-none">
       <div className="hud-text text-xs opacity-80">Speed: {value.toFixed(2)}x</div>
       <div className="flex items-center gap-1">
-        <button
-          type="button"
-          className="px-2 py-1 text-xs bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-          onClick={(): void => onChange(clamp(value - step))}
-        >
-          -
-        </button>
-        <button
-          type="button"
-          className="px-2 py-1 text-xs bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-          onClick={(): void => onChange(1)}
-        >
-          1x
-        </button>
-        <button
-          type="button"
-          className="px-2 py-1 text-xs bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700"
-          onClick={(): void => onChange(clamp(value + step))}
-        >
-          +
-        </button>
+        <Button onClick={(): void => onChange(clamp(value - step))}>-</Button>
+        <Button onClick={(): void => onChange(1)}>1x</Button>
+        <Button onClick={(): void => onChange(clamp(value + step))}>+</Button>
       </div>
       <div className="hud-text text-[10px] opacity-60 ml-2">(Shift=boost, +/- keys)</div>
     </div>

@@ -2,6 +2,7 @@ import type { JSX } from "react";
 
 import type { Action } from "../../../application/input/ActionTypes";
 import { SpeedControl } from "../../controls/composites/SpeedControl";
+import { Panel } from "../../controls";
 import { ActionReadout } from "../widgets/ActionReadout";
 import { PauseIndicator } from "../widgets/PauseIndicator";
 import { SettingsButton } from "../widgets/SettingsButton";
@@ -22,7 +23,7 @@ export function ControlsPanel({
   onOpenSettings,
 }: ControlsPanelProps): JSX.Element {
   return (
-    <div className="hud-panel px-3 py-2 space-y-2 pointer-events-auto" data-testid="hud-root">
+    <Panel className="px-3 py-2 space-y-2 pointer-events-auto" data-testid="hud-root">
       <div className="flex items-center justify-end">
         <SettingsButton onClick={onOpenSettings} />
       </div>
@@ -31,6 +32,6 @@ export function ControlsPanel({
       )}
       <ActionReadout actions={actions} />
       <PauseIndicator paused={paused} />
-    </div>
+    </Panel>
   );
 }

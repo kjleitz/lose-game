@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { HealthBar } from "../widgets/HealthBar";
 import { ExperienceBar } from "../widgets/ExperienceBar";
+import { Panel } from "../../controls";
 
 export function StatusPanel({
   health,
@@ -22,17 +23,14 @@ export function StatusPanel({
       ? Math.min(100, Math.max(0, Math.floor((experience / xpToNextLevel) * 100)))
       : 0;
   return (
-    <div
-      className="hud-panel px-4 py-3 rounded border border-gray-600 bg-black bg-opacity-80 shadow flex flex-col space-y-3"
-      style={{ minWidth: 160 }}
-    >
+    <Panel className="px-4 py-3 flex flex-col space-y-3" style={{ minWidth: 160 }}>
       <HealthBar value={health} />
       <div className="flex items-center justify-between">
-        <span className="text-xs text-white">Lv {level}</span>
+        <span className="hud-text text-xs opacity-80">Lv {level}</span>
         {perkPoints > 0 ? (
           <button
             type="button"
-            className="ml-2 text-[10px] px-1.5 py-0.5 bg-yellow-600 text-black rounded"
+            className="ml-2 text-[10px] px-1.5 py-0.5 rounded border border-hud-accent/40 text-hud-accent bg-hud-bg/70 hover:bg-hud-bg/90"
             onClick={onOpenPerks}
           >
             {perkPoints} perk
@@ -40,7 +38,7 @@ export function StatusPanel({
         ) : (
           <button
             type="button"
-            className="ml-2 text-[10px] px-1.5 py-0.5 bg-gray-700 text-gray-300 rounded"
+            className="ml-2 text-[10px] px-1.5 py-0.5 hud-btn"
             onClick={onOpenPerks}
           >
             Perks
@@ -48,6 +46,6 @@ export function StatusPanel({
         )}
       </div>
       <ExperienceBar value={pct} />
-    </div>
+    </Panel>
   );
 }

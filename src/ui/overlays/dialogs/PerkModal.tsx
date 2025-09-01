@@ -40,23 +40,23 @@ export function PerkModal({
 
   return (
     <div className="absolute inset-0 z-30 pointer-events-auto flex items-center justify-center bg-black bg-opacity-50">
-      <div
-        className="bg-gray-900 border border-gray-700 rounded p-3 w-[640px] max-w-[90vw] max-h-[80vh] flex flex-col"
+      <Panel
+        className="p-3 w-[640px] max-w-[90vw] max-h-[80vh] flex flex-col"
         role="dialog"
         aria-modal="true"
       >
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-white text-base">Perks</h2>
-          <button className="text-white text-xs px-2 py-1 bg-gray-700 rounded" onClick={onClose}>
+          <Button size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
         <div className="text-xs text-gray-300 mb-2">
           Level {level} · Perk Points: {perkPoints}
         </div>
         <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1 flex-1">
           {groups.map((group) => (
-            <div key={group.category} className="border border-gray-700 rounded p-2">
+            <div key={group.category} className="border border-hud-accent/20 rounded p-2">
               <div className="text-white text-xs font-semibold mb-1 capitalize">
                 {group.category}
               </div>
@@ -126,15 +126,18 @@ export function PerkModal({
                             Cost {nextTier?.cost ?? 0}
                           </span>
                         ) : null}
-                        <button
-                          className={`text-xs px-2 py-0.5 rounded ${
-                            canUnlock ? "bg-yellow-500 text-black" : "bg-gray-700 text-gray-400"
-                          }`}
+                        <Button
+                          size="sm"
+                          className={
+                            canUnlock
+                              ? "bg-hud-warning text-black border border-hud-warning"
+                              : undefined
+                          }
                           disabled={!canUnlock}
                           onClick={(): void => onUnlock(def.id)}
                         >
                           {locked ? "Unlock" : currentTier < def.tiers.length ? "Upgrade" : "Maxed"}
-                        </button>
+                        </Button>
                       </div>
                     </li>
                   );
@@ -143,7 +146,8 @@ export function PerkModal({
             </div>
           ))}
         </div>
-      </div>
+      </Panel>
     </div>
   );
 }
+import { Panel, Button } from "../../controls";
