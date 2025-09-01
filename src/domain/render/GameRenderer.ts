@@ -3,7 +3,7 @@ import type { Planet } from "../../domain/game/planets";
 import type { Biome } from "../../shared/types/Biome";
 import type { Circle2D, Kinematics2D, ViewSize } from "../../shared/types/geometry";
 import { createSeededRng, hashStringToInt } from "../../shared/utils";
-import type { Enemy } from "../game/enemies";
+import type { EnemyView as Enemy } from "../game/views";
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Camera } from "./camera";

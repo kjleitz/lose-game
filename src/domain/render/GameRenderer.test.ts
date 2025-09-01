@@ -7,7 +7,7 @@ import type { Biome } from "../../shared/types/Biome";
 import { GameRenderer } from "./GameRenderer";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
-import type { Enemy } from "../game/enemies";
+import type { EnemyView as Enemy } from "../game/views";
 
 // Mock projectile drawing to capture transform and size
 let lastProjectileCall: {

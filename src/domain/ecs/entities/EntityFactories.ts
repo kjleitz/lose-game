@@ -1,5 +1,5 @@
 import type { EntityBuilder, World } from "../../../lib/ecs";
-import type { Enemy as OldEnemy } from "../../game/enemies";
+import type { EnemyView as OldEnemy } from "../../game/views";
 import type { Planet as OldPlanet } from "../../game/planets";
 import type { Player as OldPlayer } from "../../game/player";
 import type { Projectile as OldProjectile } from "../../game/projectiles";
@@ -33,6 +33,7 @@ export function createPlayerEntity(world: World, player: OldPlayer): EntityBuild
     })
     .addComponent(Components.Collider, { radius: 16 })
     .addComponent(Components.Sprite, { color: "#00ff00", scale: 1.0 })
+    .addComponent(Components.Faction, { team: "player" })
     .addComponent(Components.SpaceMode)
     .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 })
     .addComponent(Components.PlayerModifiers, {
@@ -73,6 +74,23 @@ export function createEnemyEntity(world: World, enemy: OldEnemy): EntityBuilder 
       })
       .addComponent(Components.Collider, { radius: enemy.radius })
       .addComponent(Components.Sprite, { color: "#ff0000", scale: 1.0 })
+      .addComponent(Components.Faction, { team: "enemy" })
+      // Default combat capabilities
+      .addComponent(Components.RangedWeapon, {
+        cooldown: 0.9,
+        remaining: 0,
+        projectileSpeed: 520,
+        spread: 0.1,
+        damage: 12,
+        range: Math.max(400, enemy.visionRadius * 0.8),
+        color: "#ff5555",
+      })
+      .addComponent(Components.MeleeWeapon, {
+        cooldown: 0.9,
+        remaining: 0,
+        damage: 8,
+        range: 28,
+      })
       // Basic drop table so enemies can drop items on death (planet/space)
       .addComponent(Components.LootDropTable, {
         guaranteed: [
@@ -150,6 +168,7 @@ export function createBasicPlayer(world: World, x = 0, y = 0): EntityBuilder {
     })
     .addComponent(Components.Collider, { radius: 16 })
     .addComponent(Components.Sprite, { color: "#00ff00", scale: 1.0 })
+    .addComponent(Components.Faction, { team: "player" })
     .addComponent(Components.SpaceMode)
     .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 })
     .addComponent(Components.PlayerModifiers, {
@@ -189,6 +208,22 @@ export function createBasicEnemy(world: World, id: string, x: number, y: number)
     })
     .addComponent(Components.Collider, { radius: 14 })
     .addComponent(Components.Sprite, { color: "#ff0000", scale: 1.0 })
+    .addComponent(Components.Faction, { team: "enemy" })
+    .addComponent(Components.RangedWeapon, {
+      cooldown: 1.0,
+      remaining: 0,
+      projectileSpeed: 500,
+      spread: 0.12,
+      damage: 10,
+      range: 500,
+      color: "#ff5555",
+    })
+    .addComponent(Components.MeleeWeapon, {
+      cooldown: 1.0,
+      remaining: 0,
+      damage: 6,
+      range: 26,
+    })
     .addComponent(Components.LootDropTable, {
       guaranteed: [
         { itemType: "organic_matter", minQuantity: 1, maxQuantity: 2, probability: 1.0 },

@@ -18,6 +18,9 @@ export const Enemy = defineComponent<{ id: string }>();
 export const Planet = defineComponent<{ id: string }>();
 export const Projectile = defineComponent<Record<string, never>>(() => ({}));
 
+// Faction/team alignment for friendly-fire rules
+export const Faction = defineComponent<{ team: "player" | "enemy" | "neutral" }>();
+
 // Game mechanics
 export const Health = defineComponent<{ current: number; max: number }>();
 export const Damage = defineComponent<{ amount: number }>();
@@ -105,6 +108,25 @@ export const PlanetMode = defineComponent<{
 export const WeaponCooldown = defineComponent<{
   remaining: number;
   duration: number;
+}>();
+
+// Enemy combat stats (ranged)
+export const RangedWeapon = defineComponent<{
+  cooldown: number; // seconds between shots
+  remaining: number; // seconds until next shot
+  projectileSpeed: number;
+  spread: number; // radians randomization
+  damage: number;
+  range: number; // max effective range to fire
+  color?: string; // projectile color hint
+}>();
+
+// Enemy combat stats (melee)
+export const MeleeWeapon = defineComponent<{
+  cooldown: number; // seconds between strikes
+  remaining: number; // seconds until next strike
+  damage: number;
+  range: number; // effective strike distance (center-to-center)
 }>();
 
 // Looting and drops

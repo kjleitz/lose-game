@@ -1,4 +1,4 @@
-import type { Enemy } from "../domain/game/enemies";
+import type { EnemyView as Enemy } from "../domain/game/views";
 import type { PlayerInventory } from "../domain/game/inventory/PlayerInventory";
 import type { Planet } from "../domain/game/planets";
 import type { Camera } from "../domain/render/camera";

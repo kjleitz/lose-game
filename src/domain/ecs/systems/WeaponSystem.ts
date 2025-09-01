@@ -12,15 +12,17 @@ import {
   TimeToLive,
   Velocity,
   WeaponCooldown,
+  Faction,
 } from "../components";
 import { PlayerModifiers } from "../components";
+import { Entity as ECSEntity } from "../../../lib/ecs";
 
 export function createWeaponSystem(world: World, actions: Set<Action>): System {
   return defineSystem(world)
     .withComponents({ position: Position, rotation: Rotation, player: Player })
     .withOptionalComponents({ weaponCooldown: WeaponCooldown, mods: PlayerModifiers })
     .execute((entities): void => {
-      entities.forEach(({ components }) => {
+      entities.forEach(({ entity, components }) => {
         const { position, rotation, weaponCooldown, mods } = components;
 
         // Check if player wants to fire and weapon is ready
@@ -39,6 +41,7 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
           const dirY = Math.sin(fireAngle);
           const spawnDistance = 28;
 
+          const shooterFaction = new ECSEntity(entity, world).getComponent(Faction)?.team;
           world
             .createEntity()
             .addComponent(Position, {
@@ -53,7 +56,8 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
             .addComponent(TimeToLive, { remaining: 1.5, initial: 1.5 })
             .addComponent(Damage, { amount: 25 })
             .addComponent(Collider, { radius: 2 })
-            .addComponent(Sprite, { color: "#ffff00", scale: 0.5 });
+            .addComponent(Sprite, { color: "#ffff00", scale: 0.5 })
+            .addComponent(Faction, { team: shooterFaction ?? "player" });
 
           // Set weapon cooldown if component exists
           if (weaponCooldown) {

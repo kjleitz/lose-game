@@ -1,7 +1,7 @@
 import type { Action } from "../../engine";
 import { type EntityBuilder, World, Entity } from "../../lib/ecs";
 import type { Circle2D, ViewSize } from "../../shared/types/geometry";
-import type { Enemy } from "../game/enemies";
+import type { EnemyView as Enemy } from "../game/views";
 import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
 import type { Item } from "../game/items/Item";
 import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
@@ -19,6 +19,8 @@ import {
   type PickupEvent,
 } from "./systems/DroppedItemSystem";
 import { createEnemyAISystem } from "./systems/EnemyAISystem";
+import { createEnemyRangedWeaponSystem } from "./systems/EnemyRangedWeaponSystem";
+import { createEnemyMeleeSystem } from "./systems/EnemyMeleeSystem";
 import { createMovementSystem } from "./systems/MovementSystem";
 import { createPerkEffectsSystem } from "./systems/PerkEffectsSystem";
 import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
@@ -171,6 +173,8 @@ export class GameSessionECS {
     const playerControlSystem = createPlayerControlSystem(this.world, actions, dt, this.mode);
     const weaponSystem = createWeaponSystem(this.world, actions);
     const enemyAISystem = createEnemyAISystem(this.world, dt);
+    const enemyRangedSystem = createEnemyRangedWeaponSystem(this.world, dt);
+    const enemyMeleeSystem = createEnemyMeleeSystem(this.world, dt);
     const movementSystem = createMovementSystem(this.world, dt);
     const projectileSystem = createProjectileSystem(this.world, dt);
     const levelUpSystem = createLevelUpSystem(this.world, (ev) => {
@@ -202,6 +206,12 @@ export class GameSessionECS {
     playerControlSystem.run();
     weaponSystem.run();
     enemyAISystem.run();
+    // Enemy attacks: space ships fire; planet creatures strike
+    if (this.mode === "space") {
+      enemyRangedSystem.run();
+    } else if (this.mode === "planet") {
+      enemyMeleeSystem.run();
+    }
     movementSystem.run();
     // Planet terrain blocking after movement
     if (this.mode === "planet") {

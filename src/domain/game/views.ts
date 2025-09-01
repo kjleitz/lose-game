@@ -1,5 +1,4 @@
 import type { Kinematics2D, Circle2D } from "../../shared/types/geometry";
-import type { Enemy } from "./enemies";
 import type { Planet } from "./planets";
 
 export interface PlayerView extends Kinematics2D {
@@ -11,7 +10,21 @@ export interface PlayerView extends Kinematics2D {
   perks: Record<string, number>;
 }
 
-export type EnemyView = Enemy;
+export interface EnemyView {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  health: number;
+  angle: number;
+  vx: number;
+  vy: number;
+  visionRadius: number;
+  visionHysteresis: number;
+  turnSpeed: number; // rad/s
+  accel: number; // units/s^2
+  maxSpeed: number; // units/s
+}
 export type PlanetView = Planet;
 export type ProjectileView = Circle2D;
 

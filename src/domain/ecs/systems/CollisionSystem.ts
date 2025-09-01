@@ -11,6 +11,7 @@ import {
   Position,
   Projectile,
 } from "../components";
+import { Faction } from "../components";
 import type { DropEntry, DropTable as DropTableType } from "../../game/damage/DamageableEntity";
 import type { Item } from "../../game/items/Item";
 import { BaseItemType, ItemQuality, ItemRarity } from "../../game/items/Item";
@@ -43,6 +44,8 @@ export function createCollisionSystem(world: World): System {
   // Check projectile vs target collisions
   projectileEntities.forEach((projectile) => {
     const { position: projPos, collider: projCollider, damage: projDamage } = projectile.components;
+    const projFaction =
+      new ECSEntity(projectile.entity, world).getComponent(Faction)?.team ?? "neutral";
 
     targets.forEach((target) => {
       if (projectile.entity === target.entity) return; // Can't hit self
@@ -52,6 +55,10 @@ export function createCollisionSystem(world: World): System {
         collider: targetCollider,
         health: targetHealth,
       } = target.components;
+      const targetFaction =
+        new ECSEntity(target.entity, world).getComponent(Faction)?.team ?? "neutral";
+      // Prevent friendly fire: skip if same faction
+      if (projFaction === targetFaction) return;
       const dx = projPos.x - targetPos.x;
       const dy = projPos.y - targetPos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);

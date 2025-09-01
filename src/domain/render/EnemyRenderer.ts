@@ -1,4 +1,4 @@
-import type { Enemy } from "../game/enemies";
+import type { EnemyView as Enemy } from "../game/views";
 import { drawEnemyShip, drawEnemyThruster } from "./sprites";
 
 export class EnemyRenderer {

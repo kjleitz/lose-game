@@ -1,5 +1,5 @@
 import { GameSessionECS } from "../domain/ecs/GameSessionECS";
-import type { Enemy } from "../domain/game/enemies";
+import type { EnemyView as Enemy } from "../domain/game/views";
 import { PlayerInventoryManager } from "../domain/game/inventory/PlayerInventory";
 import { ItemFactory } from "../domain/game/items/ItemFactory";
 import type { Planet } from "../domain/game/planets";
