@@ -66,11 +66,7 @@ export function setSpriteConfig(next: Partial<SpriteConfig>): void {
   if (typeof next.defaultVariant === "string") config.defaultVariant = next.defaultVariant;
   if (next.overrides) config.overrides = { ...next.overrides };
   // Invalidate top-level sprite refs so new theme takes effect immediately
-  shipImg = null;
-  shipImgLoaded = false;
   thrusterImg = null;
-  enemyShipImg = null;
-  enemyShipImgLoaded = false;
   enemyThrusterImg = null;
 }
 
@@ -106,10 +102,6 @@ export function getSpriteUrlForKey(key: string, variant?: SpriteVariant): string
   return spritePath(key);
 }
 
-// Module-level cache for the SVG image and loaded state (legacy helpers)
-let shipImg: HTMLImageElement | null = null;
-let shipImgLoaded = false;
-
 export function drawShipTriangle(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -117,22 +109,12 @@ export function drawShipTriangle(
   angle: number,
   size = 24,
 ): void {
-  if (!shipImg) {
-    const { img, loaded } = getSpriteByKey("ship");
-    shipImg = img;
-    shipImgLoaded = loaded;
-    shipImg.onload = (): void => {
-      shipImgLoaded = true;
-    };
-  }
-  if (shipImgLoaded && shipImg) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.drawImage(shipImg, -size / 2, -size / 2, size, size);
-    ctx.restore();
-  }
-  // No fallback: only draw SVG if loaded
+  const { img } = getSpriteByKey("ship");
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
 }
 
 // Module-level cache for the thruster SVG image
@@ -256,9 +238,7 @@ export function drawThruster(
 
 // No fallback: only draw SVG if loaded
 
-// Module-level cache for enemy ship SVG
-let enemyShipImg: HTMLImageElement | null = null;
-let enemyShipImgLoaded = false;
+// (Enemy ship SVG uses shared cache via getSpriteByKey)
 
 export function drawEnemyShip(
   ctx: CanvasRenderingContext2D,
@@ -267,22 +247,12 @@ export function drawEnemyShip(
   angle: number,
   size = 24,
 ): void {
-  if (!enemyShipImg) {
-    const { img, loaded } = getSpriteByKey("enemy-ship");
-    enemyShipImg = img;
-    enemyShipImgLoaded = loaded;
-    enemyShipImg.onload = (): void => {
-      enemyShipImgLoaded = true;
-    };
-  }
-  if (enemyShipImgLoaded && enemyShipImg) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.drawImage(enemyShipImg, -size / 2, -size / 2, size, size);
-    ctx.restore();
-  }
-  // No fallback: only draw SVG if loaded
+  const { img } = getSpriteByKey("enemy-ship");
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
 }
 
 // Module-level cache for enemy thruster SVG
@@ -397,8 +367,7 @@ type DrawCtx = Pick<
 >;
 
 export function drawProjectile(ctx: DrawCtx, x: number, y: number, angle: number, size = 8): void {
-  const { img, loaded } = getSpriteByKey("projectile");
-  if (!loaded) return;
+  const { img } = getSpriteByKey("projectile");
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
@@ -407,8 +376,7 @@ export function drawProjectile(ctx: DrawCtx, x: number, y: number, angle: number
 }
 
 export function drawCharacter(ctx: DrawCtx, x: number, y: number, angle: number, size = 32): void {
-  const { img, loaded } = getSpriteByKey("character");
-  if (!loaded) return;
+  const { img } = getSpriteByKey("character");
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
@@ -431,8 +399,7 @@ export function drawCreature(
       : type === "neutral"
         ? "creature-neutral"
         : "creature-hostile";
-  const { img, loaded } = getSpriteByKey(key);
-  if (!loaded) return;
+  const { img } = getSpriteByKey(key);
   ctx.save();
   ctx.translate(x, y);
   ctx.drawImage(img, -size / 2, -size / 2, size, size);
@@ -458,8 +425,7 @@ export function drawDroppedItem(
   size = 16,
 ): void {
   const key = `item-${baseType}`;
-  const { img, loaded } = getSpriteByKey(key);
-  if (!loaded) return;
+  const { img } = getSpriteByKey(key);
   ctx.save();
   ctx.translate(x, y);
   ctx.drawImage(img, -size / 2, -size / 2, size, size);
@@ -476,8 +442,7 @@ export function drawTerrain(
   size: number,
 ): void {
   const key = `terrain-${type}`;
-  const { img, loaded } = getSpriteByKey(key);
-  if (!loaded) return;
+  const { img } = getSpriteByKey(key);
   ctx.save();
   ctx.translate(x, y);
   ctx.drawImage(img, -size / 2, -size / 2, size, size);
@@ -494,8 +459,7 @@ export function drawResource(
   size = 20,
 ): void {
   const key = `resource-${type}`;
-  const { img, loaded } = getSpriteByKey(key);
-  if (!loaded) return;
+  const { img } = getSpriteByKey(key);
   ctx.save();
   ctx.translate(x, y);
   ctx.drawImage(img, -size / 2, -size / 2, size, size);

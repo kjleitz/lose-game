@@ -35,6 +35,14 @@ These are the guiding principles for development in this repo. Keep them short, 
 
 - Do not change ESLint rules unless explicitly instructed. Fix code and types to satisfy the existing configuration.
 
+### Mandatory Local Checks
+
+- On every substantive change, run ALL three before handing off or opening a PR:
+  - `npm run typecheck` — no TypeScript errors.
+  - `npm run test` — tests pass (add or update as needed for changes).
+  - `npm run lint` — lints pass without disabling rules.
+- Formatting: if diff is messy, run `npm run format` to align with Prettier, but do not rely on formatting to hide issues; fix root causes first.
+
 > Direct quote for emphasis: "GET RID OF THE LEGACY STUFF. Things SHOULD NOT hang around JUST TO SATISFY TESTS. Tests are there to validate your application. Your application is NOT THERE TO VALIDATE THE TESTS."
 
 ## Style and Naming
