@@ -39,7 +39,8 @@ export interface GameSnapshot {
 
 export type GameEvent =
   | { type: "tick"; snapshot: GameSnapshot }
-  | { type: "notification"; message: string }
+  | { type: "notification"; message: string | null }
+  | { type: "toast"; message: string }
   | { type: "inputChanged"; actions: Action[] }
   | { type: "speedChanged"; value: number }
   | { type: "modeChange"; mode: "space" | "planet" }

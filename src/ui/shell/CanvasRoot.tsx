@@ -33,6 +33,7 @@ export function CanvasRoot(): JSX.Element {
   const { width, height } = size;
   const [paused, setPaused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Array<{ id: number; message: string }>>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [perksOpen, setPerksOpen] = useState(false);
   const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
@@ -68,6 +69,7 @@ export function CanvasRoot(): JSX.Element {
     let unsubNotif: (() => void) | null = null;
     let unsubInput: (() => void) | null = null;
     let unsubSpeed: (() => void) | null = null;
+    let unsubToast: (() => void) | null = null;
 
     void (async (): Promise<void> => {
       const ctrl = await GameApp.create(canvas, { size: { width, height } });
@@ -88,6 +90,14 @@ export function CanvasRoot(): JSX.Element {
       });
       unsubNotif = ctrl.bus.subscribe("notification", (event): void => {
         setNotification(event.message);
+      });
+      unsubToast = ctrl.bus.subscribe("toast", (event): void => {
+        const id = Date.now() + Math.floor(Math.random() * 10000);
+        setToasts((prev) => [...prev, { id, message: event.message }]);
+        // Auto-remove after a short duration
+        window.setTimeout(() => {
+          setToasts((prev) => prev.filter((toast) => toast.id !== id));
+        }, 3000);
       });
       unsubInput = ctrl.bus.subscribe("inputChanged", (event): void => {
         setHudActions(new Set(event.actions));
@@ -116,6 +126,7 @@ export function CanvasRoot(): JSX.Element {
       if (unsubNotif) unsubNotif();
       if (unsubInput) unsubInput();
       if (unsubSpeed) unsubSpeed();
+      if (unsubToast) unsubToast();
       window.removeEventListener("keydown", onEsc);
       controllerRef.current?.dispose();
       controllerRef.current = null;
@@ -156,6 +167,19 @@ export function CanvasRoot(): JSX.Element {
         onItemUse={handleItemUse}
         onItemDrop={handleItemDrop}
       />
+      {/* Toasts overlay (stack) */}
+      {toasts.length > 0 ? (
+        <div className="absolute left-1/2 top-20 -translate-x-1/2 z-30 space-y-2 pointer-events-none">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className="hud-text text-sm bg-hud-bg/80 rounded px-4 py-2 shadow-lg border border-hud-accent/30"
+            >
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      ) : null}
       {paused ? (
         <PauseMenu
           onResume={(): void => {

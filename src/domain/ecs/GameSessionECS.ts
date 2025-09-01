@@ -40,6 +40,7 @@ export class GameSessionECS {
   private pickupEvents: PickupEvent[] = [];
   private levelUpEvents: LevelUpEvent[] = [];
   private perkRequests: PerkUnlockRequest[] = [];
+  private toastEvents: string[] = [];
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -174,8 +175,8 @@ export class GameSessionECS {
     const projectileSystem = createProjectileSystem(this.world, dt);
     const levelUpSystem = createLevelUpSystem(this.world, (ev) => {
       this.levelUpEvents.push(ev);
-      // Set a simple notification; HUD may show a toast separately
-      this.notification = `Level Up! Reached level ${ev.newLevel}`;
+      // Emit as a transient toast instead of hijacking the HUD hint
+      this.toastEvents.push(`Level Up! Reached level ${ev.newLevel}`);
     });
     const perkSystem = createPerkUnlockSystem(
       this.world,
@@ -183,10 +184,9 @@ export class GameSessionECS {
       perkDefinitions,
       (res) => {
         if (res.success) {
-          this.notification = "Perk unlocked!";
+          this.toastEvents.push("Perk unlocked!");
         } else {
-          // Only notify on explicit failures if helpful; keep simple for now
-          // this.notification = `Perk unlock failed: ${res.reason ?? "unknown"}`;
+          // Consider emitting a failure toast in the future with more detail
         }
       },
     );
@@ -415,6 +415,12 @@ export class GameSessionECS {
     return out;
   }
 
+  getAndClearToastEvents(): string[] {
+    const out = [...this.toastEvents];
+    this.toastEvents = [];
+    return out;
+  }
+
   requestUnlockPerk(perkId: PerkId): void {
     const players = this.world.query({ player: Components.Player });
     if (players.length === 0) return;
@@ -464,10 +470,25 @@ export class GameSessionECS {
   }
 
   private updateNotifications(): void {
+    // Planet mode: show exploring hint and only gate takeoff prompt near landing site
     if (this.mode === "planet" && this.landedPlanetId) {
-      this.notification = `Exploring ${this.landedPlanetId} - Press T to takeoff`;
+      const players = this.world.query({
+        position: Components.Position,
+        player: Components.Player,
+      });
+      const surface = this.planetSurface;
+      let nearLanding = false;
+      if (surface && players.length > 0) {
+        const { x, y } = players[0].components.position;
+        const dx = x - surface.landingSite.x;
+        const dy = y - surface.landingSite.y;
+        nearLanding = Math.hypot(dx, dy) <= 64;
+      }
+      this.notification =
+        `Exploring ${this.landedPlanetId}` + (nearLanding ? " - Press T to takeoff" : "");
       return;
     }
+    // Space mode proximity hint to land
     const player = this.getPlayer();
     if (!player) {
       this.notification = null;

@@ -282,11 +282,14 @@ export class GameApp {
         // Bridge picked-up items to HUD inventory
         const picked = session.getAndClearPickupEvents();
         for (const ev of picked) hudInventory.addItem(ev.item, ev.quantity);
+        // Emit HUD hint changes (including clears) and transient toasts
         const current = session.getNotification();
-        if (current && current !== lastNotification) {
+        if (current !== lastNotification) {
           bus.publish({ type: "notification", message: current });
         }
         lastNotification = current;
+        const toasts = session.getAndClearToastEvents();
+        for (const msg of toasts) bus.publish({ type: "toast", message: msg });
         bus.publish({ type: "tick", snapshot: getSnapshot() });
       },
       render: (): void => {

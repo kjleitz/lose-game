@@ -46,7 +46,22 @@ describe("GameSessionECS input integration", () => {
     // Press L to land
     session.update(actionsSet(["land"]), 1 / 60);
     expect(session.getCurrentModeType()).toBe("planet");
-    const landedNote = session.getNotification();
+    let landedNote = session.getNotification();
+    expect(landedNote).toContain("Exploring p_test");
+    // Immediately after landing, player is at landing site; hint appears
+    expect(landedNote).toContain("Press T to takeoff");
+
+    // Move away from the landing site; hint should disappear
+    session.setPlayerPosition({ x: 200, y: 0 });
+    session.update(actionsSet([]), 1 / 60);
+    landedNote = session.getNotification();
+    expect(landedNote).toContain("Exploring p_test");
+    expect(landedNote?.includes("Press T to takeoff")).toBe(false);
+
+    // Move back to the landing site and verify hint appears again
+    session.setPlayerPosition({ x: 0, y: 0 });
+    session.update(actionsSet([]), 1 / 60);
+    landedNote = session.getNotification();
     expect(landedNote).toContain("Exploring p_test");
     expect(landedNote).toContain("Press T to takeoff");
 
