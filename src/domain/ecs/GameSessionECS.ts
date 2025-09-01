@@ -27,6 +27,8 @@ import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainColli
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
 import { createWeaponSystem } from "./systems/WeaponSystem";
+import { createHitFlashSystem } from "./systems/HitFlashSystem";
+import { createMeleeStrikeAnimSystem } from "./systems/MeleeStrikeAnimSystem";
 import { createLevelUpSystem, type LevelUpEvent } from "./systems/LevelUpSystem";
 import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
 import { perkDefinitions } from "../leveling/perksConfig";
@@ -176,7 +178,9 @@ export class GameSessionECS {
     const enemyRangedSystem = createEnemyRangedWeaponSystem(this.world, dt);
     const enemyMeleeSystem = createEnemyMeleeSystem(this.world, dt);
     const movementSystem = createMovementSystem(this.world, dt);
+    const meleeAnimSystem = createMeleeStrikeAnimSystem(this.world, dt);
     const projectileSystem = createProjectileSystem(this.world, dt);
+    const hitFlashSystem = createHitFlashSystem(this.world, dt);
     const levelUpSystem = createLevelUpSystem(this.world, (ev) => {
       this.levelUpEvents.push(ev);
       // Emit as a transient toast instead of hijacking the HUD hint
@@ -219,6 +223,8 @@ export class GameSessionECS {
       blocker.run();
     }
     projectileSystem.run();
+    hitFlashSystem.run();
+    meleeAnimSystem.run();
     collisionSystem.run();
     dropAgingSystem.run();
     pickupSystem.run();
@@ -274,6 +280,7 @@ export class GameSessionECS {
     const { position, velocity, rotation, health, experience } = player.components;
     const ent = new Entity(player.entity, this.world);
     const perk = ent.getComponent(Components.PlayerPerkPoints);
+    const hf = ent.getComponent(Components.HitFlash);
     return {
       x: position.x,
       y: position.y,
@@ -287,6 +294,9 @@ export class GameSessionECS {
       perkPoints: perk ? perk.unspent : 0,
       // expose unlocked perks to HUD/UI
       perks: ent.getComponent(Components.Perks)?.unlocked ?? {},
+      ...(hf && hf.remaining > 0
+        ? { hitFlash: { progress: Math.max(0, Math.min(1, 1 - hf.remaining / hf.duration)) } }
+        : {}),
     };
   }
 
@@ -309,6 +319,9 @@ export class GameSessionECS {
           enemy: enemyData,
           collider,
         } = enemy.components;
+        const ent = new Entity(enemy.entity, this.world);
+        const swing = ent.getComponent(Components.MeleeStrikeAnim);
+        const hf = ent.getComponent(Components.HitFlash);
         return {
           id: enemyData.id,
           x: position.x,
@@ -324,6 +337,19 @@ export class GameSessionECS {
           turnSpeed: 1.8,
           accel: 100,
           maxSpeed: 80,
+          ...(swing && swing.remaining > 0
+            ? {
+                meleeSwing: {
+                  progress: Math.max(0, Math.min(1, 1 - swing.remaining / swing.duration)),
+                  angle: swing.angle,
+                  reach: swing.reach,
+                  arc: swing.arc,
+                },
+              }
+            : {}),
+          ...(hf && hf.remaining > 0
+            ? { hitFlash: { progress: Math.max(0, Math.min(1, 1 - hf.remaining / hf.duration)) } }
+            : {}),
         };
       });
   }
@@ -375,6 +401,7 @@ export class GameSessionECS {
     radius: number;
     vx: number;
     vy: number;
+    faction?: "player" | "enemy" | "neutral";
   }> {
     return this.world
       .query({
@@ -382,9 +409,11 @@ export class GameSessionECS {
         collider: Components.Collider,
         projectile: Components.Projectile,
         velocity: Components.Velocity,
+        // faction is optional
       })
       .map((proj) => {
         const { position, collider, velocity } = proj.components;
+        const ent = new Entity(proj.entity, this.world);
         return {
           id: proj.entity,
           x: position.x,
@@ -392,6 +421,7 @@ export class GameSessionECS {
           radius: collider.radius,
           vx: velocity.dx,
           vy: velocity.dy,
+          faction: ent.getComponent(Components.Faction)?.team,
         };
       });
   }

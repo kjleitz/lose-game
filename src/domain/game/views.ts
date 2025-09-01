@@ -8,6 +8,7 @@ export interface PlayerView extends Kinematics2D {
   xpToNextLevel: number;
   perkPoints: number;
   perks: Record<string, number>;
+  hitFlash?: { progress: number };
 }
 
 export interface EnemyView {
@@ -24,6 +25,8 @@ export interface EnemyView {
   turnSpeed: number; // rad/s
   accel: number; // units/s^2
   maxSpeed: number; // units/s
+  meleeSwing?: { progress: number; angle: number; reach: number; arc: number };
+  hitFlash?: { progress: number };
 }
 export type PlanetView = Planet;
 export type ProjectileView = Circle2D;

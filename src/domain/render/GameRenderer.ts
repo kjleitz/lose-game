@@ -3,7 +3,7 @@ import type { Planet } from "../../domain/game/planets";
 import type { Biome } from "../../shared/types/Biome";
 import type { Circle2D, Kinematics2D, ViewSize } from "../../shared/types/geometry";
 import { createSeededRng, hashStringToInt } from "../../shared/utils";
-import type { EnemyView as Enemy } from "../game/views";
+import type { EnemyView as Enemy, PlayerView } from "../game/views";
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Camera } from "./camera";
@@ -27,6 +27,7 @@ interface MinimalGameSession {
   getProjectiles?: () => Array<Circle2D>;
   getDroppedItems?: () => DroppedItem[];
   getEnemies?: () => Enemy[];
+  getPlayer?: () => PlayerView | null;
   // Optional: richer projectile info for space lasers
   getProjectilesDetailed?: () => Array<{
     id: number;
@@ -35,6 +36,7 @@ interface MinimalGameSession {
     radius: number;
     vx: number;
     vy: number;
+    faction?: "player" | "enemy" | "neutral";
   }>;
 }
 
@@ -129,6 +131,25 @@ export class GameRenderer {
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
 
+    // Player hit flash overlay (space)
+    if (gameSession && typeof gameSession.getPlayer === "function") {
+      const pv = gameSession.getPlayer();
+      const hit = pv?.hitFlash;
+      if (hit) {
+        const alpha = Math.max(0, 0.9 * (1 - hit.progress));
+        if (alpha > 0.02) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = "#ffe97a";
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, 36, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
     // Draw projectiles as bright red lasers with a short trail in space
     const now = Date.now();
     const detailed =
@@ -170,7 +191,7 @@ export class GameRenderer {
           ctx.restore();
         }
 
-        // Laser core: short oriented capsule in direction of motion
+        // Laser core: short oriented capsule in direction of motion, colored by faction
         const speed = Math.hypot(proj.vx, proj.vy) || 1;
         const dirX = proj.vx / speed;
         const dirY = proj.vy / speed;
@@ -181,7 +202,9 @@ export class GameRenderer {
         // Slight additive look
         const prevOp = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = "lighter";
-        ctx.strokeStyle = "#ff3b3b";
+        const color =
+          proj.faction === "player" ? "#ffcf3b" : proj.faction === "enemy" ? "#ff3b3b" : "#ffffff";
+        ctx.strokeStyle = color;
         ctx.lineWidth = Math.max(3, proj.radius * 2.2);
         ctx.lineCap = "round";
         ctx.beginPath();
@@ -266,6 +289,25 @@ export class GameRenderer {
       creatureRenderer.render(ctx, enemies);
     }
     characterRenderer.render(ctx, player, actions, 32);
+
+    // Player hit flash overlay (planet)
+    if (gameSession && typeof gameSession.getPlayer === "function") {
+      const pv = gameSession.getPlayer();
+      const hit = pv?.hitFlash;
+      if (hit) {
+        const alpha = Math.max(0, 0.9 * (1 - hit.progress));
+        if (alpha > 0.02) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = "#ffe97a";
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, 26, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
 
     // Above-ground parallax: clouds and birds
     if (surface) {

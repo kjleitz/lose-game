@@ -11,7 +11,7 @@ import {
   Position,
   Projectile,
 } from "../components";
-import { Faction } from "../components";
+import { Faction, HitFlash } from "../components";
 import type { DropEntry, DropTable as DropTableType } from "../../game/damage/DamageableEntity";
 import type { Item } from "../../game/items/Item";
 import { BaseItemType, ItemQuality, ItemRarity } from "../../game/items/Item";
@@ -67,6 +67,13 @@ export function createCollisionSystem(world: World): System {
       if (distance < combinedRadius) {
         // Hit!
         targetHealth.current -= projDamage.amount;
+        // Hit flash on target
+        const flashDur = 0.12;
+        world.addComponentToEntity(
+          target.entity,
+          HitFlash,
+          HitFlash.create({ remaining: flashDur, duration: flashDur }),
+        );
 
         if (targetHealth.current <= 0) {
           // Spawn drops if entity has a drop table

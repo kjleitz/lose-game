@@ -27,6 +27,22 @@ export class EnemyRenderer {
       // Draw the enemy ship
       drawEnemyShip(ctx, enemy.x, enemy.y, enemy.angle, shipSize);
 
+      // Hit flash overlay
+      if (enemy.hitFlash) {
+        const progress = enemy.hitFlash.progress;
+        const alpha = Math.max(0, 0.8 * (1 - progress));
+        if (alpha > 0.02) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = Math.max(2, shipSize * 0.08);
+          ctx.beginPath();
+          ctx.arc(enemy.x, enemy.y, shipSize * 0.55, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
       // Optional: Health indicator for damaged enemies
       if (enemy.health <= 10) {
         ctx.save();

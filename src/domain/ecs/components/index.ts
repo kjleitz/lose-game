@@ -129,6 +129,15 @@ export const MeleeWeapon = defineComponent<{
   range: number; // effective strike distance (center-to-center)
 }>();
 
+// Transient: visual swipe for melee strikes
+export const MeleeStrikeAnim = defineComponent<{
+  remaining: number; // seconds remaining for animation
+  duration: number; // total seconds
+  angle: number; // center angle of swipe
+  reach: number; // visual reach (includes collider + weapon)
+  arc: number; // radians of arc sweep
+}>();
+
 // Looting and drops
 export const LootDropTable = defineComponent<DropTable>();
 export const DroppedItem = defineComponent<{
@@ -136,4 +145,10 @@ export const DroppedItem = defineComponent<{
   quantity: number;
   ageSeconds: number;
   sourceEntity?: string;
+}>();
+
+// Transient hit flash on damage
+export const HitFlash = defineComponent<{
+  remaining: number;
+  duration: number;
 }>();

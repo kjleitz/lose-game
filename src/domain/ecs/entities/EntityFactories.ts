@@ -210,19 +210,19 @@ export function createBasicEnemy(world: World, id: string, x: number, y: number)
     .addComponent(Components.Sprite, { color: "#ff0000", scale: 1.0 })
     .addComponent(Components.Faction, { team: "enemy" })
     .addComponent(Components.RangedWeapon, {
-      cooldown: 1.0,
+      cooldown: 0.9,
       remaining: 0,
-      projectileSpeed: 500,
+      projectileSpeed: 520,
       spread: 0.12,
-      damage: 10,
-      range: 500,
+      damage: 12,
+      range: 520,
       color: "#ff5555",
     })
     .addComponent(Components.MeleeWeapon, {
-      cooldown: 1.0,
+      cooldown: 0.7,
       remaining: 0,
-      damage: 6,
-      range: 26,
+      damage: 10,
+      range: 28,
     })
     .addComponent(Components.LootDropTable, {
       guaranteed: [
