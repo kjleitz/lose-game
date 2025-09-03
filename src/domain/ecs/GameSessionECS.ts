@@ -188,7 +188,7 @@ export class GameSessionECS {
         this.inPlanetShipAnim = 0;
       }
     } else if (this.mode === "planet") {
-      // Toggling ship entry/exit at the landing site via interact
+      // Enter/exit ship with C: exit anywhere; enter only near the grounded ship
       if (actions.has("interact") && this.interactCooldown <= 0) {
         const surface = this.planetSurface;
         const players = this.world.query({
@@ -197,34 +197,31 @@ export class GameSessionECS {
         });
         if (surface && players.length > 0) {
           const { x, y } = players[0].components.position;
-          const dx = x - surface.landingSite.x;
-          const dy = y - surface.landingSite.y;
-          const nearLanding = Math.hypot(dx, dy) <= 64;
-          if (nearLanding) {
-            this.inPlanetShip = !this.inPlanetShip;
-            // Debounce to avoid rapid toggling while key held
+          if (this.inPlanetShip) {
+            // Exit ship anywhere: drop ship at current player position
+            surface.landingSite = { x, y };
+            this.inPlanetShip = false;
             this.interactCooldown = 0.25;
-            // Reset/advance animation on enter
-            if (this.inPlanetShip) this.inPlanetShipAnim = 0;
+          } else {
+            // Enter ship only when near grounded ship
+            const dx = x - surface.landingSite.x;
+            const dy = y - surface.landingSite.y;
+            const nearLanding = Math.hypot(dx, dy) <= 64;
+            if (nearLanding) {
+              this.inPlanetShip = true;
+              this.inPlanetShipAnim = 0;
+              this.interactCooldown = 0.25;
+            }
           }
         }
       }
       if (actions.has("takeoff")) {
-        // Require proximity to landing site
-        const surface = this.planetSurface;
+        // Takeoff requires being in the ship, but not proximity to landing site
         const players = this.world.query({
           position: Components.Position,
           player: Components.Player,
         });
-        let nearLanding = false;
-        if (surface && players.length > 0) {
-          const { x, y } = players[0].components.position;
-          const dx = x - surface.landingSite.x;
-          const dy = y - surface.landingSite.y;
-          nearLanding = Math.hypot(dx, dy) <= 64;
-        }
-
-        if (nearLanding) {
+        if (this.inPlanetShip) {
           // Return to stored position if available
           if (this.returnPosition && players.length > 0) {
             const { position } = players[0].components;
@@ -610,7 +607,7 @@ export class GameSessionECS {
   }
 
   private updateNotifications(): void {
-    // Planet mode: show exploring hint and only gate takeoff prompt near landing site
+    // Planet mode: show exploring hint; exit ship anywhere; enter/takeoff near ship
     if (this.mode === "planet" && this.landedPlanetId) {
       const players = this.world.query({
         position: Components.Position,
@@ -625,9 +622,11 @@ export class GameSessionECS {
         nearLanding = Math.hypot(dx, dy) <= 64;
       }
       const hints: string[] = [];
-      if (nearLanding) {
-        hints.push(this.inPlanetShip ? "Press C to exit ship" : "Press C to enter ship");
+      if (this.inPlanetShip) {
+        hints.push("Press C to exit ship");
         hints.push("Press T to takeoff");
+      } else if (nearLanding) {
+        hints.push("Press C to enter ship");
       }
       this.notification =
         `Exploring ${this.landedPlanetId}` + (hints.length ? ` - ${hints.join(" | ")}` : "");

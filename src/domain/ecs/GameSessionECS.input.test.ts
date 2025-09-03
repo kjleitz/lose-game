@@ -51,21 +51,14 @@ describe("GameSessionECS input integration", () => {
     // Immediately after landing, player is at landing site; hint appears
     expect(landedNote).toContain("Press T to takeoff");
 
-    // Move away from the landing site; hint should disappear
+    // Move away from the landing site; hint should remain (can takeoff anywhere while in ship)
     session.setPlayerPosition({ x: 200, y: 0 });
-    session.update(actionsSet([]), 1 / 60);
-    landedNote = session.getNotification();
-    expect(landedNote).toContain("Exploring p_test");
-    expect(landedNote?.includes("Press T to takeoff")).toBe(false);
-
-    // Move back to the landing site and verify hint appears again
-    session.setPlayerPosition({ x: 0, y: 0 });
     session.update(actionsSet([]), 1 / 60);
     landedNote = session.getNotification();
     expect(landedNote).toContain("Exploring p_test");
     expect(landedNote).toContain("Press T to takeoff");
 
-    // And pressing T takes off back to space
+    // And pressing T takes off back to space even when far from the ship
     session.update(actionsSet(["takeoff"]), 1 / 60);
     expect(session.getCurrentModeType()).toBe("space");
   });
