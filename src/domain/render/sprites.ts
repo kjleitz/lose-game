@@ -138,7 +138,7 @@ interface EnemyTrailPoint {
 }
 const playerThrusterTrail: PlayerTrailPoint[] = [];
 const enemyThrusterTrails = new Map<string, EnemyTrailPoint[]>();
-const TRAIL_LIFETIME = 400; // milliseconds
+const TRAIL_LIFETIME = 180; // milliseconds (shorter for quicker fade)
 const TRAIL_MAX_POINTS = 40; // Maximum trail points to keep
 
 export function drawThruster(
@@ -198,15 +198,25 @@ export function drawThruster(
 
     for (let i = playerThrusterTrail.length - 1; i >= 0; i--) {
       const point = playerThrusterTrail[i];
-      const age = Math.min(1, (now - point.timestamp) / TRAIL_LIFETIME);
-      const alpha = Math.max(0, 0.6 * (1 - age));
+      const ageMs = now - point.timestamp;
+      const age = Math.min(1, ageMs / TRAIL_LIFETIME);
+      // Faster fade: quadratic falloff and slightly lower cap
+      const alpha = Math.max(0, 0.55 * (1 - age) * (1 - age));
       if (alpha <= 0.01) continue;
       const falloff = 0.6 + 0.4 * (1 - age); // taper older stamps
       const stampScale = point.scale * 0.6 * falloff;
 
+      // Propel exhaust backward relative to ship facing at emission time.
+      // Use a per-point speed that scales with thruster power for visual punch.
+      const ageSec = ageMs / 1000;
+      const exhaustSpeedPerSec = size * (2.5 + 3.5 * point.power); // px/s
+      const drift = exhaustSpeedPerSec * ageSec;
+      const driftX = Math.cos(point.angle) * drift;
+      const driftY = Math.sin(point.angle) * drift;
+
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.translate(point.x, point.y);
+      ctx.translate(point.x - driftX, point.y - driftY);
       ctx.rotate(point.angle);
       ctx.drawImage(
         thrusterImg,
@@ -312,9 +322,20 @@ export function drawEnemyThruster(
     ctx.save();
 
     // Create gradient along the trail path
-    const firstPoint = trail[trail.length - 1];
-    const lastPoint = trail[0];
-    const gradient = ctx.createLinearGradient(firstPoint.x, firstPoint.y, lastPoint.x, lastPoint.y);
+    const youngest = trail[trail.length - 1];
+    const oldest = trail[0];
+    const youngestAgeMs = now - youngest.timestamp;
+    const oldestAgeMs = now - oldest.timestamp;
+    const youngestAgeSec = youngestAgeMs / 1000;
+    const oldestAgeSec = oldestAgeMs / 1000;
+    // Enemy exhaust drift speed scales mildly with power; keep it slightly lower than player for readability
+    const youngDrift = size * (2.0 + 2.5 * youngest.power) * youngestAgeSec;
+    const oldDrift = size * (2.0 + 2.5 * oldest.power) * oldestAgeSec;
+    const youngX = youngest.x - Math.cos(youngest.angle) * youngDrift;
+    const youngY = youngest.y - Math.sin(youngest.angle) * youngDrift;
+    const oldX = oldest.x - Math.cos(oldest.angle) * oldDrift;
+    const oldY = oldest.y - Math.sin(oldest.angle) * oldDrift;
+    const gradient = ctx.createLinearGradient(youngX, youngY, oldX, oldY);
     gradient.addColorStop(0, "rgba(255, 155, 0, 0.5)"); // Lower starting opacity
     gradient.addColorStop(0.3, "rgba(255, 100, 50, 0.6)"); // Orange-red
     gradient.addColorStop(0.6, "rgba(196, 69, 54, 0.3)"); // Red
@@ -329,10 +350,15 @@ export function drawEnemyThruster(
     ctx.beginPath();
     for (let i = trail.length - 1; i >= 0; i--) {
       const point = trail[i];
+      const ageMs = now - point.timestamp;
+      const ageSec = ageMs / 1000;
+      const drift = size * (2.0 + 2.5 * point.power) * ageSec;
+      const px = point.x - Math.cos(point.angle) * drift;
+      const py = point.y - Math.sin(point.angle) * drift;
       if (i === trail.length - 1) {
-        ctx.moveTo(point.x, point.y);
+        ctx.moveTo(px, py);
       } else {
-        ctx.lineTo(point.x, point.y);
+        ctx.lineTo(px, py);
       }
     }
     ctx.stroke();
