@@ -5,7 +5,11 @@ import { getVisualConfig } from "./VisualConfig";
 import type { PlanetSurface } from "../game/planet-surface/types";
 
 export class PlanetSurfaceRenderer {
-  render(ctx: CanvasRenderingContext2D, surface: PlanetSurface | undefined): void {
+  render(
+    ctx: CanvasRenderingContext2D,
+    surface: PlanetSurface | undefined,
+    options?: { showLandedShip?: boolean },
+  ): void {
     if (!surface) return;
     const biome: Biome = surface.biome ?? "fields";
     // Draw ground as a world-space repeating texture so it does not stick to the screen
@@ -16,8 +20,10 @@ export class PlanetSurfaceRenderer {
       this.renderWaterBodies(ctx, surface.waterBodies, biome);
     }
 
-    // Draw landed ship sprite at the landing site
-    drawShipTriangle(ctx, surface.landingSite.x, surface.landingSite.y, 0, 64);
+    // Draw landed ship sprite at the landing site unless hidden (when player is flying it)
+    if (options?.showLandedShip !== false) {
+      drawShipTriangle(ctx, surface.landingSite.x, surface.landingSite.y, 0, 64);
+    }
 
     // Draw terrain features
     this.renderTerrainFeatures(ctx, surface.terrain);

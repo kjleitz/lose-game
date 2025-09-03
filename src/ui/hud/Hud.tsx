@@ -1,15 +1,15 @@
 import type { JSX } from "react";
 
+import type { Action } from "../../application/input/ActionTypes";
 import type { PlayerInventory } from "../../domain/game/inventory/PlayerInventory";
 import type { Item } from "../../domain/game/items/Item";
 import type { Planet } from "../../domain/game/planets";
-import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D } from "../../shared/types/geometry";
+import { ControlsPanel } from "./panels/ControlsPanel";
 import { InventoryPanel } from "./panels/InventoryPanel";
+import { StatusPanel } from "./panels/StatusPanel";
 import { Notification } from "./widgets/Notification";
 import { Radar } from "./widgets/Radar";
-import { ControlsPanel } from "./panels/ControlsPanel";
-import { StatusPanel } from "./panels/StatusPanel";
 
 interface HudProps {
   player: Point2D;

@@ -28,6 +28,9 @@ interface MinimalGameSession {
   getDroppedItems?: () => DroppedItem[];
   getEnemies?: () => Enemy[];
   getPlayer?: () => PlayerView | null;
+  // Planet-mode ship state (optional)
+  isInPlanetShip?: () => boolean;
+  getInPlanetShipProgress?: () => number;
   // Optional: richer projectile info for space lasers
   getProjectilesDetailed?: () => Array<{
     id: number;
@@ -261,7 +264,13 @@ export class GameRenderer {
     ctx.setTransform(m11P, m12P, m21P, m22P, dxP, dyP);
 
     // Render planet surface (must be provided by mode or session)
-    planetSurfaceRenderer.render(ctx, surface);
+    // Hide the landed ship sprite when the player is currently flying it
+    const inPlanetShip = Boolean(
+      gameSession &&
+        typeof gameSession.isInPlanetShip === "function" &&
+        gameSession.isInPlanetShip(),
+    );
+    planetSurfaceRenderer.render(ctx, surface, { showLandedShip: !inPlanetShip });
 
     // Beneath-water parallax (archipelago-only), subtle and below entities
     if (surface && surface.biome === "archipelago") {
@@ -281,14 +290,52 @@ export class GameRenderer {
       }
     }
 
-    // Draw character and enemies
+    // Draw character/ship and enemies
     const characterRenderer = new CharacterRenderer();
     const creatureRenderer = new CreatureRenderer();
     if (gameSession && typeof gameSession.getEnemies === "function") {
       const enemies = gameSession.getEnemies();
       creatureRenderer.render(ctx, enemies);
     }
-    characterRenderer.render(ctx, player, actions, 32);
+    if (inPlanetShip) {
+      // Draw a soft shadow under the ship (consistent southward offset)
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      // Elliptical shadow smaller than the ship
+      const shipSize = 56;
+      // If session exposes an animation progress, use it for a takeoff feel
+      let progress = 1;
+      if (gameSession && typeof gameSession.getInPlanetShipProgress === "function") {
+        progress = gameSession.getInPlanetShipProgress();
+      }
+      const clamped = Math.max(0, Math.min(1, progress));
+      // Make shadow slightly smaller as the ship "lifts"
+      const heightFactor = Math.max(0.55, 0.92 - 0.32 * clamped);
+      const shadowWidth = shipSize * 0.62 * heightFactor;
+      const shadowHeight = shipSize * 0.24 * heightFactor;
+      // Consistent offset: about 1x the rendered ship width, southward (positive Y)
+      const sizeBoost = 1 + 0.4 * clamped;
+      const renderSize = shipSize * sizeBoost;
+      const offsetX = player.x;
+      const offsetY = player.y + renderSize * 0.5;
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      // Keep ellipse orientation tied to ship angle for readability
+      ctx.rotate(player.angle);
+      ctx.ellipse(0, 0, shadowWidth, shadowHeight, 0, 0, Math.PI * 2);
+      ctx.restore();
+      ctx.fill();
+      ctx.restore();
+
+      // Draw the ship sprite with thruster feedback
+      const shipRenderer = new ShipRenderer();
+      // Enlarge ship more on planet to sell the lift-off perspective
+      shipRenderer.render(ctx, player, actions, shipSize * sizeBoost);
+    } else {
+      characterRenderer.render(ctx, player, actions, 32);
+    }
 
     // Player hit flash overlay (planet)
     if (gameSession && typeof gameSession.getPlayer === "function") {

@@ -1,14 +1,15 @@
-import type { Action } from "../../engine";
-import { type EntityBuilder, World, Entity } from "../../lib/ecs";
+import type { Action } from "../../application/input";
+import { Entity, type EntityBuilder, World } from "../../lib/ecs";
 import type { Circle2D, ViewSize } from "../../shared/types/geometry";
-import type { EnemyView as Enemy } from "../game/views";
 import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
 import type { Item } from "../game/items/Item";
 import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Planet } from "../game/planets";
 import type { Player } from "../game/player";
-import type { EntityCounts, PlayerView } from "../game/views";
+import type { EnemyView as Enemy, EntityCounts, PlayerView } from "../game/views";
+import { perkDefinitions } from "../leveling/perksConfig";
+import type { PerkId } from "../leveling/types";
 import type { Camera } from "../render/camera";
 import * as Components from "./components";
 import * as EntityFactories from "./entities/EntityFactories";
@@ -19,21 +20,19 @@ import {
   type PickupEvent,
 } from "./systems/DroppedItemSystem";
 import { createEnemyAISystem } from "./systems/EnemyAISystem";
-import { createEnemyRangedWeaponSystem } from "./systems/EnemyRangedWeaponSystem";
 import { createEnemyMeleeSystem } from "./systems/EnemyMeleeSystem";
+import { createEnemyRangedWeaponSystem } from "./systems/EnemyRangedWeaponSystem";
+import { createHitFlashSystem } from "./systems/HitFlashSystem";
+import { createLevelUpSystem, type LevelUpEvent } from "./systems/LevelUpSystem";
+import { createMeleeStrikeAnimSystem } from "./systems/MeleeStrikeAnimSystem";
 import { createMovementSystem } from "./systems/MovementSystem";
 import { createPerkEffectsSystem } from "./systems/PerkEffectsSystem";
+import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
 import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
-import { createWeaponSystem } from "./systems/WeaponSystem";
-import { createHitFlashSystem } from "./systems/HitFlashSystem";
-import { createMeleeStrikeAnimSystem } from "./systems/MeleeStrikeAnimSystem";
 import { createSfxEventCollectorSystem, type SfxEvent } from "./systems/SfxEventCollectorSystem";
-import { createLevelUpSystem, type LevelUpEvent } from "./systems/LevelUpSystem";
-import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
-import { perkDefinitions } from "../leveling/perksConfig";
-import type { PerkId } from "../leveling/types";
+import { createWeaponSystem } from "./systems/WeaponSystem";
 
 export class GameSessionECS {
   private world = new World();
@@ -42,11 +41,15 @@ export class GameSessionECS {
   private returnPosition: { x: number; y: number } | null = null;
   private landedPlanetId: string | null = null;
   private planetSurface: PlanetSurface | undefined;
+  // When on a planet, allow entering the ship and flying above terrain
+  private inPlanetShip: boolean = false;
   private pickupEvents: PickupEvent[] = [];
   private levelUpEvents: LevelUpEvent[] = [];
   private perkRequests: PerkUnlockRequest[] = [];
   private toastEvents: string[] = [];
   private sfxEvents: SfxEvent[] = [];
+  private interactCooldown: number = 0; // seconds until next interact toggle allowed
+  private inPlanetShipAnim: number = 0; // 0..1 takeoff animation progress
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -127,6 +130,14 @@ export class GameSessionECS {
   }
 
   update(actions: Set<Action>, dt: number): void {
+    // Update timers
+    if (this.interactCooldown > 0) this.interactCooldown = Math.max(0, this.interactCooldown - dt);
+    if (this.inPlanetShip) {
+      if (this.inPlanetShipAnim < 1)
+        this.inPlanetShipAnim = Math.min(1, this.inPlanetShipAnim + dt / 0.35);
+    } else {
+      this.inPlanetShipAnim = 0;
+    }
     // Handle landing/takeoff based on proximity and actions
     if (this.mode === "space") {
       const nearbyPlanetId = this.findNearbyPlanetId();
@@ -137,12 +148,67 @@ export class GameSessionECS {
         this.mode = "planet";
         this.landedPlanetId = nearbyPlanetId;
         const planet = this.getPlanets().find((pl) => pl.id === nearbyPlanetId);
-        if (planet)
-          this.planetSurface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
+        if (planet) {
+          // Generate a surface and align its content around the chosen landing point
+          const surface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
+          // Desired landing is the player's current world position carried into planet mode
+          const players = this.world.query({
+            position: Components.Position,
+            player: Components.Player,
+          });
+          const desired = players.length > 0 ? players[0].components.position : { x: 0, y: 0 };
+          const dx = desired.x - surface.landingSite.x;
+          const dy = desired.y - surface.landingSite.y;
+          // Translate content so it surrounds the landing point
+          for (const terrainFeature of surface.terrain) {
+            terrainFeature.x += dx;
+            terrainFeature.y += dy;
+          }
+          for (const resource of surface.resources) {
+            resource.x += dx;
+            resource.y += dy;
+          }
+          if (surface.waterBodies) {
+            for (const water of surface.waterBodies) {
+              water.x += dx;
+              water.y += dy;
+            }
+          }
+          for (const creature of surface.creatures) {
+            creature.x += dx;
+            creature.y += dy;
+          }
+          surface.landingSite = { x: desired.x, y: desired.y };
+          this.planetSurface = surface;
+        }
         // Spawn a few creatures near landing for planet mode
         this.spawnPlanetCreatures();
+        // Start in ship-on-planet state upon landing
+        this.inPlanetShip = true;
+        this.inPlanetShipAnim = 0;
       }
     } else if (this.mode === "planet") {
+      // Toggling ship entry/exit at the landing site via interact
+      if (actions.has("interact") && this.interactCooldown <= 0) {
+        const surface = this.planetSurface;
+        const players = this.world.query({
+          position: Components.Position,
+          player: Components.Player,
+        });
+        if (surface && players.length > 0) {
+          const { x, y } = players[0].components.position;
+          const dx = x - surface.landingSite.x;
+          const dy = y - surface.landingSite.y;
+          const nearLanding = Math.hypot(dx, dy) <= 64;
+          if (nearLanding) {
+            this.inPlanetShip = !this.inPlanetShip;
+            // Debounce to avoid rapid toggling while key held
+            this.interactCooldown = 0.25;
+            // Reset/advance animation on enter
+            if (this.inPlanetShip) this.inPlanetShipAnim = 0;
+          }
+        }
+      }
       if (actions.has("takeoff")) {
         // Require proximity to landing site
         const surface = this.planetSurface;
@@ -168,13 +234,25 @@ export class GameSessionECS {
           this.mode = "space";
           this.landedPlanetId = null;
           this.planetSurface = undefined;
+          this.inPlanetShip = false;
         }
       }
     }
 
     // Create and run systems in order
     const perkEffectsSystem = createPerkEffectsSystem(this.world);
-    const playerControlSystem = createPlayerControlSystem(this.world, actions, dt, this.mode);
+    // In planet mode, use ship-style controls if the player is flying the ship
+    const controlMode: "space" | "planet" =
+      this.mode === "planet" && this.inPlanetShip ? "space" : this.mode;
+    const playerControlSystem = createPlayerControlSystem(
+      this.world,
+      actions,
+      dt,
+      controlMode,
+      this.mode === "planet" && this.inPlanetShip
+        ? { spaceAccelMult: 2.5, spaceMaxSpeedMult: 3.0, spaceTurnMult: 1.5 }
+        : undefined,
+    );
     const weaponSystem = createWeaponSystem(this.world, actions);
     const enemyAISystem = createEnemyAISystem(this.world, dt);
     const enemyRangedSystem = createEnemyRangedWeaponSystem(this.world, dt);
@@ -223,7 +301,7 @@ export class GameSessionECS {
     }
     movementSystem.run();
     // Planet terrain blocking after movement
-    if (this.mode === "planet") {
+    if (this.mode === "planet" && !this.inPlanetShip) {
       const blocker = createPlanetTerrainCollisionSystem(this.world, () => this.planetSurface);
       blocker.run();
     }
@@ -497,6 +575,16 @@ export class GameSessionECS {
     return this.notification;
   }
 
+  // Planet-mode ship state (for renderer/UI)
+  isInPlanetShip(): boolean {
+    return this.mode === "planet" && this.inPlanetShip;
+  }
+
+  // Expose ship enter animation progress (0..1) for renderer
+  getInPlanetShipProgress(): number {
+    return this.inPlanetShip ? this.inPlanetShipAnim : 0;
+  }
+
   setNotification(message: string | null): void {
     this.notification = message;
   }
@@ -536,8 +624,13 @@ export class GameSessionECS {
         const dy = y - surface.landingSite.y;
         nearLanding = Math.hypot(dx, dy) <= 64;
       }
+      const hints: string[] = [];
+      if (nearLanding) {
+        hints.push(this.inPlanetShip ? "Press C to exit ship" : "Press C to enter ship");
+        hints.push("Press T to takeoff");
+      }
       this.notification =
-        `Exploring ${this.landedPlanetId}` + (nearLanding ? " - Press T to takeoff" : "");
+        `Exploring ${this.landedPlanetId}` + (hints.length ? ` - ${hints.join(" | ")}` : "");
       return;
     }
     // Space mode proximity hint to land

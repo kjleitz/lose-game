@@ -15,6 +15,12 @@ export function createPlayerControlSystem(
   actions: Set<Action>,
   dt: number,
   mode: "space" | "planet" = "space",
+  options?: {
+    // Multipliers applied in space mode (used for on-planet ship boost)
+    spaceAccelMult?: number;
+    spaceMaxSpeedMult?: number;
+    spaceTurnMult?: number;
+  },
 ): System {
   const BASE_ACCELERATION = 200;
   const BASE_MAX_SPEED = 150;
@@ -58,18 +64,22 @@ export function createPlayerControlSystem(
         } else {
           // Space (ship) controls
           if (actions.has("turnLeft")) {
-            const turn = BASE_TURN_SPEED * (mods?.turnSpeedMult ?? 1);
+            const turnBoost = options?.spaceTurnMult ?? 1;
+            const turn = BASE_TURN_SPEED * turnBoost * (mods?.turnSpeedMult ?? 1);
             rotation.angle -= turn * dt;
           }
           if (actions.has("turnRight")) {
-            const turn = BASE_TURN_SPEED * (mods?.turnSpeedMult ?? 1);
+            const turnBoost = options?.spaceTurnMult ?? 1;
+            const turn = BASE_TURN_SPEED * turnBoost * (mods?.turnSpeedMult ?? 1);
             rotation.angle += turn * dt;
           }
 
           if (actions.has("thrust")) {
             const boost = actions.has("boost") ? 1.75 : 1;
-            const ACCELERATION = BASE_ACCELERATION * boost * (mods?.accelMult ?? 1);
-            const MAX_SPEED = BASE_MAX_SPEED * boost * (mods?.maxSpeedMult ?? 1);
+            const accelBoost = options?.spaceAccelMult ?? 1;
+            const maxBoost = options?.spaceMaxSpeedMult ?? 1;
+            const ACCELERATION = BASE_ACCELERATION * boost * accelBoost * (mods?.accelMult ?? 1);
+            const MAX_SPEED = BASE_MAX_SPEED * boost * maxBoost * (mods?.maxSpeedMult ?? 1);
             const thrustX = Math.cos(rotation.angle) * ACCELERATION * dt;
             const thrustY = Math.sin(rotation.angle) * ACCELERATION * dt;
 
