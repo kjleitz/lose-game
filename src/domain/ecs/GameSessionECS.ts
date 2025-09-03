@@ -38,7 +38,7 @@ export class GameSessionECS {
   private world = new World();
   private playerEntityId: number | null = null;
   private mode: "space" | "planet" = "space";
-  private returnPosition: { x: number; y: number } | null = null;
+  // Coordinate spaces are distinct per mode; we map the active one into Position
   private landedPlanetId: string | null = null;
   private planetSurface: PlanetSurface | undefined;
   // When on a planet, allow entering the ship and flying above terrain
@@ -77,6 +77,7 @@ export class GameSessionECS {
     // Create a basic game setup for testing
     const playerEntity = EntityFactories.createBasicPlayer(this.world, 0, 0);
     this.playerEntityId = this.getEntityId(playerEntity);
+    // Position starts in space coordinates
 
     // Create some enemies
     EntityFactories.createBasicEnemy(this.world, "enemy_1", 200, 100);
@@ -103,6 +104,8 @@ export class GameSessionECS {
       const playerEntity = EntityFactories.createBasicPlayer(this.world, 0, 0);
       this.playerEntityId = this.getEntityId(playerEntity);
     }
+
+    // Position starts in space coordinates
 
     // Create planets (fall back to defaults when none provided)
     if (config.planets && config.planets.length > 0) {
@@ -142,43 +145,29 @@ export class GameSessionECS {
     if (this.mode === "space") {
       const nearbyPlanetId = this.findNearbyPlanetId();
       if (nearbyPlanetId && actions.has("land")) {
-        // Store return position (player's current pos)
-        const playerView = this.getPlayer();
-        if (playerView) this.returnPosition = { x: playerView.x, y: playerView.y };
+        // Enter planet mode
         this.mode = "planet";
         this.landedPlanetId = nearbyPlanetId;
         const planet = this.getPlanets().find((pl) => pl.id === nearbyPlanetId);
         if (planet) {
-          // Generate a surface and align its content around the chosen landing point
+          // Generate a surface (planet-local coordinates)
           const surface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
-          // Desired landing is the player's current world position carried into planet mode
+          // On entering planet mode, place player at the landing site (planet-local)
           const players = this.world.query({
             position: Components.Position,
+            velocity: Components.Velocity,
+            rotation: Components.Rotation,
             player: Components.Player,
           });
-          const desired = players.length > 0 ? players[0].components.position : { x: 0, y: 0 };
-          const dx = desired.x - surface.landingSite.x;
-          const dy = desired.y - surface.landingSite.y;
-          // Translate content so it surrounds the landing point
-          for (const terrainFeature of surface.terrain) {
-            terrainFeature.x += dx;
-            terrainFeature.y += dy;
+          if (players.length > 0) {
+            const { position, velocity, rotation } = players[0].components;
+            // Enter planet at landing site with zeroed motion
+            position.x = surface.landingSite.x;
+            position.y = surface.landingSite.y;
+            velocity.dx = 0;
+            velocity.dy = 0;
+            rotation.angle = 0;
           }
-          for (const resource of surface.resources) {
-            resource.x += dx;
-            resource.y += dy;
-          }
-          if (surface.waterBodies) {
-            for (const water of surface.waterBodies) {
-              water.x += dx;
-              water.y += dy;
-            }
-          }
-          for (const creature of surface.creatures) {
-            creature.x += dx;
-            creature.y += dy;
-          }
-          surface.landingSite = { x: desired.x, y: desired.y };
           this.planetSurface = surface;
         }
         // Spawn a few creatures near landing for planet mode
@@ -193,6 +182,8 @@ export class GameSessionECS {
         const surface = this.planetSurface;
         const players = this.world.query({
           position: Components.Position,
+          velocity: Components.Velocity,
+          rotation: Components.Rotation,
           player: Components.Player,
         });
         if (surface && players.length > 0) {
@@ -219,14 +210,27 @@ export class GameSessionECS {
         // Takeoff requires being in the ship, but not proximity to landing site
         const players = this.world.query({
           position: Components.Position,
+          velocity: Components.Velocity,
+          rotation: Components.Rotation,
           player: Components.Player,
         });
         if (this.inPlanetShip) {
-          // Return to stored position if available
-          if (this.returnPosition && players.length > 0) {
-            const { position } = players[0].components;
-            position.x = this.returnPosition.x;
-            position.y = this.returnPosition.y;
+          // Place player hovering over the planet in space coordinates
+          const planet = this.landedPlanetId
+            ? this.getPlanets().find((pl) => pl.id === this.landedPlanetId)
+            : undefined;
+          if (planet && players.length > 0) {
+            const { position, velocity, rotation } = players[0].components;
+            // Hover just outside the planet radius to the east
+            position.x = planet.x + planet.radius + 70;
+            position.y = planet.y;
+            // Reset motion and face right for a clean start
+            velocity.dx = 0;
+            velocity.dy = 0;
+            rotation.angle = 0;
+            // Snap camera immediately so the ship is centered this frame
+            this.camera.x = position.x;
+            this.camera.y = position.y;
           }
           this.mode = "space";
           this.landedPlanetId = null;
@@ -329,6 +333,8 @@ export class GameSessionECS {
 
     // Update proximity notification for planets
     this.updateNotifications();
+
+    // Active Position is authoritative for the current mode; no cross-mode syncing here
   }
 
   private updateCameraFollowPlayer(): void {

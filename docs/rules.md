@@ -15,6 +15,14 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Temporary duplication during migration is acceptable only with an explicit, near-term removal plan (tracked issue or PR checklist).
   - Current status: Legacy classes (`PlanetGame`, `SpaceGame`, `GameManager`, engine/core) have been removed. Modes are states inside `GameSessionECS` and share canonical `PlanetSurface` types.
 
+## World Coordinates
+
+- Maintain distinct coordinate spaces for space and planet modes.
+  - Player has separate x/y in space and x/y on a planet; do not mutate one while the other mode is active.
+  - On landing, move the player to the planet-local landing site. Do not translate the surface to match space coordinates.
+  - On takeoff, place the player hovering just outside the planet in space (near the planet’s world position), not at an arbitrary prior approach vector.
+  - Rendering and input operate in the active mode’s space; camera follows the active position only.
+
 ## Input and Settings Changes
 
 - If key bindings or settings change, provide a one-time migration for persisted data (e.g., remap old keys). Do not revert product changes to satisfy historical tests.
