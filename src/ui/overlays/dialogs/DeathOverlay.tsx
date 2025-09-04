@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useEffect } from "react";
 
 interface DeathOverlayProps {
   open: boolean;
@@ -6,6 +7,18 @@ interface DeathOverlayProps {
 }
 
 export function DeathOverlay({ open, onRespawn }: DeathOverlayProps): JSX.Element | null {
+  // Allow pressing Enter/NumpadEnter to trigger respawn anywhere
+  useEffect((): (() => void) => {
+    if (!open) return () => {};
+    const onKey = (evt: KeyboardEvent): void => {
+      if (evt.code === "Enter" || evt.code === "NumpadEnter") {
+        evt.preventDefault();
+        onRespawn();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return (): void => window.removeEventListener("keydown", onKey);
+  }, [open, onRespawn]);
   if (!open) return null;
   return (
     <div
@@ -14,7 +27,13 @@ export function DeathOverlay({ open, onRespawn }: DeathOverlayProps): JSX.Elemen
     >
       <div className="hud-panel px-8 py-6 text-center pointer-events-auto">
         <div className="hud-text text-3xl tracking-widest mb-4">u ded</div>
-        <button type="button" className="btn" onClick={onRespawn} aria-label="respawn">
+        <button
+          type="button"
+          className="hud-btn focus:outline-none focus:ring-0"
+          onClick={onRespawn}
+          aria-label="respawn"
+          autoFocus
+        >
           alive?
         </button>
       </div>
