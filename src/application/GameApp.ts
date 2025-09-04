@@ -303,6 +303,7 @@ export class GameApp {
         const sfx = session.getAndClearSfxEvents();
         for (const ev of sfx) {
           if (ev.type === "shoot") audio.playShoot(ev.team);
+          else if (ev.type === "playerHit") audio.playPlayerHit();
           else if (ev.type === "hit") audio.playHit();
         }
         // Emit HUD hint changes (including clears) and transient toasts

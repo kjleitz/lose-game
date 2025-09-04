@@ -75,10 +75,12 @@ export function createCollisionSystem(world: World): System {
           HitFlash.create({ remaining: flashDur, duration: flashDur }),
         );
         // Emit an impact event entity for SFX systems
+        // Tag as a player-hit when the target is the player, so audio can be unique
+        const targetIsPlayer = world.hasComponent(target.entity, Player);
         world
           .createEntity()
           .addComponent(Position, { x: targetPos.x, y: targetPos.y })
-          .addComponent(ImpactEvent);
+          .addComponent(ImpactEvent, { kind: targetIsPlayer ? "player" : "generic" });
 
         if (targetHealth.current <= 0) {
           // Spawn drops if entity has a drop table

@@ -4,7 +4,8 @@ import { JustFired, Faction, ImpactEvent, Position, Projectile } from "../compon
 
 export type SfxEvent =
   | { type: "shoot"; team: "player" | "enemy" | "neutral" }
-  | { type: "hit"; x: number; y: number };
+  | { type: "hit"; x: number; y: number }
+  | { type: "playerHit"; x: number; y: number };
 
 export function createSfxEventCollectorSystem(
   world: World,
@@ -19,8 +20,9 @@ export function createSfxEventCollectorSystem(
 
   const impacts = world.query({ position: Position, impact: ImpactEvent });
   impacts.forEach(({ entity, components }) => {
-    const { position } = components;
-    onEvent({ type: "hit", x: position.x, y: position.y });
+    const { position, impact } = components;
+    if (impact.kind === "player") onEvent({ type: "playerHit", x: position.x, y: position.y });
+    else onEvent({ type: "hit", x: position.x, y: position.y });
     world.removeEntity(entity);
   });
 

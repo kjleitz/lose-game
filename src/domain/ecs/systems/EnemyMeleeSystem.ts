@@ -9,6 +9,7 @@ import {
   Health,
   MeleeStrikeAnim,
   HitFlash,
+  ImpactEvent,
 } from "../components";
 
 export function createEnemyMeleeSystem(world: World, dt: number): System {
@@ -57,6 +58,11 @@ export function createEnemyMeleeSystem(world: World, dt: number): System {
             HitFlash,
             HitFlash.create({ remaining: flashDur, duration: flashDur }),
           );
+          // Emit a player-impact event for distinct hit SFX on planet-side melee
+          world
+            .createEntity()
+            .addComponent(Position, { x: playerPos.x, y: playerPos.y })
+            .addComponent(ImpactEvent, { kind: "player" });
         }
       });
     });

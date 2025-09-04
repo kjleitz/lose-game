@@ -41,4 +41,36 @@ export class AudioService {
     noise.connect(filter).connect(gain).connect(ctx.destination);
     noise.start();
   }
+
+  playPlayerHit(): void {
+    const ctx = this.ensure();
+    // Layered thump + crackle for player damage feedback
+    const now = ctx.currentTime;
+    // Low-frequency thump
+    const osc = ctx.createOscillator();
+    const thumpGain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+    thumpGain.gain.setValueAtTime(0.18, now);
+    thumpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    osc.connect(thumpGain).connect(ctx.destination);
+    osc.start();
+    osc.stop(now + 0.14);
+
+    // Brief high band crackle
+    const noise = ctx.createBufferSource();
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 2200;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.12, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+    noise.connect(bp).connect(noiseGain).connect(ctx.destination);
+    noise.start();
+  }
 }

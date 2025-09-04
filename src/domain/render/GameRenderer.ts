@@ -71,7 +71,18 @@ export class GameRenderer {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     if (currentMode === "space") {
-      this.renderSpaceMode(ctx, player, camera, planets, projectiles, enemies, actions, size, dpr);
+      this.renderSpaceMode(
+        ctx,
+        player,
+        camera,
+        planets,
+        projectiles,
+        enemies,
+        actions,
+        size,
+        dpr,
+        gameSession,
+      );
     } else if (currentMode === "planet") {
       this.renderPlanetMode(ctx, player, camera, actions, size, dpr, gameSession);
     }
@@ -133,25 +144,6 @@ export class GameRenderer {
     // Draw ship and thruster
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
-
-    // Player hit flash overlay (space)
-    if (gameSession && typeof gameSession.getPlayer === "function") {
-      const pv = gameSession.getPlayer();
-      const hit = pv?.hitFlash;
-      if (hit) {
-        const alpha = Math.max(0, 0.9 * (1 - hit.progress));
-        if (alpha > 0.02) {
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          ctx.strokeStyle = "#ffe97a";
-          ctx.lineWidth = 6;
-          ctx.beginPath();
-          ctx.arc(player.x, player.y, 36, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
-    }
 
     // Draw projectiles as bright red lasers with a short trail in space
     const now = Date.now();
@@ -233,6 +225,36 @@ export class GameRenderer {
         ctx.arc(proj.x, proj.y, sizePx * 0.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
+      }
+    }
+
+    // Player hit flash overlay (space) drawn last to ensure visibility
+    if (gameSession && typeof gameSession.getPlayer === "function") {
+      // Ensure world transform is active before overlay
+      const [wm11, wm12, wm21, wm22, wdx, wdy] = CameraTransform.getTransform(
+        camera,
+        size.width,
+        size.height,
+        dpr,
+      );
+      ctx.setTransform(wm11, wm12, wm21, wm22, wdx, wdy);
+      const pv = gameSession.getPlayer();
+      const hit = pv?.hitFlash;
+      if (hit) {
+        const alpha = Math.max(0, 0.9 * (1 - hit.progress));
+        if (alpha > 0.02) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = "#ffe97a";
+          // Keep stroke thickness consistent on screen regardless of zoom
+          ctx.lineWidth = 6 / Math.max(0.0001, camera.zoom);
+          ctx.beginPath();
+          const cx = pv?.x ?? player.x;
+          const cy = pv?.y ?? player.y;
+          ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
       }
     }
   }
@@ -337,25 +359,6 @@ export class GameRenderer {
       characterRenderer.render(ctx, player, actions, 32);
     }
 
-    // Player hit flash overlay (planet)
-    if (gameSession && typeof gameSession.getPlayer === "function") {
-      const pv = gameSession.getPlayer();
-      const hit = pv?.hitFlash;
-      if (hit) {
-        const alpha = Math.max(0, 0.9 * (1 - hit.progress));
-        if (alpha > 0.02) {
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          ctx.strokeStyle = "#ffe97a";
-          ctx.lineWidth = 5;
-          ctx.beginPath();
-          ctx.arc(player.x, player.y, 26, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
-    }
-
     // Above-ground parallax: clouds and birds
     if (surface) {
       const biome: Biome = surface.biome ?? "fields";
@@ -382,6 +385,36 @@ export class GameRenderer {
           ctx.restore();
 
           drawProjectile(ctx, projectile.x, projectile.y, 0, drawSize);
+        }
+      }
+    }
+
+    // Player hit flash overlay (planet) drawn after projectiles to ensure visibility
+    if (gameSession && typeof gameSession.getPlayer === "function") {
+      // Ensure world transform is active before overlay
+      const [wm11, wm12, wm21, wm22, wdx, wdy] = CameraTransform.getTransform(
+        camera,
+        size.width,
+        size.height,
+        dpr,
+      );
+      ctx.setTransform(wm11, wm12, wm21, wm22, wdx, wdy);
+      const pv = gameSession.getPlayer();
+      const hit = pv?.hitFlash;
+      if (hit) {
+        const alpha = Math.max(0, 0.9 * (1 - hit.progress));
+        if (alpha > 0.02) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = "#ffe97a";
+          // Keep stroke thickness consistent on screen regardless of zoom
+          ctx.lineWidth = 5 / Math.max(0.0001, camera.zoom);
+          ctx.beginPath();
+          const cx = pv?.x ?? player.x;
+          const cy = pv?.y ?? player.y;
+          ctx.arc(cx, cy, 26, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
         }
       }
     }

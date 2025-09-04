@@ -157,4 +157,6 @@ export const HitFlash = defineComponent<{
 }>();
 
 // Impact event entity for SFX on collision
-export const ImpactEvent = defineComponent<Record<string, never>>(() => ({}));
+// Impact event entity for SFX on collision. When kind === "player", it means the
+// player was hit and should trigger a distinct sound effect.
+export const ImpactEvent = defineComponent<{ kind?: "generic" | "player" }>();

@@ -7,7 +7,7 @@ import type { Biome } from "../../shared/types/Biome";
 import { GameRenderer } from "./GameRenderer";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
-import type { EnemyView as Enemy } from "../game/views";
+import type { EnemyView as Enemy, PlayerView } from "../game/views";
 
 // Mock projectile drawing to capture transform and size
 let lastProjectileCall: {
@@ -18,6 +18,13 @@ let lastProjectileCall: {
   size: number;
 } | null = null;
 
+let lastArcCall: { x: number; y: number; r: number } | null = null;
+let strokes: Array<{
+  strokeStyle: unknown;
+  lineWidth: number;
+  arc?: { x: number; y: number; r: number };
+}> = [];
+
 vi.mock("./sprites", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./sprites")>();
   return {
@@ -27,6 +34,26 @@ vi.mock("./sprites", async (importOriginal) => {
     }),
   };
 });
+
+// Remove noise from starfield and other renderers that might use arcs/strokes
+vi.mock("./StarfieldRenderer", () => ({
+  StarfieldRenderer: class {
+     
+    render(): void {}
+  },
+}));
+vi.mock("./PlanetRenderer", () => ({
+  PlanetRenderer: class {
+     
+    render(): void {}
+  },
+}));
+vi.mock("./EnemyRenderer", () => ({
+  EnemyRenderer: class {
+     
+    render(): void {}
+  },
+}));
 
 interface MockCtx extends CanvasRenderingContext2D {
   _transform?: [number, number, number, number, number, number];
@@ -60,9 +87,17 @@ function createMockCtx(): MockCtx {
     fillRect: vi.fn(),
     ellipse: vi.fn(),
     beginPath: vi.fn(),
-    arc: vi.fn(),
+    arc: vi.fn((x: number, y: number, r: number) => {
+      lastArcCall = { x, y, r };
+    }) as unknown as MockCtx["arc"],
     fill: vi.fn(),
-    stroke: vi.fn(),
+    stroke: vi.fn(function (this: MockCtx): void {
+      strokes.push({
+        strokeStyle: this.strokeStyle,
+        lineWidth: this.lineWidth,
+        arc: lastArcCall ? { ...lastArcCall } : undefined,
+      });
+    }) as unknown as MockCtx["stroke"],
     moveTo: vi.fn(),
     lineTo: vi.fn(),
     closePath: vi.fn(),
@@ -88,6 +123,8 @@ describe("GameRenderer planet projectiles", () => {
     ctx = createMockCtx();
     camera = { x: 0, y: 0, zoom: 1 };
     lastProjectileCall = null;
+    lastArcCall = null;
+    strokes = [];
   });
 
   interface TestSession {
@@ -165,5 +202,144 @@ describe("GameRenderer planet projectiles", () => {
     expect(lastProjectileCall).toBeTruthy();
     // Previously radius 2 -> size 4; now we enforce a minimum >= 8
     expect(lastProjectileCall!.size).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe("GameRenderer player hit ring", () => {
+  let renderer: GameRenderer;
+  let ctx: MockCtx;
+  const size: ViewSize = { width: 800, height: 600 };
+  const dpr = 1;
+
+  beforeEach(() => {
+    renderer = new GameRenderer();
+    ctx = createMockCtx();
+    lastArcCall = null;
+  });
+
+  it("draws hit ring in space when hitFlash present", () => {
+    const player = { x: 10, y: -20, vx: 0, vy: 0, angle: 0 };
+    const camera: Camera = { x: 0, y: 0, zoom: 1 };
+    const actions = new Set<Action>();
+    const baseSession = { getCurrentModeType: (): "space" => "space" as const };
+    const sessionNoHit = {
+      ...baseSession,
+      getPlayer: (): PlayerView => ({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        angle: 0,
+        health: 100,
+        experience: 0,
+        level: 1,
+        xpToNextLevel: 100,
+        perkPoints: 0,
+        perks: {},
+      }),
+    };
+    renderer.render(
+      ctx as unknown as CanvasRenderingContext2D,
+      player,
+      camera,
+      [],
+      [],
+      [],
+      actions,
+      size,
+      dpr,
+      sessionNoHit,
+    );
+    // reset tracking to isolate second render
+    strokes = [];
+    lastArcCall = null;
+    const sessionHit = {
+      ...baseSession,
+      getPlayer: (): PlayerView => ({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        angle: 0,
+        health: 100,
+        experience: 0,
+        level: 1,
+        xpToNextLevel: 100,
+        perkPoints: 0,
+        perks: {},
+        hitFlash: { progress: 0.2 },
+      }),
+    };
+    renderer.render(
+      ctx as unknown as CanvasRenderingContext2D,
+      player,
+      camera,
+      [],
+      [],
+      [],
+      actions,
+      size,
+      dpr,
+      sessionHit,
+    );
+    // Expect at least one stroked arc when hit is present
+    expect(strokes.length).toBeGreaterThanOrEqual(1);
+    const ring = strokes.find((s) => s.arc);
+    expect(ring).toBeTruthy();
+  });
+
+  it("draws hit ring on planet when hitFlash present", () => {
+    const player = { x: 5, y: 7, vx: 0, vy: 0, angle: 0 };
+    const camera: Camera = { x: 0, y: 0, zoom: 1 };
+    const actions = new Set<Action>();
+    const session = {
+      getCurrentModeType: (): "planet" => "planet" as const,
+      getPlanetSurface: (): PlanetSurface => ({
+        planetId: "p1",
+        landingSite: { x: 0, y: 0 },
+        terrain: [],
+        resources: [],
+        creatures: [],
+        biome: "fields" as Biome,
+      }),
+      getDroppedItems: (): DroppedItem[] => [],
+      getEnemies: (): Enemy[] => [],
+      getProjectiles: (): Array<{ x: number; y: number; radius: number }> => [],
+      isInPlanetShip: (): boolean => false,
+      getPlayer: (): PlayerView => ({
+        x: player.x,
+        y: player.y,
+        vx: 0,
+        vy: 0,
+        angle: 0,
+        health: 100,
+        experience: 0,
+        level: 1,
+        xpToNextLevel: 100,
+        perkPoints: 0,
+        perks: {},
+        hitFlash: { progress: 0.2 },
+      }),
+    };
+
+    renderer.render(
+      ctx as unknown as CanvasRenderingContext2D,
+      player,
+      camera,
+      [],
+      [],
+      [],
+      actions,
+      size,
+      dpr,
+      session,
+    );
+
+    const ring = strokes.find((s) => s.arc && Math.abs(s.arc.r - 26) < 0.5);
+    expect(ring).toBeTruthy();
+    expect(ring!.arc).toBeTruthy();
+    expect(ring!.arc!.x).toBeCloseTo(player.x, 1);
+    expect(ring!.arc!.y).toBeCloseTo(player.y, 1);
+    expect(ring!.arc!.r).toBeCloseTo(26, 1);
   });
 });
