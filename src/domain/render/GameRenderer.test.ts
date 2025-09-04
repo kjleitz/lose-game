@@ -38,19 +38,16 @@ vi.mock("./sprites", async (importOriginal) => {
 // Remove noise from starfield and other renderers that might use arcs/strokes
 vi.mock("./StarfieldRenderer", () => ({
   StarfieldRenderer: class {
-     
     render(): void {}
   },
 }));
 vi.mock("./PlanetRenderer", () => ({
   PlanetRenderer: class {
-     
     render(): void {}
   },
 }));
 vi.mock("./EnemyRenderer", () => ({
   EnemyRenderer: class {
-     
     render(): void {}
   },
 }));

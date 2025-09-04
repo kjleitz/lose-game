@@ -350,8 +350,7 @@ export class GameSessionECS {
     if ((noPlayer || deadByHealth) && !this.awaitingRespawn) {
       this.deathEvents += 1;
       // Toast for feedback; UI shows overlay and awaits player input
-      // Emit ~50 messages intentionally (kept as a gag) but bounded.
-      for (let i = 0; i < 50; i++) this.toastEvents.push("You died.");
+      this.toastEvents.push("You died.");
       // Do not reset immediately; wait for explicit respawn
       // Mark internal flag so UI can query if needed
       this.awaitingRespawn = true;

@@ -3,11 +3,36 @@ import { drawCreature } from "./sprites";
 
 export class CreatureRenderer {
   render(ctx: CanvasRenderingContext2D, creatures: Enemy[]): void {
-    const time = Date.now() * 0.002;
+    const timeSec = Date.now() * 0.001;
     for (const creature of creatures) {
-      const wiggle = Math.sin(time + (creature.x + creature.y) * 0.01) * 2;
-      const size = creature.radius * 2;
-      drawCreature(ctx, creature.x, creature.y + wiggle, "hostile", size);
+      // Bounce amount and frequency scale with movement speed
+      const size = Math.max(8, creature.radius * 2);
+      const speed = Math.hypot(creature.vx, creature.vy);
+      const maxSpeed = Math.max(0.0001, creature.maxSpeed);
+      const speedNorm = Math.max(0, Math.min(1, speed / maxSpeed));
+      const amplitude = size * (0.06 + 0.12 * speedNorm); // ~2px idle to ~6px running (for size≈32)
+      const freqHz = 1.6 + 3.4 * speedNorm; // faster cadence when moving
+      const phase = (creature.x + creature.y) * 0.02; // desync neighbors
+      const bounce = Math.sin(timeSec * Math.PI * 2 * freqHz + phase) * amplitude;
+
+      // Grounded shadow (does not move with the bounce)
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      // Make shadow slightly smaller when the creature is at peak height
+      const heightNorm = (bounce / amplitude + 1) * 0.5; // 0..1
+      const heightFactor = Math.max(0.65, 0.95 - 0.3 * heightNorm);
+      const shadowW = size * 0.5 * heightFactor;
+      const shadowH = size * 0.18 * heightFactor;
+      const shadowX = creature.x;
+      const shadowY = creature.y + size * 0.5; // southward offset, like ship shadow
+      ctx.ellipse(shadowX, shadowY, shadowW, shadowH, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Draw the creature at its bounced position
+      drawCreature(ctx, creature.x, creature.y + bounce, "hostile", size);
 
       // Melee swipe animation overlay
       if (creature.meleeSwing) {
@@ -22,10 +47,10 @@ export class CreatureRenderer {
           ctx.globalAlpha = alpha;
           ctx.fillStyle = "#ff6666";
           ctx.beginPath();
-          ctx.moveTo(creature.x + Math.cos(start) * r0, creature.y + wiggle + Math.sin(start) * r0);
-          ctx.arc(creature.x, creature.y + wiggle, r1, start, end);
-          ctx.lineTo(creature.x + Math.cos(end) * r0, creature.y + wiggle + Math.sin(end) * r0);
-          ctx.arc(creature.x, creature.y + wiggle, r0, end, start, true);
+          ctx.moveTo(creature.x + Math.cos(start) * r0, creature.y + bounce + Math.sin(start) * r0);
+          ctx.arc(creature.x, creature.y + bounce, r1, start, end);
+          ctx.lineTo(creature.x + Math.cos(end) * r0, creature.y + bounce + Math.sin(end) * r0);
+          ctx.arc(creature.x, creature.y + bounce, r0, end, start, true);
           ctx.closePath();
           ctx.fill();
           ctx.restore();
@@ -42,7 +67,7 @@ export class CreatureRenderer {
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = Math.max(2, size * 0.12);
           ctx.beginPath();
-          ctx.arc(creature.x, creature.y + wiggle, size * 0.7, 0, Math.PI * 2);
+          ctx.arc(creature.x, creature.y + bounce, size * 0.7, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
         }
@@ -55,7 +80,7 @@ export class CreatureRenderer {
         ctx.beginPath();
         ctx.arc(
           creature.x + creature.radius * 0.6,
-          creature.y + wiggle - creature.radius * 0.6,
+          creature.y + bounce - creature.radius * 0.6,
           3,
           0,
           Math.PI * 2,
