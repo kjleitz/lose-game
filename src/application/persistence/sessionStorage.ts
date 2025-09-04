@@ -70,3 +70,13 @@ export function loadSessionState(): SessionState | null {
 export function saveSessionState(state: SessionState): void {
   getStore().set("latest", state);
 }
+
+export function deleteSessionState(): void {
+  try {
+    const store = getStore();
+    // Removing the key effectively clears the saved session
+    store.remove("latest");
+  } catch {
+    // ignore
+  }
+}

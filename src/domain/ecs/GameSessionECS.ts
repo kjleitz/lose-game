@@ -48,8 +48,10 @@ export class GameSessionECS {
   private perkRequests: PerkUnlockRequest[] = [];
   private toastEvents: string[] = [];
   private sfxEvents: SfxEvent[] = [];
+  private deathEvents: number = 0; // count of player-death events since last read
   private interactCooldown: number = 0; // seconds until next interact toggle allowed
   private inPlanetShipAnim: number = 0; // 0..1 takeoff animation progress
+  private awaitingRespawn: boolean = false;
 
   // Camera (keep as is for now)
   camera: Camera;
@@ -334,7 +336,67 @@ export class GameSessionECS {
     // Update proximity notification for planets
     this.updateNotifications();
 
+    // Check for death in any mode and mark awaiting respawn
+    this.checkDeathAndMarkIfNeeded();
+
     // Active Position is authoritative for the current mode; no cross-mode syncing here
+  }
+
+  private checkDeathAndMarkIfNeeded(): void {
+    // Player removed (e.g., killed by projectile) OR has health <= 0 (e.g., melee on planet)
+    const players = this.world.query({ player: Components.Player, health: Components.Health });
+    const noPlayer = players.length === 0;
+    const deadByHealth = !noPlayer && players[0].components.health.current <= 0;
+    if ((noPlayer || deadByHealth) && !this.awaitingRespawn) {
+      this.deathEvents += 1;
+      // Toast for feedback; UI shows overlay and awaits player input
+      // Emit ~50 messages intentionally (kept as a gag) but bounded.
+      for (let i = 0; i < 50; i++) this.toastEvents.push("You died.");
+      // Do not reset immediately; wait for explicit respawn
+      // Mark internal flag so UI can query if needed
+      this.awaitingRespawn = true;
+    }
+  }
+
+  private hardResetToNewGame(): void {
+    // Recreate world and default entities
+    this.world = new World();
+    this.playerEntityId = null;
+    this.mode = "space";
+    this.landedPlanetId = null;
+    this.planetSurface = undefined;
+    this.inPlanetShip = false;
+    this.interactCooldown = 0;
+    this.inPlanetShipAnim = 0;
+    this.notification = null;
+    this.pickupEvents = [];
+    this.levelUpEvents = [];
+    this.perkRequests = [];
+    this.sfxEvents = [];
+    // Camera back to origin
+    this.camera.x = 0;
+    this.camera.y = 0;
+    // Build a fresh default game state
+    this.createDefaultGame();
+    // Clear awaitingRespawn marker
+    this.awaitingRespawn = false;
+  }
+
+  // Application can observe death and clear persisted data
+  getAndClearDeathEvents(): number {
+    const count = this.deathEvents;
+    this.deathEvents = 0;
+    return count;
+  }
+
+  // Soft capability for UI to check or trigger respawn without casts
+  isAwaitingRespawn(): boolean {
+    return this.awaitingRespawn;
+  }
+
+  respawnFromDeath(): void {
+    if (!this.isAwaitingRespawn()) return;
+    this.hardResetToNewGame();
   }
 
   private updateCameraFollowPlayer(): void {

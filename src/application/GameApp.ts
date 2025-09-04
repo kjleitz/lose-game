@@ -19,6 +19,7 @@ import {
   saveSessionState,
 } from "./persistence/sessionStorage";
 import { getDefaultSettings, loadSettings, updateSettings } from "./settings/settingsStorage";
+import { deleteSessionState } from "./persistence/sessionStorage";
 import { AudioService } from "../infrastructure/audio/AudioService";
 
 function defaultKinematics(): Kinematics2D {
@@ -76,6 +77,8 @@ export class GameApp {
       );
     }
     const session = new GameSessionECS(ecsConfig);
+    // Preserve last known player kinematics for stable render during death overlay
+    let lastRenderPV: Kinematics2D | null = null;
     const audio = new AudioService();
     // Restore last session state (e.g., player position)
     const last = loadSessionState();
@@ -231,6 +234,13 @@ export class GameApp {
     const SAVE_INTERVAL_MS = 1500;
     const loop = new GameLoop({
       update: (dt: number): void => {
+        // When awaiting respawn, freeze world updates until user clicks respawn
+        const isAwaitingRespawn = session.isAwaitingRespawn();
+        if (isAwaitingRespawn) {
+          // Still process input for UI, but don't mutate world state
+          input.updateActions();
+          return;
+        }
         // Update input state and publish input changes
         const actions = input.updateActions();
         const actionsArr = Array.from(actions.values());
@@ -258,6 +268,11 @@ export class GameApp {
         }
 
         session.update(actions, dt * speedMultiplier);
+        // If the session reports a death, show overlay via event and wait for respawn
+        const deaths = session.getAndClearDeathEvents();
+        if (deaths > 0) {
+          bus.publish({ type: "death" });
+        }
         // Periodically persist session state (position, mode, inventory)
         const now = performance.now();
         if (now - lastSavedAt >= SAVE_INTERVAL_MS) {
@@ -303,10 +318,15 @@ export class GameApp {
       render: (): void => {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
+        const awaiting = session.isAwaitingRespawn();
         const pv = session.getPlayer();
         const playerForRender: Kinematics2D = pv
           ? { x: pv.x, y: pv.y, vx: pv.vx, vy: pv.vy, angle: pv.angle }
-          : defaultKinematics();
+          : awaiting && lastRenderPV
+            ? lastRenderPV
+            : defaultKinematics();
+        // Remember last seen PV when valid
+        if (pv) lastRenderPV = playerForRender;
         renderer.render(
           ctx,
           playerForRender,
@@ -368,6 +388,20 @@ export class GameApp {
       },
       getInventory(): PlayerInventoryManager {
         return hudInventory;
+      },
+      respawn(): void {
+        // Clear saved session only; keep settings and keybindings
+        deleteSessionState();
+        // Clear HUD inventory runtime state
+        const slots = hudInventory.getSlots();
+        for (const slot of slots) {
+          slot.item = null;
+          slot.quantity = 0;
+        }
+        // Respawn world to a fresh new game
+        session.respawnFromDeath();
+        // Reset lastSavedAt to defer autosave until the new state stabilizes
+        lastSavedAt = performance.now();
       },
       unlockPerk(perkId) {
         session.requestUnlockPerk(perkId);

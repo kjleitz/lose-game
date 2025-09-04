@@ -8,10 +8,9 @@ import type { Planet } from "../../domain/game/planets";
 import type { Action } from "../../application/input/ActionTypes";
 import type { Point2D, ViewSize } from "../../shared/types/geometry";
 import { Hud } from "../hud/Hud";
-import { SettingsModal } from "../overlays/dialogs/SettingsModal";
+import { SettingsModal, DeathOverlay } from "../overlays/dialogs";
 import { PerkModal } from "../overlays/dialogs/PerkModal";
 import { PauseMenu } from "../overlays/menus/PauseMenu";
-import { deleteAllGameData } from "../../application/persistence/deleteData";
 
 function useCanvasSize(): ViewSize {
   const [size, setSize] = useState<ViewSize>({
@@ -36,6 +35,7 @@ export function CanvasRoot(): JSX.Element {
   const [toasts, setToasts] = useState<Array<{ id: number; message: string }>>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [perksOpen, setPerksOpen] = useState(false);
+  const [dead, setDead] = useState(false);
   const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -70,6 +70,7 @@ export function CanvasRoot(): JSX.Element {
     let unsubInput: (() => void) | null = null;
     let unsubSpeed: (() => void) | null = null;
     let unsubToast: (() => void) | null = null;
+    let unsubDeath: (() => void) | null = null;
 
     void (async (): Promise<void> => {
       const ctrl = await GameApp.create(canvas, { size: { width, height } });
@@ -105,6 +106,10 @@ export function CanvasRoot(): JSX.Element {
       unsubSpeed = ctrl.bus.subscribe("speedChanged", (event): void => {
         setSpeed(event.value);
       });
+      // Death overlay trigger
+      unsubDeath = ctrl.bus.subscribe("death", (): void => {
+        setDead(true);
+      });
       ctrl.start();
     })();
 
@@ -127,6 +132,7 @@ export function CanvasRoot(): JSX.Element {
       if (unsubInput) unsubInput();
       if (unsubSpeed) unsubSpeed();
       if (unsubToast) unsubToast();
+      if (unsubDeath) unsubDeath();
       window.removeEventListener("keydown", onEsc);
       controllerRef.current?.dispose();
       controllerRef.current = null;
@@ -144,6 +150,13 @@ export function CanvasRoot(): JSX.Element {
   return (
     <div className="relative w-screen h-screen overflow-hidden" data-testid="game-root">
       <canvas ref={canvasRef} className="block w-full h-full" />
+      <DeathOverlay
+        open={dead}
+        onRespawn={(): void => {
+          controllerRef.current?.respawn?.();
+          setDead(false);
+        }}
+      />
       <Hud
         player={hudState.player}
         experience={hudState.experience}
@@ -187,7 +200,8 @@ export function CanvasRoot(): JSX.Element {
             controllerRef.current?.resume();
           }}
           onDeleteData={(): void => {
-            deleteAllGameData();
+            // Keep settings/keybindings; only clear saved session via settings menu
+            controllerRef.current?.respawn?.();
             setPaused(false);
             controllerRef.current?.resume();
           }}

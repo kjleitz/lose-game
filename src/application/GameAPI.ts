@@ -44,6 +44,7 @@ export type GameEvent =
   | { type: "inputChanged"; actions: Action[] }
   | { type: "speedChanged"; value: number }
   | { type: "modeChange"; mode: "space" | "planet" }
+  | { type: "death" }
   | { type: "healthChanged"; value: number }
   | { type: "xpChanged"; value: number }
   | { type: "inventoryUpdated" } // simplified for now
@@ -82,4 +83,5 @@ export interface GameController {
   // Optional extras exposed by some controllers
   getInventory?: () => PlayerInventory;
   unlockPerk?: (perkId: PerkId) => void;
+  respawn?: () => void;
 }
