@@ -59,6 +59,7 @@ export function CanvasRoot(): JSX.Element {
   // HUD actions readout and speed mirror
   const [hudActions, setHudActions] = useState<Set<Action>>(() => new Set());
   const [speed, setSpeed] = useState<number>(1);
+  const [playerSpeed, setPlayerSpeed] = useState<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -88,6 +89,7 @@ export function CanvasRoot(): JSX.Element {
           health: snapshot.player.health,
           planets: snapshot.planets,
         });
+        setPlayerSpeed(Math.hypot(snapshot.player.vx, snapshot.player.vy));
       });
       unsubNotif = ctrl.bus.subscribe("notification", (event): void => {
         setNotification(event.message);
@@ -172,6 +174,7 @@ export function CanvasRoot(): JSX.Element {
         actions={hudActions}
         paused={paused}
         speedMultiplier={speed}
+        playerSpeed={playerSpeed}
         inventory={controllerRef.current?.getInventory?.()}
         inventoryVisible={true}
         onOpenPerks={(): void => setPerksOpen(true)}

@@ -946,7 +946,7 @@ export class GameSessionECS {
       x: number;
       y: number;
       r: number;
-      weight: number;
+      density: number;
       kind: "planet" | "star";
     }> = [];
     // Planets
@@ -960,7 +960,8 @@ export class GameSessionECS {
         x: planetEntity.components.position.x,
         y: planetEntity.components.position.y,
         r: planetEntity.components.collider.radius,
-        weight: 2.2, // stronger pull for planets
+        // Planets are about 4x as dense as stars (see star density below)
+        density: 0.1,
         kind: "planet",
       });
     }
@@ -975,7 +976,8 @@ export class GameSessionECS {
         x: starEntity.components.position.x,
         y: starEntity.components.position.y,
         r: starEntity.components.collider.radius,
-        weight: 2.5,
+        // Baseline star density (planets use ~4x this value)
+        density: 0.025,
         kind: "star",
       });
     }
@@ -986,32 +988,42 @@ export class GameSessionECS {
       const dy = body.y - playerPos.y;
       const dist = Math.hypot(dx, dy);
       const influence = body.r * 3;
-      // Do not attract when too close to the center (<= 0.5 * radius)
-      const minRadius = body.r * 0.5;
-      if (dist > minRadius && dist <= influence) {
+      if (dist > 1e-6 && dist <= influence) {
         const nx = dx / dist;
         const ny = dy / dist;
-        const accel = (gravityConstant * body.weight * (body.r * body.r)) / (dist * dist);
+        // Effective GM with density-based mass: M ∝ density * R^3
+        // Stars are much larger; to keep star gravity playable, normalize star density by radius
+        // so surface gravity doesn't explode with large R (planets remain unnormalized).
+        const referenceR = 100; // typical planet radius used for tuning
+        const effectiveDensity =
+          body.kind === "star" ? body.density * (referenceR / Math.max(1, body.r)) : body.density;
+        const effectiveGM = gravityConstant * effectiveDensity * (body.r * body.r * body.r);
+        // Outside surface: inverse-square. Inside: linearly decreases to zero at center.
+        const accel =
+          dist >= body.r
+            ? effectiveGM / (dist * dist)
+            : (effectiveGM / (body.r * body.r * body.r)) * dist;
+
         playerVel.dx += nx * accel * dt;
         playerVel.dy += ny * accel * dt;
 
-        // Planet-only: gentle orbital assist to make capture easy and breaking out easy
+        // Planet-only: gentle orbital assist (only meaningful outside the surface)
         if (body.kind === "planet") {
           this.underPlanetGravity = true;
-          // Desired circular speed given our effective GM := gravityConstant * weight * r^2
-          const effectiveGM = gravityConstant * body.weight * (body.r * body.r);
-          const desiredTangential = Math.sqrt(Math.max(0, effectiveGM / dist));
-          // Current tangential unit vector (perpendicular to radial outward)
-          const tnx = -ny;
-          const tny = nx;
-          const currentTangential = playerVel.dx * tnx + playerVel.dy * tny;
-          // Nudge toward desired tangential speed with a capped assist
-          const assistGain = 0.8; // how quickly we approach desired v_t per second
-          const maxAssist = accel * 0.7; // do not exceed a fraction of radial accel
-          const deltaVPerSec = (desiredTangential - currentTangential) * assistGain;
-          const clamped = Math.max(-maxAssist, Math.min(maxAssist, deltaVPerSec));
-          playerVel.dx += tnx * clamped * dt;
-          playerVel.dy += tny * clamped * dt;
+          if (dist >= body.r) {
+            const desiredTangential = Math.sqrt(Math.max(0, effectiveGM / dist));
+            // Current tangential unit vector (perpendicular to radial outward)
+            const tnx = -ny;
+            const tny = nx;
+            const currentTangential = playerVel.dx * tnx + playerVel.dy * tny;
+            // Nudge toward desired tangential speed with a capped assist
+            const assistGain = 0.8; // how quickly we approach desired v_t per second
+            const maxAssist = accel * 0.7; // do not exceed a fraction of radial accel
+            const deltaVPerSec = (desiredTangential - currentTangential) * assistGain;
+            const clamped = Math.max(-maxAssist, Math.min(maxAssist, deltaVPerSec));
+            playerVel.dx += tnx * clamped * dt;
+            playerVel.dy += tny * clamped * dt;
+          }
         }
       }
     }

@@ -8,7 +8,7 @@ function actionsSet<T extends string>(actions: T[]): Set<T> {
 }
 
 describe("Gravity behavior (space mode)", () => {
-  it("applies inverse-square acceleration toward a planet within 3R and outside 0.5R", () => {
+  it("applies inverse-square acceleration toward a planet within 3R and outside the surface", () => {
     const planet = { id: "p", x: 0, y: 0, radius: 100, color: "#888", design: "solid" as const };
     const session = new GameSessionECS({ planets: [planet] });
     // Player at (250, 0): within 3R=300, outside 0.5R=50
@@ -22,17 +22,17 @@ describe("Gravity behavior (space mode)", () => {
     if (!after) return;
     // Expect velocity toward planet (negative x)
     expect(after.vx).toBeLessThan(0);
-    // Intended formula: a = G * weight * r^2 / d^2; dv = a * dt
+    // New formula: effectiveGM = G * density * r^3; a = effectiveGM / d^2; dv = a * dt
     const G = 120;
-    const weightPlanet = 2.2;
+    const densityPlanet = 0.1; // planets ~4x stars (0.025)
     const r = 100;
     const d = 250;
-    const expectedDv = ((G * weightPlanet * r * r) / (d * d)) * dt;
+    const effectiveGM = G * densityPlanet * r * r * r;
+    const expectedDv = (effectiveGM / (d * d)) * dt;
     expect(after.vx).toBeCloseTo(-expectedDv, 3);
     // With orbital assist, expect a small tangential nudge capped at 0.7 * accel
-    const accel = (G * weightPlanet * r * r) / (d * d);
+    const accel = effectiveGM / (d * d);
     const maxAssist = accel * 0.7;
-    const effectiveGM = G * weightPlanet * r * r;
     const desiredTangential = Math.sqrt(effectiveGM / d);
     const assistGain = 0.8;
     const assistPerSec = Math.min(maxAssist, desiredTangential * assistGain);
@@ -53,20 +53,25 @@ describe("Gravity behavior (space mode)", () => {
     expect(Math.abs(after.vy)).toBeLessThan(1e-6);
   });
 
-  it("does not apply gravity within core exclusion zone (<= 0.5R)", () => {
+  it("applies inside-body gravity that decreases linearly to center (<= R)", () => {
     const planet = { id: "p", x: 0, y: 0, radius: 100, color: "#888", design: "solid" as const };
     const session = new GameSessionECS({ planets: [planet] });
-    session.setPlayerPosition({ x: 40, y: 0 }); // < 0.5R
+    session.setPlayerPosition({ x: 40, y: 0 }); // inside body (0.4R)
     const dt = 0.1;
     session.update(actionsSet([]), dt);
     const after = session.getPlayer();
     expect(after).not.toBeNull();
     if (!after) return;
-    expect(Math.abs(after.vx)).toBeLessThan(1e-6);
+    // Expected inside-body acceleration: a = G * density * d (uniform density sphere)
+    const G = 120;
+    const densityPlanet = 0.1;
+    const d = 40;
+    const expectedDv = G * densityPlanet * d * dt;
+    expect(after.vx).toBeCloseTo(-expectedDv, 6);
     expect(Math.abs(after.vy)).toBeLessThan(1e-6);
   });
 
-  it("applies stronger acceleration toward a star than a planet at equal radius and distance", () => {
+  it("applies stronger acceleration toward a denser planet than a star at equal radius and distance", () => {
     // Provide a far-away planet so default logic doesn't add extras nearby
     const farPlanet = {
       id: "p_far",
@@ -117,13 +122,15 @@ describe("Gravity behavior (space mode)", () => {
     if (!afterPlanet) return;
     const dvPlanet = -afterPlanet.vx;
 
-    expect(dvStar).toBeGreaterThan(dvPlanet);
+    expect(dvPlanet).toBeGreaterThan(dvStar);
     // Also check numeric expectations from intended constants
     const G = 120;
     const r = 100;
     const d = 250;
-    const expectedStar = ((G * 2.5 * r * r) / (d * d)) * dt; // weight 2.5 for stars
-    const expectedPlanet = ((G * 2.2 * r * r) / (d * d)) * dt; // weight 2.2 for planets
+    const densityStar = 0.025;
+    const densityPlanet = 0.1;
+    const expectedStar = ((G * densityStar * r * r * r) / (d * d)) * dt;
+    const expectedPlanet = ((G * densityPlanet * r * r * r) / (d * d)) * dt;
     expect(dvStar).toBeCloseTo(expectedStar, 3);
     expect(dvPlanet).toBeCloseTo(expectedPlanet, 3);
   });

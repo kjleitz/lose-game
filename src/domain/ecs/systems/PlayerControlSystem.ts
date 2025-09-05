@@ -24,7 +24,6 @@ export function createPlayerControlSystem(
   },
 ): System {
   const BASE_ACCELERATION = 240; // snappier acceleration
-  const BASE_MAX_SPEED = 300; // doubled max speed in space
   const BASE_TURN_SPEED = 3;
   const WALK_SPEED = 200;
   const RUN_SPEED = 350;
@@ -64,7 +63,7 @@ export function createPlayerControlSystem(
           }
         } else {
           // Space (ship) controls
-          // Apply drag first so sustained thrust can reach MAX_SPEED (clamp happens after thrust)
+          // Apply drag first for smoother damping and momentum preservation
           const baseDrag = 0.985; // gentler default drag in space
           const normalDrag = Math.max(0.9, Math.min(0.999, baseDrag - (mods?.dragReduction ?? 0)));
           const drag = options?.spaceDragOverride ?? normalDrag;
@@ -83,22 +82,14 @@ export function createPlayerControlSystem(
           }
 
           if (actions.has("thrust")) {
-            const boost = actions.has("boost") ? 1.75 : 1;
+            const boost = actions.has("boost") ? 2 : 1; // boost doubles acceleration
             const accelBoost = options?.spaceAccelMult ?? 1;
-            const maxBoost = options?.spaceMaxSpeedMult ?? 1;
             const ACCELERATION = BASE_ACCELERATION * boost * accelBoost * (mods?.accelMult ?? 1);
-            const MAX_SPEED = BASE_MAX_SPEED * boost * maxBoost * (mods?.maxSpeedMult ?? 1);
             const thrustX = Math.cos(rotation.angle) * ACCELERATION * dt;
             const thrustY = Math.sin(rotation.angle) * ACCELERATION * dt;
 
             velocity.dx += thrustX;
             velocity.dy += thrustY;
-
-            const speed = Math.hypot(velocity.dx, velocity.dy);
-            if (speed > MAX_SPEED) {
-              velocity.dx = (velocity.dx / speed) * MAX_SPEED;
-              velocity.dy = (velocity.dy / speed) * MAX_SPEED;
-            }
           }
 
           // Drag already applied at start of space update

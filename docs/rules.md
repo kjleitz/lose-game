@@ -98,3 +98,11 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Formatting and style: 2-space indent, semicolons on, double quotes.
 
 > Core mantra: “Fix your types first.” If types are too complicated, simplify the code.
+
+## Space Flight Physics
+
+- Ship movement is momentum-based and unconstrained by a top speed cap in space mode; remove max-speed clamps from player controls.
+- Boost modifies acceleration only (2x acceleration while held); it does not raise or lower any speed cap.
+- Apply a light, continuous drag in space so velocity decays over time without input.
+- Planet/star gravity acts as acceleration toward bodies and is independent of any ship speed considerations.
+- Planet mode uses walking-style movement (direct velocity set) and can keep run/walk semantics.
