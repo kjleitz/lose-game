@@ -3,11 +3,12 @@ import { TIME } from "../../../config/time";
 import type { System, World } from "../../../lib/ecs";
 import { defineSystem, Entity } from "../../../lib/ecs";
 import type { Item } from "../../game/items/Item";
-import { DroppedItem, Player, Position, Velocity } from "../components";
+import { DroppedItem, Player, Position, Velocity, PlayerExperience } from "../components";
 
 export interface PickupEvent {
   item: Item;
   quantity: number;
+  autoUsed?: boolean;
 }
 
 export function createDroppedItemAgingSystem(world: World, dt: number): System {
@@ -50,7 +51,17 @@ export function createPickupSystem(
 
         // If within pickup radius, collect immediately
         if (dist <= range) {
-          onPickedUp({ item: dropped.item, quantity: dropped.quantity });
+          // Auto-use certain items on pickup (e.g., XP orbs)
+          let autoUsed = false;
+          if (dropped.item.type === "xp_energy") {
+            const xpEntities = world.query({ player: Player, experience: PlayerExperience });
+            if (xpEntities.length > 0) {
+              const exp = xpEntities[0].components.experience;
+              exp.current += dropped.quantity;
+              autoUsed = true;
+            }
+          }
+          onPickedUp({ item: dropped.item, quantity: dropped.quantity, autoUsed });
           world.removeEntity(entity);
           return;
         }

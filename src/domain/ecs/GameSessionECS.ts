@@ -314,6 +314,10 @@ export class GameSessionECS {
     collisionSystem.run();
     sfxSystem.run();
     dropAgingSystem.run();
+    // Attract planet resources and promote to items when close
+    if (this.mode === "planet") {
+      this.attractAndPromoteNearbyResources(dt);
+    }
     pickupSystem.run();
     // Level-up after any XP-changing actions this frame
     levelUpSystem.run();
@@ -323,10 +327,7 @@ export class GameSessionECS {
     // Update camera to follow player
     this.updateCameraFollowPlayer();
 
-    // Auto-collect nearby planet resources with attraction toward player
-    if (this.mode === "planet") {
-      this.collectNearbyResources(dt);
-    }
+    // Planet resources are now items; no separate resource collection step
 
     // Re-check for level-ups in case resource collection granted XP
     levelUpSystem.run();
@@ -591,7 +592,7 @@ export class GameSessionECS {
       });
   }
 
-  getAndClearPickupEvents(): Array<{ item: Item; quantity: number }> {
+  getAndClearPickupEvents(): Array<PickupEvent> {
     const out = [...this.pickupEvents];
     this.pickupEvents = [];
     return out;
@@ -637,6 +638,124 @@ export class GameSessionECS {
 
   getNotification(): string | null {
     return this.notification;
+  }
+
+  // Attract resources toward player and promote to items when within pickup radius
+  private attractAndPromoteNearbyResources(dt: number): void {
+    if (!this.planetSurface) return;
+    const players = this.world.query({ position: Components.Position, player: Components.Player });
+    if (players.length === 0) return;
+    const playerPos = players[0].components.position;
+    const ATTRACTION_RADIUS = 140;
+    const PICKUP_RADIUS = 30;
+    const MAX_PULL_SPEED = 260;
+    const resources = this.planetSurface.resources;
+    for (let i = resources.length - 1; i >= 0; i--) {
+      const res = resources[i];
+      const dx = playerPos.x - res.x;
+      const dy = playerPos.y - res.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist <= PICKUP_RADIUS) {
+        const { item, quantity } = this.createItemFromResource(res.type, res.amount);
+        this.world
+          .createEntity()
+          .addComponent(Components.Position, { x: res.x, y: res.y })
+          .addComponent(Components.DroppedItem, { item, quantity, ageSeconds: 0 });
+        // Remove from surface once promoted to item entity
+        resources.splice(i, 1);
+      } else if (dist <= ATTRACTION_RADIUS) {
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+        const proximityFactor = Math.max(0, Math.min(1, 1 - dist / ATTRACTION_RADIUS));
+        const speed = MAX_PULL_SPEED * proximityFactor;
+        const step = speed * dt;
+        res.x += nx * step;
+        res.y += ny * step;
+      }
+    }
+  }
+
+  private createItemFromResource(
+    type: PlanetSurface["resources"][number]["type"],
+    amount: number,
+  ): { item: Item; quantity: number } {
+    const id = `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    if (type === "energy") {
+      return {
+        item: {
+          id,
+          type: "xp_energy",
+          baseType: "consumable",
+          name: "Energy Shard",
+          description: "A shard of pure energy that grants experience on pickup.",
+          properties: {
+            weight: 0,
+            volume: 0,
+            stackable: true,
+            maxStackSize: 9999,
+            quality: "common",
+            rarity: "common",
+            tradeable: false,
+            dropOnDeath: false,
+          },
+          stats: { value: amount },
+          requirements: {},
+          effects: [],
+          metadata: { discoveredAt: Date.now() },
+        },
+        quantity: amount,
+      } as const;
+    }
+    if (type === "organic") {
+      return {
+        item: {
+          id,
+          type: "organic_matter",
+          baseType: "material",
+          name: "Organic Matter",
+          description: "Organic material useful for crafting.",
+          properties: {
+            weight: 0.2,
+            volume: 0.3,
+            stackable: true,
+            maxStackSize: 50,
+            quality: "common",
+            rarity: "common",
+            tradeable: true,
+            dropOnDeath: false,
+          },
+          stats: { value: 2 },
+          requirements: {},
+          effects: [],
+          metadata: { discoveredAt: Date.now() },
+        },
+        quantity: Math.max(1, Math.floor(amount / 10)),
+      } as const;
+    }
+    return {
+      item: {
+        id,
+        type: "metal_ore",
+        baseType: "material",
+        name: "Metal Ore",
+        description: "Unrefined ore containing useful metals.",
+        properties: {
+          weight: 0.5,
+          volume: 0.4,
+          stackable: true,
+          maxStackSize: 50,
+          quality: "common",
+          rarity: "common",
+          tradeable: true,
+          dropOnDeath: false,
+        },
+        stats: { value: 4 },
+        requirements: {},
+        effects: [],
+        metadata: { discoveredAt: Date.now() },
+      },
+      quantity: Math.max(1, Math.floor(amount / 8)),
+    } as const;
   }
 
   // Planet-mode ship state (for renderer/UI)
@@ -725,47 +844,7 @@ export class GameSessionECS {
     return this.planetSurface;
   }
 
-  // Collect planet resources (e.g., energy/mineral/organic) when the player is close
-  private collectNearbyResources(dt: number): void {
-    if (!this.planetSurface) return;
-    const players = this.world.query({ position: Components.Position, player: Components.Player });
-    if (players.length === 0) return;
-    const playerPos = players[0].components.position;
-    const xpEntities = this.world.query({
-      player: Components.Player,
-      experience: Components.PlayerExperience,
-    });
-    const xp = xpEntities.length > 0 ? xpEntities[0].components.experience : null;
-
-    // Radii and attraction parameters
-    const PICKUP_RADIUS = 30; // actual collection radius
-    const ATTRACTION_RADIUS = 140; // begin pulling resources toward player
-    const MAX_PULL_SPEED = 260; // px/s near player, tapered at edge
-    const { resources } = this.planetSurface;
-    for (let i = resources.length - 1; i >= 0; i--) {
-      const resource = resources[i];
-      const dx = playerPos.x - resource.x;
-      const dy = playerPos.y - resource.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist <= PICKUP_RADIUS) {
-        // Remove collected resource and award XP if available
-        resources.splice(i, 1);
-        if (xp) {
-          xp.current += resource.amount;
-          // Level progression can be added later
-        }
-      } else if (dist <= ATTRACTION_RADIUS) {
-        // Pull resource toward player.
-        const nx = dx / (dist || 1);
-        const ny = dy / (dist || 1);
-        const proximityFactor = Math.max(0, Math.min(1, 1 - dist / ATTRACTION_RADIUS));
-        const speed = MAX_PULL_SPEED * proximityFactor;
-        const step = speed * dt;
-        resource.x += nx * step;
-        resource.y += ny * step;
-      }
-    }
-  }
+  // Legacy resource collection removed: resources are promoted to items and handled by pickup system
 
   // Allow application layer to set player position on load/restore
   setPlayerPosition(pos: { x: number; y: number }): void {
@@ -799,8 +878,6 @@ export class GameSessionECS {
     }
     this.updateNotifications();
   }
-
-  // generatePlanetSurface is now shared in domain/game/planet-surface/generate.ts
 
   private spawnPlanetCreatures(): void {
     // Spawn simple enemies near player when entering planet mode

@@ -298,7 +298,9 @@ export class GameApp {
         }
         // Bridge picked-up items to HUD inventory
         const picked = session.getAndClearPickupEvents();
-        for (const ev of picked) hudInventory.addItem(ev.item, ev.quantity);
+        for (const ev of picked) {
+          if (!ev.autoUsed) hudInventory.addItem(ev.item, ev.quantity);
+        }
         // Play SFX events emitted by session
         const sfx = session.getAndClearSfxEvents();
         for (const ev of sfx) {
