@@ -937,7 +937,13 @@ export class GameSessionECS {
     if (players.length === 0) return;
     const { position: playerPos, velocity: playerVel } = players[0].components;
 
-    const bodies: Array<{ x: number; y: number; r: number; weight: number }> = [];
+    const bodies: Array<{
+      x: number;
+      y: number;
+      r: number;
+      weight: number;
+      kind: "planet" | "star";
+    }> = [];
     // Planets
     const planetEntities = this.world.query({
       position: Components.Position,
@@ -950,6 +956,7 @@ export class GameSessionECS {
         y: planetEntity.components.position.y,
         r: planetEntity.components.collider.radius,
         weight: 2.2, // stronger pull for planets
+        kind: "planet",
       });
     }
     // Stars (heavier)
@@ -964,6 +971,7 @@ export class GameSessionECS {
         y: starEntity.components.position.y,
         r: starEntity.components.collider.radius,
         weight: 2.5,
+        kind: "star",
       });
     }
 
@@ -981,6 +989,24 @@ export class GameSessionECS {
         const accel = (gravityConstant * body.weight * (body.r * body.r)) / (dist * dist);
         playerVel.dx += nx * accel * dt;
         playerVel.dy += ny * accel * dt;
+
+        // Planet-only: gentle orbital assist to make capture easy and breaking out easy
+        if (body.kind === "planet") {
+          // Desired circular speed given our effective GM := gravityConstant * weight * r^2
+          const effectiveGM = gravityConstant * body.weight * (body.r * body.r);
+          const desiredTangential = Math.sqrt(Math.max(0, effectiveGM / dist));
+          // Current tangential unit vector (perpendicular to radial outward)
+          const tnx = -ny;
+          const tny = nx;
+          const currentTangential = playerVel.dx * tnx + playerVel.dy * tny;
+          // Nudge toward desired tangential speed with a capped assist
+          const assistGain = 0.8; // how quickly we approach desired v_t per second
+          const maxAssist = accel * 0.7; // do not exceed a fraction of radial accel
+          const deltaVPerSec = (desiredTangential - currentTangential) * assistGain;
+          const clamped = Math.max(-maxAssist, Math.min(maxAssist, deltaVPerSec));
+          playerVel.dx += tnx * clamped * dt;
+          playerVel.dy += tny * clamped * dt;
+        }
       }
     }
   }

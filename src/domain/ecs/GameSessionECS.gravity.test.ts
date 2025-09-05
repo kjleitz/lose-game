@@ -29,7 +29,15 @@ describe("Gravity behavior (space mode)", () => {
     const d = 250;
     const expectedDv = ((G * weightPlanet * r * r) / (d * d)) * dt;
     expect(after.vx).toBeCloseTo(-expectedDv, 3);
-    expect(Math.abs(after.vy)).toBeLessThan(1e-6);
+    // With orbital assist, expect a small tangential nudge capped at 0.7 * accel
+    const accel = (G * weightPlanet * r * r) / (d * d);
+    const maxAssist = accel * 0.7;
+    const effectiveGM = G * weightPlanet * r * r;
+    const desiredTangential = Math.sqrt(effectiveGM / d);
+    const assistGain = 0.8;
+    const assistPerSec = Math.min(maxAssist, desiredTangential * assistGain);
+    const expectedVy = -assistPerSec * dt; // negative y (clockwise tangential)
+    expect(after.vy).toBeCloseTo(expectedVy, 3);
   });
 
   it("does not apply gravity beyond 3R influence", () => {
