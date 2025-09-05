@@ -2,6 +2,7 @@ import type { Action } from "../../application/input/ActionTypes";
 import type { Kinematics2D, ViewSize } from "../../shared/types/geometry";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Camera } from "./camera";
+import type { RenderSession } from "./RenderSession";
 import { CameraTransform } from "./CameraTransform";
 import { CharacterRenderer } from "./CharacterRenderer";
 import { CreatureRenderer } from "./CreatureRenderer";
@@ -9,19 +10,9 @@ import { DroppedItemRenderer } from "./DroppedItemRenderer";
 import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
 import { drawProjectile } from "./sprites";
 import type { Biome } from "../../shared/types/Biome";
-import type { DroppedItem } from "../game/items/DroppedItemSystem";
-import type { EnemyView as Enemy } from "../game/views";
 import { ShipRenderer } from "./ShipRenderer";
 
-interface SessionLike {
-  getPlanetSurface?: () => PlanetSurface | undefined;
-  getDroppedItems?: () => DroppedItem[];
-  getEnemies?: () => Enemy[];
-  isInPlanetShip?: () => boolean;
-  getInPlanetShipProgress?: () => number;
-  getProjectiles?: () => Array<{ x: number; y: number; radius: number }>;
-  getPlayer?: () => { x: number; y: number; hitFlash?: { progress: number } } | null;
-}
+type SessionLike = RenderSession;
 
 export class PlanetModeRenderer {
   render(
@@ -31,7 +22,7 @@ export class PlanetModeRenderer {
     actions: Set<Action>,
     size: ViewSize,
     dpr: number,
-    session?: SessionLike | null,
+    session: SessionLike,
   ): void {
     const surface = this.getPlanetSurfaceFromSession(session);
     const inPlanetShip = this.isInPlanetShip(session);
@@ -44,20 +35,18 @@ export class PlanetModeRenderer {
     this.renderPlayerHitFlashPlanet(ctx, session, player, camera, size, dpr);
   }
 
-  private getPlanetSurfaceFromSession(session?: SessionLike | null): PlanetSurface | undefined {
-    if (!session || typeof session.getPlanetSurface !== "function") return undefined;
+  private getPlanetSurfaceFromSession(session: SessionLike): PlanetSurface | undefined {
+    if (typeof session.getPlanetSurface !== "function") return undefined;
     return session.getPlanetSurface();
   }
 
-  private isInPlanetShip(session?: SessionLike | null): boolean {
-    return Boolean(
-      session && typeof session.isInPlanetShip === "function" && session.isInPlanetShip(),
-    );
+  private isInPlanetShip(session: SessionLike): boolean {
+    return Boolean(typeof session.isInPlanetShip === "function" && session.isInPlanetShip());
   }
 
   private renderPlanetSurfaceLayer(
     ctx: CanvasRenderingContext2D,
-    session: SessionLike | null | undefined,
+    session: SessionLike,
     camera: Camera,
     size: ViewSize,
     dpr: number,
@@ -79,12 +68,8 @@ export class PlanetModeRenderer {
     }
   }
 
-  private renderPlanetDroppedItems(
-    ctx: CanvasRenderingContext2D,
-    session?: SessionLike | null,
-  ): void {
-    if (!session || typeof session.getDroppedItems !== "function") return;
-    const items = session.getDroppedItems();
+  private renderPlanetDroppedItems(ctx: CanvasRenderingContext2D, session: SessionLike): void {
+    const items = session.getDroppedItems ? session.getDroppedItems() : [];
     if (!Array.isArray(items) || items.length === 0) return;
     const renderer = new DroppedItemRenderer();
     renderer.render(ctx, items);
@@ -92,20 +77,18 @@ export class PlanetModeRenderer {
 
   private renderPlanetEntities(
     ctx: CanvasRenderingContext2D,
-    session: SessionLike | null | undefined,
+    session: SessionLike,
     player: Kinematics2D,
     actions: Set<Action>,
     inPlanetShip: boolean,
   ): void {
     const creatureRenderer = new CreatureRenderer();
-    if (session && typeof session.getEnemies === "function") {
-      const enemies = session.getEnemies();
-      creatureRenderer.render(ctx, enemies);
-    }
+    const enemies = session.getEnemies();
+    creatureRenderer.render(ctx, enemies);
     if (inPlanetShip) {
       this.renderPlanetShipShadow(ctx, player);
       const progress =
-        session && typeof session.getInPlanetShipProgress === "function"
+        typeof session.getInPlanetShipProgress === "function"
           ? session.getInPlanetShipProgress()
           : 1;
       const clamped = Math.max(0, Math.min(1, progress));
@@ -157,12 +140,11 @@ export class PlanetModeRenderer {
 
   private renderPlanetProjectiles(
     ctx: CanvasRenderingContext2D,
-    session: SessionLike | null | undefined,
+    session: SessionLike,
     camera: Camera,
     size: ViewSize,
     dpr: number,
   ): void {
-    if (!session || typeof session.getProjectiles !== "function") return;
     const list = session.getProjectiles();
     if (!Array.isArray(list) || list.length === 0) return;
     // Ensure world transform before drawing projectiles
@@ -188,13 +170,12 @@ export class PlanetModeRenderer {
 
   private renderPlayerHitFlashPlanet(
     ctx: CanvasRenderingContext2D,
-    session: SessionLike | null | undefined,
+    session: SessionLike,
     player: Kinematics2D,
     camera: Camera,
     size: ViewSize,
     dpr: number,
   ): void {
-    if (!session || typeof session.getPlayer !== "function") return;
     const [wm11, wm12, wm21, wm22, wdx, wdy] = CameraTransform.getTransform(
       camera,
       size.width,

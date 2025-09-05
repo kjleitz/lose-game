@@ -13,6 +13,7 @@ import { Radar } from "./widgets/Radar";
 
 interface HudProps {
   player: Point2D;
+  playerAngle?: number;
   experience?: number;
   level?: number;
   xpToNextLevel?: number;
@@ -21,6 +22,7 @@ interface HudProps {
   healthMax?: number;
   planets: Planet[];
   stars?: Array<{ id: string; x: number; y: number; radius: number; color: string }>;
+  enemies?: Array<{ id: string; x: number; y: number; radius: number }>;
   screenW: number;
   screenH: number;
   notification?: string | null;
@@ -40,6 +42,7 @@ interface HudProps {
 
 export function Hud({
   player,
+  playerAngle,
   experience = 0,
   level = 1,
   xpToNextLevel = 100,
@@ -48,6 +51,7 @@ export function Hud({
   healthMax = 100,
   planets,
   stars = [],
+  enemies = [],
   screenW,
   screenH,
   notification,
@@ -66,7 +70,15 @@ export function Hud({
 }: HudProps): JSX.Element {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
-      <Radar player={player} planets={planets} stars={stars} screenW={screenW} screenH={screenH} />
+      <Radar
+        player={player}
+        playerAngle={playerAngle}
+        planets={planets}
+        stars={stars}
+        enemies={enemies}
+        screenW={screenW}
+        screenH={screenH}
+      />
       <Notification message={notification} />
       <div className="absolute left-4 bottom-4 pointer-events-auto z-20" style={{ minWidth: 180 }}>
         <StatusPanel

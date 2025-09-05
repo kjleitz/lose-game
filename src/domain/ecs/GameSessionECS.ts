@@ -55,6 +55,7 @@ export class GameSessionECS {
   private sfxEvents: SfxEvent[] = [];
   // Transient render FX events for the renderer (non-audio)
   private renderFxEvents: Array<{ type: "burn"; x: number; y: number }> = [];
+  private enemyStarHeatOverlays: Array<{ id: string; angle: number; intensity: number }> = [];
   private deathEvents: number = 0; // count of player-death events since last read
   private interactCooldown: number = 0; // seconds until next interact toggle allowed
   private inPlanetShipAnim: number = 0; // 0..1 takeoff animation progress
@@ -136,7 +137,17 @@ export class GameSessionECS {
   }
 
   update(actions: Set<Action>, dt: number): void {
-    // Update timers
+    this.updateTimers(dt);
+    this.handleModeTransitions(actions);
+    this.runEcsSystems(actions, dt);
+    this.updateCameraFollowPlayer();
+    this.updateNotifications();
+    this.checkDeathAndMarkIfNeeded();
+    // Active Position is authoritative for the current mode; no cross-mode syncing here
+  }
+
+  // --- Frame helpers ---
+  private updateTimers(dt: number): void {
     if (this.interactCooldown > 0) this.interactCooldown = Math.max(0, this.interactCooldown - dt);
     if (this.gravityCooldown > 0) this.gravityCooldown = Math.max(0, this.gravityCooldown - dt);
     if (this.inPlanetShip) {
@@ -145,125 +156,139 @@ export class GameSessionECS {
     } else {
       this.inPlanetShipAnim = 0;
     }
-    // Handle landing/takeoff based on proximity and actions
+  }
+
+  private handleModeTransitions(actions: Set<Action>): void {
     if (this.mode === "space") {
-      const nearbyPlanetId = this.findNearbyPlanetId();
-      if (nearbyPlanetId && actions.has("land")) {
-        // Enter planet mode
-        this.mode = "planet";
-        this.landedPlanetId = nearbyPlanetId;
-        const planet = this.getPlanets().find((pl) => pl.id === nearbyPlanetId);
-        if (planet) {
-          // Generate a surface (planet-local coordinates)
-          const surface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
-          // On entering planet mode, place player at the landing site (planet-local)
-          const players = this.world.query({
-            position: Components.Position,
-            velocity: Components.Velocity,
-            rotation: Components.Rotation,
-            player: Components.Player,
-          });
-          if (players.length > 0) {
-            const { position, velocity, rotation } = players[0].components;
-            // Enter planet at landing site with zeroed motion
-            position.x = surface.landingSite.x;
-            position.y = surface.landingSite.y;
-            velocity.dx = 0;
-            velocity.dy = 0;
-            rotation.angle = 0;
-          }
-          this.planetSurface = surface;
-        }
-        // Spawn a few creatures near landing for planet mode
-        this.spawnPlanetCreatures();
-        // Start in ship-on-planet state upon landing
-        this.inPlanetShip = true;
-        this.inPlanetShipAnim = 0;
+      this.handleSpaceModeTransitions(actions);
+    } else {
+      this.handlePlanetModeTransitions(actions);
+    }
+  }
+
+  private handleSpaceModeTransitions(actions: Set<Action>): void {
+    const nearbyPlanetId = this.findNearbyPlanetId();
+    if (!(nearbyPlanetId && actions.has("land"))) return;
+
+    // Enter planet mode
+    this.mode = "planet";
+    this.landedPlanetId = nearbyPlanetId;
+    const planet = this.getPlanets().find((pl) => pl.id === nearbyPlanetId);
+    if (planet) {
+      // Generate a surface (planet-local coordinates)
+      const surface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
+      // On entering planet mode, place player at the landing site (planet-local)
+      const players = this.world.query({
+        position: Components.Position,
+        velocity: Components.Velocity,
+        rotation: Components.Rotation,
+        player: Components.Player,
+      });
+      if (players.length > 0) {
+        const { position, velocity, rotation } = players[0].components;
+        position.x = surface.landingSite.x;
+        position.y = surface.landingSite.y;
+        velocity.dx = 0;
+        velocity.dy = 0;
+        rotation.angle = 0;
       }
-    } else if (this.mode === "planet") {
-      // Enter/exit ship with C: exit anywhere; enter only near the grounded ship
-      if (actions.has("interact") && this.interactCooldown <= 0) {
-        const surface = this.planetSurface;
-        const players = this.world.query({
-          position: Components.Position,
-          velocity: Components.Velocity,
-          rotation: Components.Rotation,
-          player: Components.Player,
-        });
-        if (surface && players.length > 0) {
-          const { x, y } = players[0].components.position;
-          if (this.inPlanetShip) {
-            // Exit ship anywhere: drop ship at current player position
-            surface.landingSite = { x, y };
-            this.inPlanetShip = false;
-            this.interactCooldown = 0.25;
-          } else {
-            // Enter ship only when near grounded ship
-            const dx = x - surface.landingSite.x;
-            const dy = y - surface.landingSite.y;
-            const nearLanding = Math.hypot(dx, dy) <= 64;
-            if (nearLanding) {
-              this.inPlanetShip = true;
-              this.inPlanetShipAnim = 0;
-              this.interactCooldown = 0.25;
-            }
-          }
-        }
-      }
-      if (actions.has("takeoff")) {
-        // Takeoff requires being in the ship, but not proximity to landing site
-        const players = this.world.query({
-          position: Components.Position,
-          velocity: Components.Velocity,
-          rotation: Components.Rotation,
-          player: Components.Player,
-        });
+      this.planetSurface = surface;
+    }
+    // Spawn a few creatures near landing for planet mode
+    this.spawnPlanetCreatures();
+    // Start in ship-on-planet state upon landing
+    this.inPlanetShip = true;
+    this.inPlanetShipAnim = 0;
+  }
+
+  private handlePlanetModeTransitions(actions: Set<Action>): void {
+    // Enter/exit ship with C: exit anywhere; enter only near the grounded ship
+    if (actions.has("interact") && this.interactCooldown <= 0) {
+      const surface = this.planetSurface;
+      const players = this.world.query({
+        position: Components.Position,
+        velocity: Components.Velocity,
+        rotation: Components.Rotation,
+        player: Components.Player,
+      });
+      if (surface && players.length > 0) {
+        const { x, y } = players[0].components.position;
         if (this.inPlanetShip) {
-          // Place player hovering over the planet in space coordinates
-          const planet = this.landedPlanetId
-            ? this.getPlanets().find((pl) => pl.id === this.landedPlanetId)
-            : undefined;
-          if (planet && players.length > 0) {
-            const { position, velocity, rotation } = players[0].components;
-            // Hover just outside the planet radius to the east
-            position.x = planet.x + planet.radius + 70;
-            position.y = planet.y;
-            // Reset motion and face right for a clean start
-            velocity.dx = 0;
-            velocity.dy = 0;
-            rotation.angle = 0;
-            // Snap camera immediately so the ship is centered this frame
-            this.camera.x = position.x;
-            this.camera.y = position.y;
-          }
-          this.mode = "space";
-          this.landedPlanetId = null;
-          this.planetSurface = undefined;
+          // Exit ship anywhere: drop ship at current player position
+          surface.landingSite = { x, y };
           this.inPlanetShip = false;
-          // Grace period to avoid immediate gravity tug on takeoff frame
-          this.gravityCooldown = 0.1;
-          // Clear any planet/star heat overlay remnants when leaving planet
-          this.starHeat = null;
+          this.interactCooldown = 0.25;
+        } else {
+          // Enter ship only when near grounded ship
+          const dx = x - surface.landingSite.x;
+          const dy = y - surface.landingSite.y;
+          const nearLanding = Math.hypot(dx, dy) <= 64;
+          if (nearLanding) {
+            this.inPlanetShip = true;
+            this.inPlanetShipAnim = 0;
+            this.interactCooldown = 0.25;
+          }
         }
       }
     }
 
-    // Create and run systems in order
+    if (!actions.has("takeoff")) return;
+
+    // Takeoff requires being in the ship, but not proximity to landing site
+    const players = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      rotation: Components.Rotation,
+      player: Components.Player,
+    });
+    if (!this.inPlanetShip) return;
+
+    // Place player hovering over the planet in space coordinates
+    const planet = this.landedPlanetId
+      ? this.getPlanets().find((pl) => pl.id === this.landedPlanetId)
+      : undefined;
+    if (planet && players.length > 0) {
+      const { position, velocity, rotation } = players[0].components;
+      // Hover just outside the planet radius to the east
+      position.x = planet.x + planet.radius + 70;
+      position.y = planet.y;
+      // Reset motion and face right for a clean start
+      velocity.dx = 0;
+      velocity.dy = 0;
+      rotation.angle = 0;
+      // Snap camera immediately so the ship is centered this frame
+      this.camera.x = position.x;
+      this.camera.y = position.y;
+    }
+    this.mode = "space";
+    this.landedPlanetId = null;
+    this.planetSurface = undefined;
+    this.inPlanetShip = false;
+    // Grace period to avoid immediate gravity tug on takeoff frame
+    this.gravityCooldown = 0.1;
+    // Clear any planet/star heat overlay remnants when leaving planet
+    this.starHeat = null;
+  }
+
+  private runEcsSystems(actions: Set<Action>, dt: number): void {
     const perkEffectsSystem = createPerkEffectsSystem(this.world);
     // In planet mode, use ship-style controls if the player is flying the ship
     const controlMode: "space" | "planet" =
       this.mode === "planet" && this.inPlanetShip ? "space" : this.mode;
+    const controlTuning =
+      this.mode === "planet" && this.inPlanetShip
+        ? { spaceAccelMult: 2.5, spaceMaxSpeedMult: 3.0, spaceTurnMult: 1.5 }
+        : this.mode === "space" && this.underPlanetGravity
+          ? { spaceDragOverride: 0.996 }
+          : undefined;
     const playerControlSystem = createPlayerControlSystem(
       this.world,
       actions,
       dt,
       controlMode,
-      this.mode === "planet" && this.inPlanetShip
-        ? { spaceAccelMult: 2.5, spaceMaxSpeedMult: 3.0, spaceTurnMult: 1.5 }
-        : this.mode === "space" && this.underPlanetGravity
-          ? { spaceDragOverride: 0.996 }
-          : undefined,
+      controlTuning,
     );
+
     const weaponSystem = createWeaponSystem(this.world, actions);
     const enemyAISystem = createEnemyAISystem(this.world, dt);
     const enemyRangedSystem = createEnemyRangedWeaponSystem(this.world, dt);
@@ -274,7 +299,6 @@ export class GameSessionECS {
     const hitFlashSystem = createHitFlashSystem(this.world, dt);
     const levelUpSystem = createLevelUpSystem(this.world, (ev) => {
       this.levelUpEvents.push(ev);
-      // Emit as a transient toast instead of hijacking the HUD hint
       this.toastEvents.push(`Level Up! Reached level ${ev.newLevel}`);
     });
     const perkSystem = createPerkUnlockSystem(
@@ -282,11 +306,7 @@ export class GameSessionECS {
       this.perkRequests,
       perkDefinitions,
       (res) => {
-        if (res.success) {
-          this.toastEvents.push("Perk unlocked!");
-        } else {
-          // Consider emitting a failure toast in the future with more detail
-        }
+        if (res.success) this.toastEvents.push("Perk unlocked!");
       },
     );
     const collisionSystem = createCollisionSystem(this.world);
@@ -299,7 +319,6 @@ export class GameSessionECS {
       actions,
       (ev): void => {
         this.pickupEvents.push(ev);
-        // Play a pickup confirmation chime
         this.sfxEvents.push({ type: "pickup" });
       },
       40,
@@ -309,26 +328,21 @@ export class GameSessionECS {
     );
 
     // Run systems in order
-    // Recompute modifiers then apply player controls
     perkEffectsSystem.run();
     playerControlSystem.run();
     weaponSystem.run();
     enemyAISystem.run();
-    // Enemy attacks: space ships fire; planet creatures strike
     if (this.mode === "space") {
       enemyRangedSystem.run();
     } else if (this.mode === "planet") {
       enemyMeleeSystem.run();
     }
-    // Update orbital motion for planets around stars
     createOrbitSystem(this.world, dt).run();
-    // Apply gravitational acceleration toward nearby stars/planets in space mode
     if (this.mode === "space" && this.gravityCooldown <= 0) {
       this.applyGravity(dt);
       this.applyStarHazard(dt);
     }
     movementSystem.run();
-    // Planet terrain blocking after movement
     if (this.mode === "planet" && !this.inPlanetShip) {
       const blocker = createPlanetTerrainCollisionSystem(this.world, () => this.planetSurface);
       blocker.run();
@@ -339,33 +353,13 @@ export class GameSessionECS {
     collisionSystem.run();
     sfxSystem.run();
     dropAgingSystem.run();
-    // Attract planet resources and promote to items when close
-    if (this.mode === "planet") {
-      this.attractAndPromoteNearbyResources(dt);
-    }
+    if (this.mode === "planet") this.attractAndPromoteNearbyResources(dt);
     pickupSystem.run();
-    // Level-up after any XP-changing actions this frame
     levelUpSystem.run();
-    // Process any perk unlock requests
     perkSystem.run();
-
-    // Update camera to follow player
-    this.updateCameraFollowPlayer();
-
-    // Planet resources are now items; no separate resource collection step
-
-    // Re-check for level-ups in case resource collection granted XP
+    // Re-check after any late XP changes
     levelUpSystem.run();
-    // Re-run perk system in case points changed (not necessary but safe)
     perkSystem.run();
-
-    // Update proximity notification for planets
-    this.updateNotifications();
-
-    // Check for death in any mode and mark awaiting respawn
-    this.checkDeathAndMarkIfNeeded();
-
-    // Active Position is authoritative for the current mode; no cross-mode syncing here
   }
 
   private checkDeathAndMarkIfNeeded(): void {
@@ -639,8 +633,8 @@ export class GameSessionECS {
       });
   }
 
-  // Provide optional star heat overlay parameters for renderer when near a star
-  getStarHeatOverlay(): { angle: number; intensity: number } | null {
+  // Provide star heat overlay parameters for renderer when near a star (player)
+  getPlayerStarHeatOverlay(): { angle: number; intensity: number } | null {
     return this.starHeat;
   }
 
@@ -673,6 +667,11 @@ export class GameSessionECS {
     const out = [...this.renderFxEvents];
     this.renderFxEvents = [];
     return out;
+  }
+
+  // Enemy star heat overlays for renderer (space mode)
+  getEnemyStarHeatOverlays(): Array<{ id: string; angle: number; intensity: number }> {
+    return this.enemyStarHeatOverlays;
   }
 
   requestUnlockPerk(perkId: PerkId): void {
@@ -1015,6 +1014,7 @@ export class GameSessionECS {
     // Only active in space mode
     if (this.mode !== "space") {
       this.starHeat = null;
+      this.enemyStarHeatOverlays = [];
       return;
     }
 
@@ -1026,6 +1026,7 @@ export class GameSessionECS {
     });
     if (stars.length === 0) {
       this.starHeat = null;
+      this.enemyStarHeatOverlays = [];
       return;
     }
 
@@ -1084,7 +1085,8 @@ export class GameSessionECS {
       }
     }
 
-    // Enemy damage (no overlay needed)
+    // Enemy damage + overlay export for renderer parity with player
+    this.enemyStarHeatOverlays = [];
     const enemies = this.world.query({
       position: Components.Position,
       health: Components.Health,
@@ -1093,6 +1095,7 @@ export class GameSessionECS {
     for (const enemy of enemies) {
       const pos = enemy.components.position;
       const hp = enemy.components.health;
+      const id = enemy.components.enemy.id;
       const nearest = findNearest(pos.x, pos.y);
       if (!nearest) continue;
       const dist = nearest.dist;
@@ -1102,16 +1105,22 @@ export class GameSessionECS {
       const surface = starRadius;
 
       let died = false;
+      let overlay: { angle: number; intensity: number } | null = null;
       if (dist <= killRadius) {
         hp.current = 0;
         died = true;
       } else if (dist <= heatOuter) {
         const span = Math.max(0.0001, heatOuter - surface);
         const intensity = Math.max(0, Math.min(1, (heatOuter - dist) / span));
+        overlay = { angle: Math.atan2(-nearest.dy, -nearest.dx), intensity };
         const baseDps = 6;
         const scaledDps = baseDps * (0.2 + 1.0 * intensity);
         hp.current = Math.max(0, hp.current - scaledDps * dt);
         died = hp.current <= 0;
+      }
+
+      if (!died && overlay && overlay.intensity > 0) {
+        this.enemyStarHeatOverlays.push({ id, angle: overlay.angle, intensity: overlay.intensity });
       }
 
       if (died) {

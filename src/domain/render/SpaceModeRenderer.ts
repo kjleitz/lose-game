@@ -7,25 +7,12 @@ import type { EnemyView as Enemy } from "../game/views";
 import { PlanetRenderer } from "./PlanetRenderer";
 import { ShipRenderer } from "./ShipRenderer";
 import { StarfieldRenderer } from "./StarfieldRenderer";
-import { StarRenderer, type StarView } from "./StarRenderer";
+import { StarRenderer } from "./StarRenderer";
 import { drawProjectile } from "./sprites";
 import type { Camera } from "./camera";
+import type { RenderSession } from "./RenderSession";
 
-interface SessionLike {
-  getStars?: () => StarView[];
-  getStarHeatOverlay?: () => { angle: number; intensity: number } | null;
-  getProjectilesDetailed?: () => Array<{
-    id: number;
-    x: number;
-    y: number;
-    radius: number;
-    vx: number;
-    vy: number;
-    faction?: "player" | "enemy" | "neutral";
-  }>;
-  getAndClearRenderFxEvents?: () => Array<{ type: "burn"; x: number; y: number }>;
-  getPlayer?: () => { hitFlash?: { progress: number }; x: number; y: number } | null;
-}
+type SessionLike = RenderSession;
 
 export class SpaceModeRenderer {
   private spaceProjectileTrails: Map<number, Array<{ x: number; y: number; t: number }>> =
@@ -43,7 +30,7 @@ export class SpaceModeRenderer {
     actions: Set<Action>,
     size: ViewSize,
     dpr: number,
-    session?: SessionLike | null,
+    session: SessionLike,
   ): void {
     // FX timing
     const nowMs = Date.now();
@@ -62,33 +49,25 @@ export class SpaceModeRenderer {
     this.renderShipSprite(ctx, player, actions, 48);
 
     // Player heat trails
-    if (session && typeof session.getStarHeatOverlay === "function") {
-      const heat = session.getStarHeatOverlay();
-      if (heat && heat.intensity > 0.001) {
-        this.drawStarHeatTrails(ctx, player.x, player.y, heat.angle, heat.intensity, camera.zoom);
-      }
+    const heat = session.getPlayerStarHeatOverlay ? session.getPlayerStarHeatOverlay() : null;
+    if (heat && heat.intensity > 0.001) {
+      this.drawStarHeatTrails(ctx, player.x, player.y, heat.angle, heat.intensity, camera.zoom);
     }
 
-    // Enemy heat trails (relative to nearest star)
-    const stars = session && typeof session.getStars === "function" ? session.getStars() : null;
-    if (stars && stars.length > 0) {
+    // Enemy heat trails from session (parity with player)
+    const overlays = session.getEnemyStarHeatOverlays();
+    if (overlays && overlays.length > 0) {
+      const byId = new Map(overlays.map((overlay) => [overlay.id, overlay]));
       for (const enemy of enemies) {
-        const overlay = this.computeStarHeatFor(enemy.x, enemy.y, stars);
-        if (overlay && overlay.intensity > 0.001) {
-          this.drawStarHeatTrails(
-            ctx,
-            enemy.x,
-            enemy.y,
-            overlay.angle,
-            overlay.intensity,
-            camera.zoom,
-          );
+        const ov = byId.get(enemy.id);
+        if (ov && ov.intensity > 0.001) {
+          this.drawStarHeatTrails(ctx, enemy.x, enemy.y, ov.angle, ov.intensity, camera.zoom);
         }
       }
     }
 
     // Session visual FX (e.g., burn-up flares)
-    if (session && typeof session.getAndClearRenderFxEvents === "function") {
+    if (session.getAndClearRenderFxEvents) {
       const events = session.getAndClearRenderFxEvents();
       for (const ev of events)
         if (ev.type === "burn") this.burnFx.push({ x: ev.x, y: ev.y, age: 0, duration: 0.6 });
@@ -190,8 +169,7 @@ export class SpaceModeRenderer {
     ctx.setTransform(m11, m12, m21, m22, dx, dy);
   }
 
-  private renderStars(ctx: CanvasRenderingContext2D, session?: SessionLike | null): void {
-    if (!session || typeof session.getStars !== "function") return;
+  private renderStars(ctx: CanvasRenderingContext2D, session: SessionLike): void {
     const starRenderer = new StarRenderer();
     starRenderer.render(ctx, session.getStars());
   }
@@ -219,11 +197,11 @@ export class SpaceModeRenderer {
   private renderSpaceProjectiles(
     ctx: CanvasRenderingContext2D,
     projectiles: Array<Circle2D>,
-    session?: SessionLike | null,
+    session: SessionLike,
   ): void {
     const now = Date.now();
     const detailed =
-      session && typeof session.getProjectilesDetailed === "function"
+      typeof session.getProjectilesDetailed === "function"
         ? session.getProjectilesDetailed()
         : null;
     if (detailed && detailed.length > 0) {
@@ -298,31 +276,7 @@ export class SpaceModeRenderer {
     }
   }
 
-  // Shared heat trail helpers
-  private computeStarHeatFor(
-    x: number,
-    y: number,
-    stars: StarView[] | null | undefined,
-  ): { angle: number; intensity: number } | null {
-    if (!stars || stars.length === 0) return null;
-    let nearest: { dx: number; dy: number; dist: number; radius: number } | null = null;
-    for (const star of stars) {
-      const dx = star.x - x;
-      const dy = star.y - y;
-      const dist = Math.hypot(dx, dy);
-      if (!nearest || dist < nearest.dist) nearest = { dx, dy, dist, radius: star.radius };
-    }
-    if (!nearest) return null;
-    const distance = nearest.dist;
-    const starRadius = nearest.radius;
-    const heatOuter = starRadius * 1.25;
-    const surface = starRadius;
-    if (distance > heatOuter) return null;
-    const awayAngle = Math.atan2(-nearest.dy, -nearest.dx);
-    const span = Math.max(0.0001, heatOuter - surface);
-    const intensity = Math.max(0, Math.min(1, (heatOuter - distance) / span));
-    return { angle: awayAngle, intensity };
-  }
+  // (No local heat computation needed; session provides overlays.)
 
   private drawStarHeatTrails(
     ctx: CanvasRenderingContext2D,

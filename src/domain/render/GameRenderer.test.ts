@@ -130,6 +130,10 @@ describe("GameRenderer planet projectiles", () => {
     getProjectiles: () => Array<{ x: number; y: number; radius: number }>;
     getDroppedItems: () => DroppedItem[];
     getEnemies: () => Enemy[];
+    // Required by RenderSession now
+    getStars: () => Array<{ id: string; x: number; y: number; radius: number; color: string }>;
+    getPlayer: () => PlayerView | null;
+    getEnemyStarHeatOverlays: () => Array<{ id: string; angle: number; intensity: number }>;
   }
 
   function makeSession(): TestSession {
@@ -149,6 +153,9 @@ describe("GameRenderer planet projectiles", () => {
       ],
       getDroppedItems: (): DroppedItem[] => [],
       getEnemies: (): Enemy[] => [],
+      getStars: () => [],
+      getPlayer: () => null,
+      getEnemyStarHeatOverlays: () => [],
     };
   }
 
@@ -218,7 +225,13 @@ describe("GameRenderer player hit ring", () => {
     const player = { x: 10, y: -20, vx: 0, vy: 0, angle: 0 };
     const camera: Camera = { x: 0, y: 0, zoom: 1 };
     const actions = new Set<Action>();
-    const baseSession = { getCurrentModeType: (): "space" => "space" as const };
+    const baseSession = {
+      getCurrentModeType: (): "space" => "space" as const,
+      getStars: (): [] => [],
+      getEnemies: (): [] => [],
+      getProjectiles: (): [] => [],
+      getEnemyStarHeatOverlays: (): [] => [],
+    };
     const sessionNoHit = {
       ...baseSession,
       getPlayer: (): PlayerView => ({
@@ -293,6 +306,7 @@ describe("GameRenderer player hit ring", () => {
     const actions = new Set<Action>();
     const session = {
       getCurrentModeType: (): "planet" => "planet" as const,
+      getStars: (): [] => [],
       getPlanetSurface: (): PlanetSurface => ({
         planetId: "p1",
         landingSite: { x: 0, y: 0 },
@@ -305,6 +319,7 @@ describe("GameRenderer player hit ring", () => {
       getEnemies: (): Enemy[] => [],
       getProjectiles: (): Array<{ x: number; y: number; radius: number }> => [],
       isInPlanetShip: (): boolean => false,
+      getEnemyStarHeatOverlays: (): [] => [],
       getPlayer: (): PlayerView => ({
         x: player.x,
         y: player.y,

@@ -164,6 +164,7 @@ export function CanvasRoot(): JSX.Element {
       />
       <Hud
         player={hudState.player}
+        playerAngle={controllerRef.current?.getSnapshot().player.angle ?? 0}
         experience={hudState.experience}
         level={hudState.level}
         xpToNextLevel={hudState.xpToNextLevel}
@@ -172,6 +173,14 @@ export function CanvasRoot(): JSX.Element {
         healthMax={hudState.healthMax}
         planets={hudState.planets}
         stars={controllerRef.current?.getSnapshot().stars ?? []}
+        enemies={
+          controllerRef.current?.getSnapshot().enemies?.map((enemy) => ({
+            id: enemy.id,
+            x: enemy.x,
+            y: enemy.y,
+            radius: enemy.radius,
+          })) ?? []
+        }
         screenW={size.width}
         screenH={size.height}
         notification={notification}
