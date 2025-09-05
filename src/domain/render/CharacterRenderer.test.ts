@@ -174,15 +174,12 @@ describe("CharacterRenderer", () => {
       expect(mockCtx.lineTo).toHaveBeenCalled();
     });
 
-    it("should animate legs when moving", () => {
-      const player = { x: 0, y: 0, vx: 50, vy: 0, angle: 0 };
+    // Legs no longer draw extra wag lines; ensure normal render doesn't error
+    it("should render cleanly when moving without leg lines", () => {
+      const player = { x: 0, y: 0, vx: 50, vy: 10, angle: 0 };
       const actions = new Set<Action>();
 
-      renderer.render(mockCtx, player, actions, 32);
-
-      // Should draw animated legs
-      expect(mockCtx.moveTo).toHaveBeenCalledWith(-6.4, 9.6);
-      expect(mockCtx.lineTo).toHaveBeenCalled();
+      expect(() => renderer.render(mockCtx, player, actions, 32)).not.toThrow();
     });
   });
 

@@ -109,7 +109,6 @@ export class CharacterRenderer {
     ctx.translate(player.x, player.y);
     ctx.rotate(player.angle);
 
-    const isMoving = Math.abs(player.vx) > 1 || Math.abs(player.vy) > 1;
     const isRunning = actions.has("boost");
 
     if (actions.has("fire")) {
@@ -122,35 +121,19 @@ export class CharacterRenderer {
       ctx.shadowBlur = 0;
     }
 
-    if (isMoving) {
-      const time = Date.now() * 0.01;
-      const legOffset = Math.sin(time) * 3;
-      ctx.strokeStyle = isRunning ? "#FF6B6B" : "#4ECDC4";
-      ctx.lineWidth = 2;
-
-      ctx.beginPath();
-      ctx.moveTo(-size * 0.2, size * 0.3);
-      ctx.lineTo(-size * 0.2 + legOffset, size * 0.5);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(-size * 0.2, -size * 0.3);
-      ctx.lineTo(-size * 0.2 - legOffset, -size * 0.5);
-      ctx.stroke();
-
-      if (isRunning) {
-        ctx.strokeStyle = "#FFD93D";
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.7;
-        for (let i = 0; i < 3; i++) {
-          const offset = (i + 1) * 6;
-          ctx.beginPath();
-          ctx.moveTo(-size * 0.6 - offset, -2 + i * 1);
-          ctx.lineTo(-size * 0.6 - offset + 4, -2 + i * 1);
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
+    // Remove wagging leg lines; keep speed lines only when running
+    if (isRunning) {
+      ctx.strokeStyle = "#FFD93D";
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.7;
+      for (let i = 0; i < 3; i++) {
+        const offset = (i + 1) * 6;
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.6 - offset, -2 + i * 1);
+        ctx.lineTo(-size * 0.6 - offset + 4, -2 + i * 1);
+        ctx.stroke();
       }
+      ctx.globalAlpha = 1;
     }
 
     ctx.restore();
