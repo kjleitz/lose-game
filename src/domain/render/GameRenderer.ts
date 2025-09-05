@@ -44,6 +44,8 @@ interface MinimalGameSession {
   }>;
   // Optional: stars in space mode for rendering
   getStars?: () => StarView[];
+  // Optional: star heat overlay (when too close to a star in space mode)
+  getStarHeatOverlay?: () => { angle: number; intensity: number } | null;
 }
 
 export class GameRenderer {
@@ -153,6 +155,49 @@ export class GameRenderer {
     // Draw ship and thruster
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
+
+    // Star heat overlay (space hazard): render a flame cone away from the star
+    if (gameSession && typeof gameSession.getStarHeatOverlay === "function") {
+      const heat = gameSession.getStarHeatOverlay();
+      if (heat && heat.intensity > 0.001) {
+        const angle = heat.angle;
+        const intensity = Math.max(0, Math.min(1, heat.intensity));
+        const baseLen = 80;
+        const length = baseLen * (0.6 + 1.8 * intensity);
+        const baseWidth = 22;
+        const halfWidth = baseWidth * (0.6 + 1.6 * intensity);
+        const cx = player.x;
+        const cy = player.y;
+        const dirX = Math.cos(angle);
+        const dirY = Math.sin(angle);
+        const orthoX = -dirY;
+        const orthoY = dirX;
+        const tipX = cx + dirX * length;
+        const tipY = cy + dirY * length;
+        const leftX = cx + orthoX * halfWidth;
+        const leftY = cy + orthoY * halfWidth;
+        const rightX = cx - orthoX * halfWidth;
+        const rightY = cy - orthoY * halfWidth;
+        ctx.save();
+        const prev = ctx.globalCompositeOperation;
+        ctx.globalCompositeOperation = "lighter";
+        const grad = ctx.createLinearGradient(cx, cy, tipX, tipY);
+        // More opaque as intensity grows; white at core to yellow at tip
+        const a0 = 0.25 + 0.55 * intensity;
+        const a1 = 0.15 + 0.35 * intensity;
+        grad.addColorStop(0, `rgba(255,255,255,${a0.toFixed(3)})`);
+        grad.addColorStop(1, `rgba(255,220,80,${a1.toFixed(3)})`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(leftX, leftY);
+        ctx.lineTo(rightX, rightY);
+        ctx.lineTo(tipX, tipY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalCompositeOperation = prev;
+        ctx.restore();
+      }
+    }
 
     // Draw projectiles as bright red lasers with a short trail in space
     const now = Date.now();

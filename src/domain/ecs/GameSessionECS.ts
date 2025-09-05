@@ -44,6 +44,7 @@ export class GameSessionECS {
   private planetSurface: PlanetSurface | undefined;
   // When on a planet, allow entering the ship and flying above terrain
   private inPlanetShip: boolean = false;
+  private starHeat: { angle: number; intensity: number } | null = null;
   private gravityCooldown: number = 0; // seconds to skip gravity after takeoff
   private pickupEvents: PickupEvent[] = [];
   private levelUpEvents: LevelUpEvent[] = [];
@@ -237,6 +238,8 @@ export class GameSessionECS {
           this.inPlanetShip = false;
           // Grace period to avoid immediate gravity tug on takeoff frame
           this.gravityCooldown = 0.1;
+          // Clear any planet/star heat overlay remnants when leaving planet
+          this.starHeat = null;
         }
       }
     }
@@ -316,6 +319,7 @@ export class GameSessionECS {
     // Apply gravitational acceleration toward nearby stars/planets in space mode
     if (this.mode === "space" && this.gravityCooldown <= 0) {
       this.applyGravity(dt);
+      this.applyStarHazard(dt);
     }
     movementSystem.run();
     // Planet terrain blocking after movement
@@ -626,6 +630,11 @@ export class GameSessionECS {
           sourceEntity: undefined,
         };
       });
+  }
+
+  // Provide optional star heat overlay parameters for renderer when near a star
+  getStarHeatOverlay(): { angle: number; intensity: number } | null {
+    return this.starHeat;
   }
 
   getAndClearPickupEvents(): Array<PickupEvent> {
@@ -973,6 +982,74 @@ export class GameSessionECS {
         playerVel.dx += nx * accel * dt;
         playerVel.dy += ny * accel * dt;
       }
+    }
+  }
+
+  private applyStarHazard(dt: number): void {
+    // Only active in space mode
+    if (this.mode !== "space") {
+      this.starHeat = null;
+      return;
+    }
+    const players = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      health: Components.Health,
+      player: Components.Player,
+    });
+    if (players.length === 0) {
+      this.starHeat = null;
+      return;
+    }
+    const playerPos = players[0].components.position;
+    const playerHealth = players[0].components.health;
+
+    // Find nearest star
+    const starEntities = this.world.query({
+      position: Components.Position,
+      collider: Components.Collider,
+      star: Components.Star,
+    });
+    let nearest: { dx: number; dy: number; dist: number; radius: number } | null = null;
+    for (const star of starEntities) {
+      const sx = star.components.position.x;
+      const sy = star.components.position.y;
+      const starRadius = star.components.collider.radius;
+      const dx = sx - playerPos.x;
+      const dy = sy - playerPos.y;
+      const dist = Math.hypot(dx, dy);
+      if (!nearest || dist < nearest.dist) nearest = { dx, dy, dist, radius: starRadius };
+    }
+    if (!nearest) {
+      this.starHeat = null;
+      return;
+    }
+    const dist = nearest.dist;
+    const starRadius = nearest.radius;
+    const killRadius = starRadius * 0.75;
+    const heatOuter = starRadius * 1.25;
+    const surface = starRadius; // visual surface reference
+
+    if (dist <= killRadius) {
+      // Instant death if too close to stellar core region
+      playerHealth.current = 0;
+      this.starHeat = null;
+      return;
+    }
+    if (dist <= heatOuter) {
+      // Heat overlay and damage scale up as you approach the surface (radius)
+      // Vector away from star = (player - star) = (-dx, -dy)
+      const angle = Math.atan2(-nearest.dy, -nearest.dx);
+      const span = Math.max(0.0001, heatOuter - surface);
+      const intensity = Math.max(0, Math.min(1, (heatOuter - dist) / span));
+      this.starHeat = { angle, intensity };
+
+      // Damage per second increases with intensity; mild at edge, harsh at surface
+      const baseDps = 12; // damage per second at minimal intensity
+      const scaledDps = baseDps * (0.3 + 1.7 * intensity);
+      playerHealth.current = Math.max(0, playerHealth.current - scaledDps * dt);
+    } else {
+      this.starHeat = null;
     }
   }
 
