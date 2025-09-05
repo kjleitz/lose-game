@@ -119,6 +119,9 @@ export function drawShipTriangle(
 
 // Module-level cache for the thruster SVG image
 let thrusterImg: HTMLImageElement | null = null;
+// Smoothed player thruster scale so size transitions are not abrupt
+let playerThrusterScaleSmoothed: number | null = null;
+let playerThrusterScaleLastMs = 0;
 
 // Trail history for thruster effects
 interface PlayerTrailPoint {
@@ -148,6 +151,7 @@ export function drawThruster(
   angle: number,
   size = 24,
   power = 1,
+  flameMult = 1,
 ): void {
   if (!thrusterImg) {
     const { img } = getSpriteByKey("thruster");
@@ -155,18 +159,49 @@ export function drawThruster(
     // Image will be ready when needed
   }
 
-  // Calculate actual thruster scale (matches main thruster rendering)
-  const thrusterScale = 0.8 + 1.2 * power;
+  // Calculate target thruster scale (matches main thruster rendering)
+  const targetScale = (0.8 + 1.2 * power) * flameMult;
+  // Smooth the scale to avoid popping on boost/slowdown
+  const nowMs = Date.now();
+  if (playerThrusterScaleSmoothed === null) {
+    playerThrusterScaleSmoothed = targetScale;
+    playerThrusterScaleLastMs = nowMs;
+  } else {
+    const dtSec = Math.max(0, Math.min(0.2, (nowMs - playerThrusterScaleLastMs) / 1000));
+    const tau = 0.12; // seconds; lower = snappier
+    const alpha = 1 - Math.exp(-dtSec / tau);
+    playerThrusterScaleSmoothed =
+      playerThrusterScaleSmoothed + (targetScale - playerThrusterScaleSmoothed) * alpha;
+    playerThrusterScaleLastMs = nowMs;
+  }
+  const thrusterScale = playerThrusterScaleSmoothed;
+  // Compensate for cropped SVG viewBox widths so on-screen size remains consistent.
+  // Default assumes classic variant cropped to width 12 (from original 48) => 0.25.
+  let scaleAdjust = 12 / 48;
+  const src = thrusterImg.src;
+  if (src.includes("art-deco")) {
+    // art-deco cropped to width 18 (from original 48)
+    scaleAdjust = 18 / 48;
+  }
+  const thrusterHalf = (size * thrusterScale * scaleAdjust) / 2;
+  const shipHalf = size / 2;
+  // Position thruster so its near edge aligns with the back of the ship,
+  // independent of any empty padding inside the SVG. This avoids scale
+  // pushing the flame further back as the image grows.
+  // Pull the thruster further into the ship so it appears closer to the hull
+  const embed = size * 0.18;
+  const thrusterCX = x + Math.cos(angle) * (-shipHalf - thrusterHalf + embed);
+  const thrusterCY = y + Math.sin(angle) * (-shipHalf - thrusterHalf + embed);
 
   // Add trail point every frame when thrusting
-  const now = Date.now();
+  const now = nowMs;
   // Only begin sampling once thrust is at max visual power
   if (power >= 0.999) {
-    // Sample a bit further back behind the ship than before
-    // Small offset along the negative facing direction
-    const baseOffset = size * 0.35; // teeny bit further back
-    const sampleX = x - Math.cos(angle) * baseOffset;
-    const sampleY = y - Math.sin(angle) * baseOffset;
+    // Start trail slightly further back: half a thruster width behind the flame center
+    const thrusterWidth = size * thrusterScale * scaleAdjust;
+    const sampleBack = thrusterWidth * 0.25;
+    const sampleX = thrusterCX - Math.cos(angle) * sampleBack;
+    const sampleY = thrusterCY - Math.sin(angle) * sampleBack;
     playerThrusterTrail.push({
       x: sampleX,
       y: sampleY,
@@ -204,7 +239,7 @@ export function drawThruster(
       const alpha = Math.max(0, 0.55 * (1 - age) * (1 - age));
       if (alpha <= 0.01) continue;
       const falloff = 0.6 + 0.4 * (1 - age); // taper older stamps
-      const stampScale = point.scale * 0.6 * falloff;
+      const stampScale = point.scale * 0.6 * falloff * scaleAdjust;
 
       // Propel exhaust backward relative to ship facing at emission time.
       // Use a per-point speed that scales with thruster power for visual punch.
@@ -232,16 +267,16 @@ export function drawThruster(
     ctx.restore();
   }
 
-  // Draw main thruster at the original ship center
+  // Draw main thruster at its computed center (aligned to ship's back)
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(thrusterCX, thrusterCY);
   ctx.rotate(angle);
   ctx.drawImage(
     thrusterImg,
-    (-size / 2) * thrusterScale,
-    (-size / 2) * thrusterScale,
-    size * thrusterScale,
-    size * thrusterScale,
+    (-size / 2) * thrusterScale * scaleAdjust,
+    (-size / 2) * thrusterScale * scaleAdjust,
+    size * thrusterScale * scaleAdjust,
+    size * thrusterScale * scaleAdjust,
   );
   ctx.restore();
 }

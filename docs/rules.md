@@ -78,6 +78,12 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Use `index.ts` barrels per area to keep imports shallow; do not introduce path aliases.
 - Non-React utilities (e.g., canvas rendering) live under `src/domain/render/`, not `src/ui`.
 
+## Sprites & Rendering Assets
+
+- Sprite SVGs must be tightly bounded to the artwork; do not include empty padding to account for nearby objects (e.g., ship hull). Positioning/alignment belongs in code, not in the asset.
+- When a sprite has an obvious "near edge" (attachment side), design the SVG so that the near edge is at the viewBox boundary. Rendering code should align to that edge as needed.
+- Keep variants consistent in coordinate space so render math remains variant-agnostic.
+
 ### HUD/Menu Visual Consistency
 
 - Use one shared visual style for all HUD panels and UI menus.
