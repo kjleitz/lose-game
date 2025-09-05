@@ -5,7 +5,10 @@ import { JustFired, Faction, ImpactEvent, Position, Projectile } from "../compon
 export type SfxEvent =
   | { type: "shoot"; team: "player" | "enemy" | "neutral" }
   | { type: "hit"; x: number; y: number }
-  | { type: "playerHit"; x: number; y: number };
+  | { type: "playerHit"; x: number; y: number }
+  // Emitted by pickup/attraction logic (not collected here)
+  | { type: "pickup" }
+  | { type: "attract"; strength: number };
 
 export function createSfxEventCollectorSystem(
   world: World,

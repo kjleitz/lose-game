@@ -303,11 +303,18 @@ export class GameApp {
         }
         // Play SFX events emitted by session
         const sfx = session.getAndClearSfxEvents();
+        let maxAttract = 0;
         for (const ev of sfx) {
           if (ev.type === "shoot") audio.playShoot(ev.team);
           else if (ev.type === "playerHit") audio.playPlayerHit();
           else if (ev.type === "hit") audio.playHit();
+          else if (ev.type === "pickup") audio.playPickup();
+          else if (ev.type === "attract") {
+            if (ev.strength > maxAttract) maxAttract = ev.strength;
+          }
         }
+        // Apply the strongest attraction for a clean single ramp tone
+        audio.setAttractStrength(maxAttract);
         // Emit HUD hint changes (including clears) and transient toasts
         const current = session.getNotification();
         if (current !== lastNotification) {

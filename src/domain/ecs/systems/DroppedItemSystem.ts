@@ -31,6 +31,7 @@ export function createPickupSystem(
   _actions: Set<Action>,
   onPickedUp: (ev: PickupEvent) => void,
   range = 40,
+  onAttractStrength?: (strength: number) => void,
 ): System {
   // Attraction mechanics
   const ATTRACTION_RADIUS = 140; // pixels; beyond pickup range, items are pulled toward player
@@ -42,6 +43,7 @@ export function createPickupSystem(
       const players = world.query({ position: Position, player: Player });
       if (players.length === 0) return;
       const playerPos = players[0].components.position;
+      let maxStrength = 0;
 
       drops.forEach(({ components, entity }) => {
         const { position, dropped } = components;
@@ -53,6 +55,8 @@ export function createPickupSystem(
         if (dist <= range) {
           // Auto-use certain items on pickup (e.g., XP orbs)
           let autoUsed = false;
+          // Emit a final strong attraction cue so autoused items still wwomp
+          if (onAttractStrength) onAttractStrength(1);
           if (dropped.item.type === "xp_energy") {
             const xpEntities = world.query({ player: Player, experience: PlayerExperience });
             if (xpEntities.length > 0) {
@@ -72,6 +76,7 @@ export function createPickupSystem(
           const ny = dy / (dist || 1); // normalized direction y
           // Speed increases as item gets closer (0 at edge -> MAX near player)
           const proximityFactor = Math.max(0, Math.min(1, 1 - dist / ATTRACTION_RADIUS));
+          if (proximityFactor > maxStrength) maxStrength = proximityFactor;
           const speed = MAX_PULL_SPEED * proximityFactor;
           const vx = nx * speed;
           const vy = ny * speed;
@@ -87,5 +92,6 @@ export function createPickupSystem(
           }
         }
       });
+      if (onAttractStrength && maxStrength > 0) onAttractStrength(maxStrength);
     });
 }

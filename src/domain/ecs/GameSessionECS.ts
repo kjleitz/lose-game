@@ -286,9 +286,19 @@ export class GameSessionECS {
     const sfxSystem = createSfxEventCollectorSystem(this.world, (ev) => {
       this.sfxEvents.push(ev);
     });
-    const pickupSystem = createPickupSystem(this.world, actions, (ev): void => {
-      this.pickupEvents.push(ev);
-    });
+    const pickupSystem = createPickupSystem(
+      this.world,
+      actions,
+      (ev): void => {
+        this.pickupEvents.push(ev);
+        // Play a pickup confirmation chime
+        this.sfxEvents.push({ type: "pickup" });
+      },
+      40,
+      (strength): void => {
+        this.sfxEvents.push({ type: "attract", strength });
+      },
+    );
 
     // Run systems in order
     // Recompute modifiers then apply player controls

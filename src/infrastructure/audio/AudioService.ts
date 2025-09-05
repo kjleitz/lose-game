@@ -2,6 +2,13 @@ export type Team = "player" | "enemy" | "neutral";
 
 export class AudioService {
   private ctx: AudioContext | null = null;
+  // Continuous attract tone state
+  private attract: {
+    osc: OscillatorNode;
+    gain: GainNode;
+    filter: BiquadFilterNode;
+    stopping: boolean;
+  } | null = null;
 
   private ensure(): AudioContext {
     if (!this.ctx) this.ctx = new AudioContext();
@@ -72,5 +79,84 @@ export class AudioService {
     noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
     noise.connect(bp).connect(noiseGain).connect(ctx.destination);
     noise.start();
+  }
+
+  // Smooth, continuous tone that grows with attraction strength (0..1)
+  setAttractStrength(strength: number): void {
+    const strengthClamped = Math.max(0, Math.min(1, strength));
+    if (strengthClamped <= 0) {
+      // Ramp down and stop if playing
+      if (this.attract && !this.attract.stopping) {
+        const ctx = this.ensure();
+        const now = ctx.currentTime;
+        this.attract.stopping = true;
+        this.attract.gain.gain.cancelScheduledValues(now);
+        this.attract.gain.gain.setValueAtTime(this.attract.gain.gain.value, now);
+        this.attract.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+        const osc = this.attract.osc;
+        const local = this.attract;
+        osc.stop(now + 0.1);
+        // Clear after stop completes
+        setTimeout(() => {
+          if (this.attract === local) this.attract = null;
+        }, 120);
+      }
+      return;
+    }
+
+    const ctx = this.ensure();
+    const now = ctx.currentTime;
+    // Create if missing
+    if (!this.attract || this.attract.stopping) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(520, now);
+      lp.Q.setValueAtTime(0.5, now);
+      osc.type = "triangle";
+      // Start soft
+      gain.gain.setValueAtTime(0.0001, now);
+      osc.connect(lp).connect(gain).connect(ctx.destination);
+      osc.start();
+      this.attract = { osc, gain, filter: lp, stopping: false };
+    }
+
+    // Map strength to frequency and gain. Lower base for a "wwomp" feel.
+    const baseFreq = 120; // Hz
+    const maxFreq = 380; // Hz
+    const freq = baseFreq + (maxFreq - baseFreq) * strengthClamped * strengthClamped; // ease-in
+    const targetGain = 0.03 + 0.09 * strengthClamped; // 0.03..0.12 (softer)
+    const osc = this.attract.osc;
+    const gain = this.attract.gain;
+    // Smooth ramp updates
+    osc.frequency.setTargetAtTime(freq, now, 0.03);
+    gain.gain.setTargetAtTime(targetGain, now, 0.045);
+  }
+
+  // Short chime to confirm pickup
+  playPickup(): void {
+    const ctx = this.ensure();
+    const now = ctx.currentTime;
+    // Two sine partials for a bell-like chime
+    const o1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    o1.type = "sine";
+    o1.frequency.setValueAtTime(1046.5, now); // C6
+    g1.gain.setValueAtTime(0.12, now);
+    g1.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+    o1.connect(g1).connect(ctx.destination);
+    o1.start();
+    o1.stop(now + 0.28);
+
+    const o2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    o2.type = "sine";
+    o2.frequency.setValueAtTime(1318.5, now); // E6
+    g2.gain.setValueAtTime(0.08, now);
+    g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    o2.connect(g2).connect(ctx.destination);
+    o2.start();
+    o2.stop(now + 0.25);
   }
 }
