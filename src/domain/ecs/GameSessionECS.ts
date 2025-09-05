@@ -323,9 +323,9 @@ export class GameSessionECS {
     // Update camera to follow player
     this.updateCameraFollowPlayer();
 
-    // Auto-collect nearby planet resources (matches classic PlanetMode behavior)
+    // Auto-collect nearby planet resources with attraction toward player
     if (this.mode === "planet") {
-      this.collectNearbyResources();
+      this.collectNearbyResources(dt);
     }
 
     // Re-check for level-ups in case resource collection granted XP
@@ -726,7 +726,7 @@ export class GameSessionECS {
   }
 
   // Collect planet resources (e.g., energy/mineral/organic) when the player is close
-  private collectNearbyResources(): void {
+  private collectNearbyResources(dt: number): void {
     if (!this.planetSurface) return;
     const players = this.world.query({ position: Components.Position, player: Components.Player });
     if (players.length === 0) return;
@@ -737,19 +737,32 @@ export class GameSessionECS {
     });
     const xp = xpEntities.length > 0 ? xpEntities[0].components.experience : null;
 
-    // Match classic collection radius
-    const RADIUS = 30;
+    // Radii and attraction parameters
+    const PICKUP_RADIUS = 30; // actual collection radius
+    const ATTRACTION_RADIUS = 140; // begin pulling resources toward player
+    const MAX_PULL_SPEED = 260; // px/s near player, tapered at edge
     const { resources } = this.planetSurface;
     for (let i = resources.length - 1; i >= 0; i--) {
       const resource = resources[i];
-      const dist = Math.hypot(playerPos.x - resource.x, playerPos.y - resource.y);
-      if (dist < RADIUS) {
+      const dx = playerPos.x - resource.x;
+      const dy = playerPos.y - resource.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist <= PICKUP_RADIUS) {
         // Remove collected resource and award XP if available
         resources.splice(i, 1);
         if (xp) {
           xp.current += resource.amount;
           // Level progression can be added later
         }
+      } else if (dist <= ATTRACTION_RADIUS) {
+        // Pull resource toward player.
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+        const proximityFactor = Math.max(0, Math.min(1, 1 - dist / ATTRACTION_RADIUS));
+        const speed = MAX_PULL_SPEED * proximityFactor;
+        const step = speed * dt;
+        resource.x += nx * step;
+        resource.y += ny * step;
       }
     }
   }
