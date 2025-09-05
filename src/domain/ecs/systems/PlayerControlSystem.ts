@@ -3,11 +3,11 @@ import type { System, World } from "../../../lib/ecs";
 import { defineSystem } from "../../../lib/ecs";
 import {
   Player,
+  PlayerModifiers,
   Position,
   Rotation,
   Velocity,
   WeaponCooldown,
-  PlayerModifiers,
 } from "../components";
 
 export function createPlayerControlSystem(
@@ -20,10 +20,11 @@ export function createPlayerControlSystem(
     spaceAccelMult?: number;
     spaceMaxSpeedMult?: number;
     spaceTurnMult?: number;
+    spaceDragOverride?: number; // optional override for drag factor in space mode
   },
 ): System {
-  const BASE_ACCELERATION = 200;
-  const BASE_MAX_SPEED = 150;
+  const BASE_ACCELERATION = 240; // snappier acceleration
+  const BASE_MAX_SPEED = 300; // doubled max speed in space
   const BASE_TURN_SPEED = 3;
   const WALK_SPEED = 200;
   const RUN_SPEED = 350;
@@ -63,6 +64,13 @@ export function createPlayerControlSystem(
           }
         } else {
           // Space (ship) controls
+          // Apply drag first so sustained thrust can reach MAX_SPEED (clamp happens after thrust)
+          const baseDrag = 0.985; // gentler default drag in space
+          const normalDrag = Math.max(0.9, Math.min(0.999, baseDrag - (mods?.dragReduction ?? 0)));
+          const drag = options?.spaceDragOverride ?? normalDrag;
+          velocity.dx *= drag;
+          velocity.dy *= drag;
+
           if (actions.has("turnLeft")) {
             const turnBoost = options?.spaceTurnMult ?? 1;
             const turn = BASE_TURN_SPEED * turnBoost * (mods?.turnSpeedMult ?? 1);
@@ -93,11 +101,7 @@ export function createPlayerControlSystem(
             }
           }
 
-          // Apply drag
-          const baseDrag = 0.98;
-          const drag = Math.max(0.9, Math.min(0.999, baseDrag - (mods?.dragReduction ?? 0)));
-          velocity.dx *= drag;
-          velocity.dy *= drag;
+          // Drag already applied at start of space update
         }
 
         // Update weapon cooldown

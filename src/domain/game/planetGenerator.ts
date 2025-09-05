@@ -1,4 +1,5 @@
 import { createNoise2D } from "simplex-noise";
+import { hashStringToInt } from "../../shared/utils";
 
 const noise2D = createNoise2D();
 
@@ -19,10 +20,17 @@ export interface PlanetSeed {
 
 export function generatePlanet(x: number, y: number): PlanetSeed {
   // Larger, more varied planet sizes
+  const size = 40 + Math.abs(noise2D(x, y)) * 60;
+  // Stable hue in [0, 360) using two decorrelated noise samples to avoid collisions
+  const n1 = noise2D(x * 0.01 + 1000, y * 0.01 + 1000);
+  const n2 = noise2D(x * 0.017 - 500, y * 0.019 + 750);
+  const baseHue = Math.floor((((n1 + n2) * 0.5 + 1) * 180) % 360);
+  const hueOffset = hashStringToInt(`${Math.round(x * 1000)},${Math.round(y * 1000)}`) % 360;
+  const hue = (baseHue + hueOffset) % 360;
   return {
-    x: x,
-    y: y,
-    size: 40 + Math.abs(noise2D(x, y)) * 60,
-    color: `hsl(${Math.floor(noise2D(x + 1000, y + 1000) * 360)}, 70%, 50%)`,
+    x,
+    y,
+    size,
+    color: `hsl(${hue}, 70%, 50%)`,
   };
 }

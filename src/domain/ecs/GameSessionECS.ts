@@ -46,6 +46,7 @@ export class GameSessionECS {
   private inPlanetShip: boolean = false;
   private starHeat: { angle: number; intensity: number } | null = null;
   private gravityCooldown: number = 0; // seconds to skip gravity after takeoff
+  private underPlanetGravity: boolean = false; // whether player is currently within planetary gravity influence
   private pickupEvents: PickupEvent[] = [];
   private levelUpEvents: LevelUpEvent[] = [];
   private perkRequests: PerkUnlockRequest[] = [];
@@ -256,7 +257,9 @@ export class GameSessionECS {
       controlMode,
       this.mode === "planet" && this.inPlanetShip
         ? { spaceAccelMult: 2.5, spaceMaxSpeedMult: 3.0, spaceTurnMult: 1.5 }
-        : undefined,
+        : this.mode === "space" && this.underPlanetGravity
+          ? { spaceDragOverride: 0.996 }
+          : undefined,
     );
     const weaponSystem = createWeaponSystem(this.world, actions);
     const enemyAISystem = createEnemyAISystem(this.world, dt);
@@ -929,6 +932,8 @@ export class GameSessionECS {
   }
 
   private applyGravity(dt: number): void {
+    // Reset influence flag; will be set if a planet affects the player this frame
+    this.underPlanetGravity = false;
     const players = this.world.query({
       position: Components.Position,
       velocity: Components.Velocity,
@@ -992,6 +997,7 @@ export class GameSessionECS {
 
         // Planet-only: gentle orbital assist to make capture easy and breaking out easy
         if (body.kind === "planet") {
+          this.underPlanetGravity = true;
           // Desired circular speed given our effective GM := gravityConstant * weight * r^2
           const effectiveGM = gravityConstant * body.weight * (body.r * body.r);
           const desiredTangential = Math.sqrt(Math.max(0, effectiveGM / dist));
