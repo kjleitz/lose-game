@@ -156,44 +156,74 @@ export class GameRenderer {
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
 
-    // Star heat overlay (space hazard): render a flame cone away from the star
+    // Star heat overlay (space hazard): render streaming micro-flames away from the star
     if (gameSession && typeof gameSession.getStarHeatOverlay === "function") {
       const heat = gameSession.getStarHeatOverlay();
       if (heat && heat.intensity > 0.001) {
-        const angle = heat.angle;
+        const streamAngle = heat.angle;
         const intensity = Math.max(0, Math.min(1, heat.intensity));
-        const baseLen = 80;
-        const length = baseLen * (0.6 + 1.8 * intensity);
-        const baseWidth = 22;
-        const halfWidth = baseWidth * (0.6 + 1.6 * intensity);
-        const cx = player.x;
-        const cy = player.y;
-        const dirX = Math.cos(angle);
-        const dirY = Math.sin(angle);
-        const orthoX = -dirY;
-        const orthoY = dirX;
-        const tipX = cx + dirX * length;
-        const tipY = cy + dirY * length;
-        const leftX = cx + orthoX * halfWidth;
-        const leftY = cy + orthoY * halfWidth;
-        const rightX = cx - orthoX * halfWidth;
-        const rightY = cy - orthoY * halfWidth;
+        const centerX = player.x;
+        const centerY = player.y;
+        const dirX = Math.cos(streamAngle);
+        const dirY = Math.sin(streamAngle);
+
+        // Particle-like streaks count/length scale with intensity
+        const baseCount = 6;
+        const extraCount = 22;
+        const streakCount = Math.floor(baseCount + extraCount * intensity);
+        const baseLength = 34;
+        const length = baseLength * (0.7 + 2.0 * intensity);
+        // Tighter cluster: about one third the previous radius
+        const spawnRadius = (20 * (0.8 + 1.4 * intensity)) / 3;
+        const lineWidth = (1.5 + 2.0 * intensity) / Math.max(0.0001, camera.zoom);
+        const nowMs = Date.now();
+
         ctx.save();
         const prev = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = "lighter";
-        const grad = ctx.createLinearGradient(cx, cy, tipX, tipY);
-        // More opaque as intensity grows; white at core to yellow at tip
-        const a0 = 0.25 + 0.55 * intensity;
-        const a1 = 0.15 + 0.35 * intensity;
-        grad.addColorStop(0, `rgba(255,255,255,${a0.toFixed(3)})`);
-        grad.addColorStop(1, `rgba(255,220,80,${a1.toFixed(3)})`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(leftX, leftY);
-        ctx.lineTo(rightX, rightY);
-        ctx.lineTo(tipX, tipY);
-        ctx.closePath();
-        ctx.fill();
+
+        for (let i = 0; i < streakCount; i++) {
+          // Deterministic jitter per frame and index
+          const seed = (nowMs * 0.001 + i * 12.345) % 1;
+          const randA = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
+          const randB = Math.sin(seed * 93.989 + i * 19.19) * 127.531;
+          const rand0to1A = randA - Math.floor(randA); // 0..1
+          const rand0to1B = randB - Math.floor(randB); // 0..1
+
+          // Spawn head point uniformly inside a circle centered on the ship
+          const theta = rand0to1A * Math.PI * 2;
+          const radius = Math.sqrt(rand0to1B) * spawnRadius; // sqrt for uniform disc
+          const headX = centerX + Math.cos(theta) * radius;
+          const headY = centerY + Math.sin(theta) * radius;
+          const frac = 0.55 + 0.45 * rand0to1A; // 0.55..1.0 length variance
+          // Trails stream away from the star: extend in +dir (away)
+          const tailX = headX + dirX * length * frac;
+          const tailY = headY + dirY * length * frac;
+
+          // Gradient from bright white at head to warm yellow at tail with fade
+          const grad = ctx.createLinearGradient(headX, headY, tailX, tailY);
+          const headAlpha = 0.28 + 0.52 * intensity;
+          const tailAlpha = 0.06 + 0.24 * intensity;
+          grad.addColorStop(0, `rgba(255,255,255,${headAlpha.toFixed(3)})`);
+          grad.addColorStop(1, `rgba(255,210,60,${tailAlpha.toFixed(3)})`);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(tailX, tailY);
+          ctx.lineTo(headX, headY);
+          ctx.stroke();
+
+          // Small head glow dot for extra punch
+          ctx.save();
+          ctx.fillStyle = `rgba(255,255,255,${(headAlpha * 0.8).toFixed(3)})`;
+          const headSize = (1.4 + 2.2 * intensity) / Math.max(0.0001, camera.zoom);
+          ctx.beginPath();
+          ctx.arc(headX, headY, headSize, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
         ctx.globalCompositeOperation = prev;
         ctx.restore();
       }

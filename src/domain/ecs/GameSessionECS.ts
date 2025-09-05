@@ -1045,8 +1045,8 @@ export class GameSessionECS {
       this.starHeat = { angle, intensity };
 
       // Damage per second increases with intensity; mild at edge, harsh at surface
-      const baseDps = 12; // damage per second at minimal intensity
-      const scaledDps = baseDps * (0.3 + 1.7 * intensity);
+      const baseDps = 6; // slower damage baseline
+      const scaledDps = baseDps * (0.2 + 1.0 * intensity);
       playerHealth.current = Math.max(0, playerHealth.current - scaledDps * dt);
     } else {
       this.starHeat = null;
