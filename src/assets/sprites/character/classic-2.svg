@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <!-- Top-down little guy, slight 3/4 tilt. Transparent background. -->
+  <!-- Running frame 2: right leg forward, left back -->
   <g stroke="#1b2430" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
     <!-- Helmet -->
     <circle cx="24" cy="13.5" r="6.2" fill="#e8eff6" />
@@ -7,27 +7,25 @@
     <ellipse cx="24" cy="13.5" rx="4.1" ry="2.4" fill="#c2e9ff" />
     <path d="M20.2 12.3c1.8-1 8-1 9.6 0" fill="none" opacity="0.35"/>
 
-    <!-- Torso (angled slightly) -->
+    <!-- Torso -->
     <path d="M18.8 18.5c-.8 0-1.5.6-1.6 1.4l-.6 4.6c-.2 1.7.7 3.3 2.2 4.1l3.1 1.7c1.3.7 2.9.7 4.2 0l3.1-1.7c1.5-.8 2.4-2.4 2.2-4.1l-.6-4.6c-.1-.8-.8-1.4-1.6-1.4h-9.4z" fill="#4ecdc4"/>
-    <!-- Belt -->
     <rect x="18.4" y="24.1" width="11.2" height="2.8" rx="1.2" fill="#2c3e50" />
 
     <!-- Arms -->
-    <path d="M18.3 21.8l-3.2 3.0c-.7.7-.8 1.8-.2 2.6l1.4 1.9" fill="#4ecdc4" />
-    <path d="M29.7 21.8l3.2 3.0c.7.7.8 1.8.2 2.6l-1.4 1.9" fill="#4ecdc4" />
-    <!-- Gloves -->
-    <circle cx="15.6" cy="30.0" r="1.7" fill="#ffd166" />
-    <circle cx="32.4" cy="30.0" r="1.7" fill="#ffd166" />
+    <path d="M18.2 22.2l-3.1 2.9c-.7.7-.8 1.8-.2 2.6l1.5 1.8" fill="#4ecdc4" />
+    <path d="M29.8 22.2l3.1 2.9c.7.7.8 1.8.2 2.6l-1.5 1.8" fill="#4ecdc4" />
+    <circle cx="15.8" cy="29.8" r="1.7" fill="#ffd166" />
+    <circle cx="32.2" cy="30.4" r="1.7" fill="#ffd166" />
 
-    <!-- Legs (slight spread) -->
-    <path d="M21.2 29.5l-2.0 5.8c-.3.9.1 1.8.9 2.2l1.8.9" fill="#2b6777" />
-    <path d="M26.8 29.5l2.0 5.8c.3.9-.1 1.8-.9 2.2l-1.8.9" fill="#2b6777" />
+    <!-- Legs (swap) -->
+    <path d="M27.0 29.4l2.6 4.1c.5.8.4 1.8-.3 2.4l-1.8 1.1" fill="#2b6777" />
+    <path d="M21.0 29.6l-2.6 5.6c-.3.9.2 1.8 1.0 2.1l1.9.7" fill="#2b6777" />
 
     <!-- Boots -->
-    <ellipse cx="19.8" cy="39.3" rx="3.0" ry="1.8" fill="#1f1f1f" />
-    <ellipse cx="28.2" cy="39.3" rx="3.0" ry="1.8" fill="#1f1f1f" />
+    <ellipse cx="29.6" cy="39.0" rx="3.2" ry="1.7" fill="#1f1f1f" />
+    <ellipse cx="18.8" cy="39.6" rx="2.8" ry="1.6" fill="#1f1f1f" />
 
-    <!-- Small suit accents -->
+    <!-- Accents -->
     <circle cx="24" cy="22.4" r="1.1" fill="#ffd166" />
     <circle cx="26.6" cy="22.4" r="0.9" fill="#ff6b6b" />
   </g>
