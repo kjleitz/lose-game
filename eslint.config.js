@@ -42,6 +42,8 @@ export default tseslint.config([
       // Never use `any`
       "@typescript-eslint/no-explicit-any": "error",
 
+      "@typescript-eslint/no-var-requires": "error",
+
       // Ban all TS directive comments that hide type issues
       "@typescript-eslint/ban-ts-comment": [
         "error",

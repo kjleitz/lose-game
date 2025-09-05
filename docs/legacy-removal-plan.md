@@ -94,7 +94,8 @@ Purpose: remove legacy code paths and converge on the ECS-based architecture. Fo
 
 ### Input Parity (Resolved)
 
-- Fixed: `PlayerControlSystem` now uses `moveDown` for down movement in planet mode. `interact` remains for pickups.
+- Fixed: `PlayerControlSystem` now uses `moveDown` for down movement in planet mode.
+- Updated: Pickups are proximity-based with attraction; `interact` (KeyC) is reserved for enter/exit ship.
 
 ## Deletion Candidates (Legacy)
 
