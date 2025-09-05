@@ -6,8 +6,10 @@ describe("ECS planet resource auto-collect", () => {
 
   beforeEach(() => {
     session = new GameSessionECS();
-    // Enter planet mode deterministically on an existing planet
-    session.restoreMode({ mode: "planet", planetId: "planet_1" });
+    // Enter planet mode on the first generated planet
+    const first = session.getPlanets()[0];
+    expect(first).toBeTruthy();
+    session.restoreMode({ mode: "planet", planetId: first.id });
     // Land at the landing site (0,0)
     session.setPlayerPosition({ x: 0, y: 0 });
   });

@@ -7,11 +7,12 @@ import type { Point2D } from "../../../shared/types/geometry";
 interface RadarProps {
   player: Point2D;
   planets: Planet[];
+  stars?: Array<{ id: string; x: number; y: number; radius: number; color: string }>;
   screenW: number;
   screenH: number;
 }
 
-export function Radar({ player, planets, screenW, screenH }: RadarProps): JSX.Element {
+export function Radar({ player, planets, stars = [], screenW, screenH }: RadarProps): JSX.Element {
   const radarService = new RadarService(screenW, screenH);
   const RADAR_SIZE = radarService.RADAR_SIZE;
   return (
@@ -39,6 +40,50 @@ export function Radar({ player, planets, screenW, screenH }: RadarProps): JSX.El
           stroke="#0ff"
           strokeWidth={2}
         />
+        {/* Stars (draw first) */}
+        {stars.map((star) => {
+          const dx = star.x - player.x;
+          const dy = star.y - player.y;
+          const angle = Math.atan2(dy, dx);
+          const { x, y, r } = radarService.toRadarCoordsAndScale(
+            player,
+            star.x,
+            star.y,
+            star.radius,
+          );
+          const radarCenter = RADAR_SIZE / 2;
+          const radarRadius = radarCenter - 2;
+          const distToCenter = Math.hypot(x - radarCenter, y - radarCenter);
+          if (distToCenter <= radarRadius + r) {
+            return (
+              <g key={star.id} clipPath="url(#radar-clip)">
+                <circle cx={x} cy={y} r={r * 0.8} fill={star.color} opacity={0.9} />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth={1.5}
+                  opacity={0.9}
+                />
+              </g>
+            );
+          } else {
+            const arrow = radarService.getEdgeArrow(angle);
+            return (
+              <polygon
+                key={star.id}
+                points={arrow.points.map(([px, py]) => `${px},${py}`).join(" ")}
+                fill={star.color}
+                stroke="#fff"
+                strokeWidth={1}
+                opacity={0.9}
+              />
+            );
+          }
+        })}
+
         {/* Planets and edge indicators */}
         {planets.map((planet) => {
           const dx = planet.x - player.x;

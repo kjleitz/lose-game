@@ -16,6 +16,15 @@ export const RigidBody = defineComponent<{ mass: number }>();
 export const Player = defineComponent<Record<string, never>>(() => ({}));
 export const Enemy = defineComponent<{ id: string }>();
 export const Planet = defineComponent<{ id: string }>();
+// Central stars for solar systems
+export const Star = defineComponent<{ id: string }>();
+// Orbital motion around a center entity
+export const Orbit = defineComponent<{
+  centerId: number; // entity id of the star or parent body
+  radius: number; // orbit radius in world units
+  speed: number; // angular speed in radians per second
+  angle: number; // current angle in radians
+}>();
 export const Projectile = defineComponent<Record<string, never>>(() => ({}));
 
 // Faction/team alignment for friendly-fire rules

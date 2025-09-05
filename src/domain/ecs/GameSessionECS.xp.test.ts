@@ -6,7 +6,9 @@ describe("ECS XP gains", () => {
 
   beforeEach(() => {
     session = new GameSessionECS();
-    session.restoreMode({ mode: "planet", planetId: "planet_1" });
+    const first = session.getPlanets()[0];
+    expect(first).toBeTruthy();
+    session.restoreMode({ mode: "planet", planetId: first.id });
     session.setPlayerPosition({ x: 0, y: 0 });
   });
 

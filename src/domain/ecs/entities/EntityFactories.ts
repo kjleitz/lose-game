@@ -268,3 +268,56 @@ export function createBasicPlanet(
     })
     .addComponent(Components.SpaceMode);
 }
+
+export function createStar(
+  world: World,
+  id: string,
+  x: number,
+  y: number,
+  radius = 140,
+  color = "#ffcc66",
+): EntityBuilder {
+  return world
+    .createEntity()
+    .addComponent(Components.Position, { x, y })
+    .addComponent(Components.Collider, { radius })
+    .addComponent(Components.Star, { id })
+    .addComponent(Components.Sprite, { color, scale: 1.0, opacity: 1.0 })
+    .addComponent(Components.SpaceMode);
+}
+
+export function createOrbitingPlanet(
+  world: World,
+  opts: {
+    id: string;
+    color: string;
+    design: "solid" | "ringed" | "striped" | "spotted";
+    radius: number;
+    centerId: number;
+    orbitRadius: number;
+    orbitSpeed: number; // radians/sec
+    angle: number; // initial angle
+  },
+): EntityBuilder {
+  // Seed initial position on orbit
+  // We'll place at (0,0) and let OrbitSystem update this frame; set approximate start
+  const entity = world
+    .createEntity()
+    .addComponent(Components.Position, { x: 0, y: 0 })
+    .addComponent(Components.Collider, { radius: opts.radius })
+    .addComponent(Components.Planet, { id: opts.id })
+    .addComponent(Components.Sprite, {
+      color: opts.color,
+      design: opts.design,
+      scale: 1.0,
+    })
+    .addComponent(Components.Orbit, {
+      centerId: opts.centerId,
+      radius: opts.orbitRadius,
+      speed: opts.orbitSpeed,
+      angle: opts.angle,
+    })
+    .addComponent(Components.SpaceMode);
+
+  return entity;
+}

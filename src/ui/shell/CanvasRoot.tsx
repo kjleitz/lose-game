@@ -165,6 +165,7 @@ export function CanvasRoot(): JSX.Element {
         perkPoints={hudState.perkPoints}
         health={hudState.health}
         planets={hudState.planets}
+        stars={controllerRef.current?.getSnapshot().stars ?? []}
         screenW={size.width}
         screenH={size.height}
         notification={notification}

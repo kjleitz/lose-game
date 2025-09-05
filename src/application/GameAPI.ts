@@ -29,6 +29,7 @@ export interface GameSnapshot {
   };
   camera: Camera;
   planets: Array<Planet>;
+  stars: Array<{ id: string; x: number; y: number; radius: number; color: string }>;
   enemies: Array<Pick<Enemy, "id" | "x" | "y" | "angle" | "health" | "radius">>;
   projectiles: Array<Circle2D>;
   stats: {

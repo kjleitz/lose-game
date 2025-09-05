@@ -190,6 +190,7 @@ export class GameApp {
           };
       const camera = session.getCamera();
       const planets = session.getPlanets();
+      const stars = session.getStars ? session.getStars() : [];
       const enemies = session.getEnemies();
       const projectiles = session.getProjectiles();
       const entityCount = session.getEntityCount();
@@ -211,6 +212,13 @@ export class GameApp {
           radius: pl.radius,
           color: pl.color,
           design: pl.design,
+        })),
+        stars: stars.map((st) => ({
+          id: st.id,
+          x: st.x,
+          y: st.y,
+          radius: st.radius,
+          color: st.color,
         })),
         enemies: enemies.map((enemy) => ({
           id: enemy.id,

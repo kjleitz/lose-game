@@ -10,7 +10,9 @@ function actionsSet(actions: Action[]): Set<Action> {
 describe("Planet terrain collision system", () => {
   it("pushes player out of overlapping terrain feature", async () => {
     const session = new GameSessionECS();
-    session.restoreMode({ mode: "planet", planetId: "planet_1" });
+    const first = session.getPlanets()[0];
+    expect(first).toBeTruthy();
+    session.restoreMode({ mode: "planet", planetId: first.id });
     // Land at landing site
     session.setPlayerPosition({ x: 0, y: 0 });
 

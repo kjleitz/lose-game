@@ -13,6 +13,7 @@ import type { PerkId } from "../leveling/types";
 import type { Camera } from "../render/camera";
 import * as Components from "./components";
 import * as EntityFactories from "./entities/EntityFactories";
+import { createOrbitSystem } from "./systems/OrbitSystem";
 import { createCollisionSystem } from "./systems/CollisionSystem";
 import {
   createDroppedItemAgingSystem,
@@ -43,6 +44,7 @@ export class GameSessionECS {
   private planetSurface: PlanetSurface | undefined;
   // When on a planet, allow entering the ship and flying above terrain
   private inPlanetShip: boolean = false;
+  private gravityCooldown: number = 0; // seconds to skip gravity after takeoff
   private pickupEvents: PickupEvent[] = [];
   private levelUpEvents: LevelUpEvent[] = [];
   private perkRequests: PerkUnlockRequest[] = [];
@@ -86,11 +88,8 @@ export class GameSessionECS {
     EntityFactories.createBasicEnemy(this.world, "enemy_2", -150, 200);
     EntityFactories.createBasicEnemy(this.world, "enemy_3", 100, -150);
 
-    // Create some planets
-    EntityFactories.createBasicPlanet(this.world, "planet_1", 400, 300, 80);
-    EntityFactories.createBasicPlanet(this.world, "planet_2", -300, -200, 60);
-    EntityFactories.createBasicPlanet(this.world, "planet_3", -100, 400, 70);
-    EntityFactories.createBasicPlanet(this.world, "planet_4", 500, -300, 90);
+    // Create a few solar systems: big burning stars with orbiting planets
+    this.createSolarNeighborhood();
   }
 
   private createInitialEntities(config: {
@@ -115,11 +114,8 @@ export class GameSessionECS {
         EntityFactories.createPlanetEntity(this.world, planet);
       });
     } else {
-      // Default selection of planets around origin
-      EntityFactories.createBasicPlanet(this.world, "planet_1", 400, 300, 80);
-      EntityFactories.createBasicPlanet(this.world, "planet_2", -300, -200, 60);
-      EntityFactories.createBasicPlanet(this.world, "planet_3", -100, 400, 70);
-      EntityFactories.createBasicPlanet(this.world, "planet_4", 500, -300, 90);
+      // Default: create orbiting planets around stars
+      this.createSolarNeighborhood();
     }
 
     // Create enemies (fall back to defaults when none provided)
@@ -137,6 +133,7 @@ export class GameSessionECS {
   update(actions: Set<Action>, dt: number): void {
     // Update timers
     if (this.interactCooldown > 0) this.interactCooldown = Math.max(0, this.interactCooldown - dt);
+    if (this.gravityCooldown > 0) this.gravityCooldown = Math.max(0, this.gravityCooldown - dt);
     if (this.inPlanetShip) {
       if (this.inPlanetShipAnim < 1)
         this.inPlanetShipAnim = Math.min(1, this.inPlanetShipAnim + dt / 0.35);
@@ -238,6 +235,8 @@ export class GameSessionECS {
           this.landedPlanetId = null;
           this.planetSurface = undefined;
           this.inPlanetShip = false;
+          // Grace period to avoid immediate gravity tug on takeoff frame
+          this.gravityCooldown = 0.1;
         }
       }
     }
@@ -311,6 +310,12 @@ export class GameSessionECS {
       enemyRangedSystem.run();
     } else if (this.mode === "planet") {
       enemyMeleeSystem.run();
+    }
+    // Update orbital motion for planets around stars
+    createOrbitSystem(this.world, dt).run();
+    // Apply gravitational acceleration toward nearby stars/planets in space mode
+    if (this.mode === "space" && this.gravityCooldown <= 0) {
+      this.applyGravity(dt);
     }
     movementSystem.run();
     // Planet terrain blocking after movement
@@ -585,6 +590,27 @@ export class GameSessionECS {
       });
   }
 
+  // Stars for rendering (space mode)
+  getStars(): Array<{ id: string; x: number; y: number; radius: number; color: string }> {
+    return this.world
+      .query({
+        position: Components.Position,
+        collider: Components.Collider,
+        star: Components.Star,
+        sprite: Components.Sprite,
+      })
+      .map((ent) => {
+        const { position, collider, star, sprite } = ent.components;
+        return {
+          id: star.id,
+          x: position.x,
+          y: position.y,
+          radius: collider.radius,
+          color: sprite.color,
+        };
+      });
+  }
+
   getDroppedItems(): DroppedItemShape[] {
     return this.world
       .query({ position: Components.Position, dropped: Components.DroppedItem })
@@ -836,6 +862,118 @@ export class GameSessionECS {
     }
     const nearbyPlanetId = this.findNearbyPlanetId();
     this.notification = nearbyPlanetId ? `Press L to land on ${nearbyPlanetId}` : null;
+  }
+
+  private createSolarNeighborhood(): void {
+    // Place a few very large stars, spaced far apart
+    const starDefs = [
+      { id: "star_a", x: 2000, y: 0, r: 480, color: "#ffd27a" },
+      { id: "star_b", x: 0, y: -2300, r: 600, color: "#ffbb55" },
+      { id: "star_c", x: -2200, y: 1700, r: 420, color: "#ffe08a" },
+    ];
+    for (const starDef of starDefs) {
+      const starEnt = EntityFactories.createStar(
+        this.world,
+        starDef.id,
+        starDef.x,
+        starDef.y,
+        starDef.r,
+        starDef.color,
+      );
+      const starId = this.getEntityId(starEnt);
+      // 2-5 planets per star
+      const planetCount = 2 + Math.floor(Math.random() * 4);
+      const baseOrbit = starDef.r + 400; // push first orbit further from huge star
+      for (let i = 0; i < planetCount; i++) {
+        // Wider orbit spacing to suit larger stars and farther systems
+        const orbitRadius = baseOrbit + i * (200 + Math.random() * 280);
+        const speed = (0.2 + Math.random() * 0.25) * (Math.random() < 0.5 ? 1 : -1);
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 40 + Math.random() * 60;
+        const colors = [
+          "#4a90e2",
+          "#e2a04a",
+          "#4ae264",
+          "#e24a90",
+          "#9c4ae2",
+          "#a7d3ff",
+          "#ffd1a7",
+        ];
+        const designs: Array<"solid" | "ringed" | "striped" | "spotted"> = [
+          "solid",
+          "ringed",
+          "striped",
+          "spotted",
+        ];
+        EntityFactories.createOrbitingPlanet(this.world, {
+          id: `${starDef.id}_p${i + 1}`,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          design: designs[Math.floor(Math.random() * designs.length)],
+          radius,
+          centerId: starId,
+          orbitRadius,
+          orbitSpeed: speed,
+          angle,
+        });
+      }
+    }
+  }
+
+  private applyGravity(dt: number): void {
+    const players = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      player: Components.Player,
+    });
+    if (players.length === 0) return;
+    const { position: playerPos, velocity: playerVel } = players[0].components;
+
+    const bodies: Array<{ x: number; y: number; r: number; weight: number }> = [];
+    // Planets
+    const planetEntities = this.world.query({
+      position: Components.Position,
+      collider: Components.Collider,
+      planet: Components.Planet,
+    });
+    for (const planetEntity of planetEntities) {
+      bodies.push({
+        x: planetEntity.components.position.x,
+        y: planetEntity.components.position.y,
+        r: planetEntity.components.collider.radius,
+        weight: 2.2, // stronger pull for planets
+      });
+    }
+    // Stars (heavier)
+    const starEntities = this.world.query({
+      position: Components.Position,
+      collider: Components.Collider,
+      star: Components.Star,
+    });
+    for (const starEntity of starEntities) {
+      bodies.push({
+        x: starEntity.components.position.x,
+        y: starEntity.components.position.y,
+        r: starEntity.components.collider.radius,
+        weight: 2.5,
+      });
+    }
+
+    const gravityConstant = 120; // tuned gravitational constant
+    for (const body of bodies) {
+      const dx = body.x - playerPos.x;
+      const dy = body.y - playerPos.y;
+      const dist = Math.hypot(dx, dy);
+      const influence = body.r * 3;
+      // Do not attract when too close to the center (<= 0.5 * radius)
+      const minRadius = body.r * 0.5;
+      if (dist > minRadius && dist <= influence) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const accel = (gravityConstant * body.weight * (body.r * body.r)) / (dist * dist);
+        playerVel.dx += nx * accel * dt;
+        playerVel.dy += ny * accel * dt;
+      }
+    }
   }
 
   private findNearbyPlanetId(): string | null {

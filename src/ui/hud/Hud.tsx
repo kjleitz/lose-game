@@ -19,6 +19,7 @@ interface HudProps {
   perkPoints?: number;
   health?: number;
   planets: Planet[];
+  stars?: Array<{ id: string; x: number; y: number; radius: number; color: string }>;
   screenW: number;
   screenH: number;
   notification?: string | null;
@@ -43,6 +44,7 @@ export function Hud({
   perkPoints = 0,
   health = 100,
   planets,
+  stars = [],
   screenW,
   screenH,
   notification,
@@ -60,7 +62,7 @@ export function Hud({
 }: HudProps): JSX.Element {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
-      <Radar player={player} planets={planets} screenW={screenW} screenH={screenH} />
+      <Radar player={player} planets={planets} stars={stars} screenW={screenW} screenH={screenH} />
       <Notification message={notification} />
       <div className="absolute left-4 bottom-4 pointer-events-auto z-20" style={{ minWidth: 180 }}>
         <StatusPanel

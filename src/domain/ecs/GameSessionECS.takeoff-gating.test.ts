@@ -10,8 +10,10 @@ function actionsSet(actions: Action[]): Set<Action> {
 describe("GameSessionECS takeoff gating", () => {
   it("does not takeoff on foot; succeeds anywhere when in ship", () => {
     const session = new GameSessionECS();
-    // Enter planet mode deterministically on planet_1 and set player far from landing site
-    session.restoreMode({ mode: "planet", planetId: "planet_1" });
+    // Enter planet mode on the first generated planet and set player far from landing site
+    const first = session.getPlanets()[0];
+    expect(first).toBeTruthy();
+    session.restoreMode({ mode: "planet", planetId: first.id });
     session.setPlayerPosition({ x: 200, y: 0 });
 
     // Attempt takeoff while on foot: should remain on planet

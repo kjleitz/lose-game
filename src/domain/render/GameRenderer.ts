@@ -18,6 +18,7 @@ import { ShipRenderer } from "./ShipRenderer";
 import { drawProjectile } from "./sprites";
 import { StarfieldRenderer } from "./StarfieldRenderer";
 import { getVisualConfig } from "./VisualConfig";
+import { StarRenderer, type StarView } from "./StarRenderer";
 
 // Legacy modes removed from renderer path; rely on session getters only
 
@@ -41,6 +42,8 @@ interface MinimalGameSession {
     vy: number;
     faction?: "player" | "enemy" | "neutral";
   }>;
+  // Optional: stars in space mode for rendering
+  getStars?: () => StarView[];
 }
 
 export class GameRenderer {
@@ -132,6 +135,12 @@ export class GameRenderer {
       dpr,
     );
     ctx.setTransform(m11, m12, m21, m22, dx, dy);
+
+    // Draw stars (solar centers) behind planets if provided
+    if (gameSession && typeof gameSession.getStars === "function") {
+      const starRenderer = new StarRenderer();
+      starRenderer.render(ctx, gameSession.getStars());
+    }
 
     // Draw planets
     const planetRenderer = new PlanetRenderer();
