@@ -10,7 +10,6 @@ import { InventoryPanel } from "./panels/InventoryPanel";
 import { StatusPanel } from "./panels/StatusPanel";
 import { Notification } from "./widgets/Notification";
 import { Radar } from "./widgets/Radar";
-import { SpeedometerPanel } from "./panels/SpeedometerPanel";
 
 interface HudProps {
   player: Point2D;
@@ -85,16 +84,12 @@ export function Hud({
           actions={actions}
           paused={paused}
           speedMultiplier={speedMultiplier}
+          playerSpeed={playerSpeed}
           onChangeSpeed={onChangeSpeed}
           onOpenSettings={onOpenSettings}
         />
       </div>
-      {typeof playerSpeed === "number" ? (
-        <div className="absolute right-4 bottom-4 z-20">
-          {/* Player speed readout */}
-          <SpeedometerPanel speed={playerSpeed} />
-        </div>
-      ) : null}
+      {/* Speedometer moved into ControlsPanel (top-right) */}
       <div className="pointer-events-auto">
         <InventoryPanel
           inventory={inventory}

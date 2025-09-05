@@ -6,11 +6,13 @@ import { Panel } from "../../controls";
 import { ActionReadout } from "../widgets/ActionReadout";
 import { PauseIndicator } from "../widgets/PauseIndicator";
 import { SettingsButton } from "../widgets/SettingsButton";
+import { SpeedometerGauge } from "../widgets/SpeedometerGauge";
 
 interface ControlsPanelProps {
   actions: Set<Action>;
   paused: boolean;
   speedMultiplier?: number;
+  playerSpeed?: number;
   onChangeSpeed?: (n: number) => void;
   onOpenSettings?: () => void;
 }
@@ -19,6 +21,7 @@ export function ControlsPanel({
   actions,
   paused,
   speedMultiplier,
+  playerSpeed,
   onChangeSpeed,
   onOpenSettings,
 }: ControlsPanelProps): JSX.Element {
@@ -30,6 +33,11 @@ export function ControlsPanel({
       {typeof speedMultiplier === "number" && onChangeSpeed && (
         <SpeedControl value={speedMultiplier} onChange={onChangeSpeed} />
       )}
+      {typeof playerSpeed === "number" ? (
+        <div className="pt-1">
+          <SpeedometerGauge speed={playerSpeed} />
+        </div>
+      ) : null}
       <ActionReadout actions={actions} />
       <PauseIndicator paused={paused} />
     </Panel>

@@ -11,7 +11,9 @@ export function DeathOverlay({ open, onRespawn }: DeathOverlayProps): JSX.Elemen
   useEffect((): (() => void) => {
     if (!open) return () => {};
     const onKey = (evt: KeyboardEvent): void => {
-      if (evt.code === "Enter" || evt.code === "NumpadEnter") {
+      const isEnter = evt.code === "Enter" || evt.code === "NumpadEnter";
+      const isSpace = evt.code === "Space" || evt.key === " " || evt.key === "Spacebar";
+      if (isEnter || isSpace) {
         evt.preventDefault();
         onRespawn();
       }

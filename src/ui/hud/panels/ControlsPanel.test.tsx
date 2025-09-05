@@ -28,4 +28,10 @@ describe("ControlsPanel", () => {
     renderPanel({ paused: true });
     expect(screen.getByText("paused")).toBeInTheDocument();
   });
+
+  it("renders speedometer gauge when playerSpeed provided", (): void => {
+    render(<ControlsPanel actions={new Set()} paused={false} playerSpeed={12.3456} />);
+    expect(screen.getByText(/Speed/i)).toBeInTheDocument();
+    expect(screen.getByText("12.35")).toBeInTheDocument();
+  });
 });
