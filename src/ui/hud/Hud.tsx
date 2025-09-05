@@ -19,6 +19,7 @@ interface HudProps {
   xpToNextLevel?: number;
   perkPoints?: number;
   health?: number;
+  healthMax?: number;
   planets: Planet[];
   stars?: Array<{ id: string; x: number; y: number; radius: number; color: string }>;
   screenW: number;
@@ -45,6 +46,7 @@ export function Hud({
   xpToNextLevel = 100,
   perkPoints = 0,
   health = 100,
+  healthMax = 100,
   planets,
   stars = [],
   screenW,
@@ -70,6 +72,7 @@ export function Hud({
       <div className="absolute left-4 bottom-4 pointer-events-auto z-20" style={{ minWidth: 180 }}>
         <StatusPanel
           health={health}
+          healthMax={healthMax}
           experience={experience}
           level={level}
           xpToNextLevel={xpToNextLevel}

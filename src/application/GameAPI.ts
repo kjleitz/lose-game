@@ -21,6 +21,7 @@ export interface GameOptions {
 export interface GameSnapshot {
   player: Kinematics2D & {
     health: number;
+    healthMax: number;
     experience: number;
     level: number;
     xpToNextLevel: number;

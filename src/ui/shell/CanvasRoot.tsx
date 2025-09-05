@@ -46,6 +46,7 @@ export function CanvasRoot(): JSX.Element {
     xpToNextLevel: number;
     perkPoints: number;
     health: number;
+    healthMax: number;
     planets: Planet[];
   }>(() => ({
     player: { x: 0, y: 0 },
@@ -54,6 +55,7 @@ export function CanvasRoot(): JSX.Element {
     xpToNextLevel: 100,
     perkPoints: 0,
     health: 100,
+    healthMax: 100,
     planets: [],
   }));
   // HUD actions readout and speed mirror
@@ -87,6 +89,7 @@ export function CanvasRoot(): JSX.Element {
           xpToNextLevel: snapshot.player.xpToNextLevel,
           perkPoints: snapshot.player.perkPoints,
           health: snapshot.player.health,
+          healthMax: snapshot.player.healthMax,
           planets: snapshot.planets,
         });
         setPlayerSpeed(Math.hypot(snapshot.player.vx, snapshot.player.vy));
@@ -166,6 +169,7 @@ export function CanvasRoot(): JSX.Element {
         xpToNextLevel={hudState.xpToNextLevel}
         perkPoints={hudState.perkPoints}
         health={hudState.health}
+        healthMax={hudState.healthMax}
         planets={hudState.planets}
         stars={controllerRef.current?.getSnapshot().stars ?? []}
         screenW={size.width}

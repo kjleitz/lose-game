@@ -161,6 +161,7 @@ export class GameApp {
       const playerView = session.getPlayer();
       const player: Kinematics2D & {
         health: number;
+        healthMax: number;
         experience: number;
         level: number;
         xpToNextLevel: number;
@@ -174,6 +175,7 @@ export class GameApp {
             vy: playerView.vy,
             angle: playerView.angle,
             health: playerView.health,
+            healthMax: playerView.healthMax,
             experience: playerView.experience,
             level: playerView.level,
             xpToNextLevel: playerView.xpToNextLevel,
@@ -182,6 +184,7 @@ export class GameApp {
           }
         : {
             ...defaultKinematicsWithHealth(),
+            healthMax: 100,
             experience: 0,
             level: 1,
             xpToNextLevel: 100,
@@ -199,6 +202,7 @@ export class GameApp {
           ...player,
           experience: player.experience ?? 0,
           health: player.health ?? 100,
+          healthMax: player.healthMax ?? 100,
           level: player.level ?? 1,
           xpToNextLevel: player.xpToNextLevel ?? 100,
           perkPoints: player.perkPoints ?? 0,

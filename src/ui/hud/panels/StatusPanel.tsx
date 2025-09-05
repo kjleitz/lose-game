@@ -5,6 +5,7 @@ import { Panel } from "../../controls";
 
 export function StatusPanel({
   health,
+  healthMax = 100,
   experience,
   level = 1,
   xpToNextLevel = 100,
@@ -12,6 +13,7 @@ export function StatusPanel({
   onOpenPerks,
 }: {
   health: number;
+  healthMax?: number;
   experience: number;
   level?: number;
   xpToNextLevel?: number;
@@ -24,7 +26,7 @@ export function StatusPanel({
       : 0;
   return (
     <Panel className="px-4 py-3 flex flex-col space-y-3" style={{ minWidth: 160 }}>
-      <HealthBar value={health} />
+      <HealthBar current={health} max={healthMax} />
       <div className="flex items-center justify-between">
         <span className="hud-text text-xs opacity-80">Lv {level}</span>
         {perkPoints > 0 ? (

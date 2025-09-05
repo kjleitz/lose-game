@@ -3,6 +3,7 @@ import type { Planet } from "./planets";
 
 export interface PlayerView extends Kinematics2D {
   health: number;
+  healthMax: number;
   experience: number; // current XP toward next level
   level: number;
   xpToNextLevel: number;

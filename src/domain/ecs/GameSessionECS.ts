@@ -459,6 +459,7 @@ export class GameSessionECS {
       vy: velocity.dy,
       angle: rotation.angle,
       health: health.current,
+      healthMax: health.max,
       experience: experience.current,
       level: experience.level,
       xpToNextLevel: experience.toNextLevel,
