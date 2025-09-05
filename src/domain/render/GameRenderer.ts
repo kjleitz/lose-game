@@ -46,12 +46,117 @@ interface MinimalGameSession {
   getStars?: () => StarView[];
   // Optional: star heat overlay (when too close to a star in space mode)
   getStarHeatOverlay?: () => { angle: number; intensity: number } | null;
+  // Optional: renderer FX events (e.g., enemy burn-up)
+  getAndClearRenderFxEvents?: () => Array<{ type: "burn"; x: number; y: number }>;
 }
 
 export class GameRenderer {
   // Track short trails for space projectiles (by entity id)
   private spaceProjectileTrails: Map<number, Array<{ x: number; y: number; t: number }>> =
     new Map();
+  // Transient burn-up FX (renderer-managed lifetimes)
+  private burnFx: Array<{ x: number; y: number; age: number; duration: number }> = [];
+  private lastRenderAtMs: number | null = null;
+
+  // Compute heat overlay for a point relative to the nearest star.
+  private computeStarHeatFor(
+    x: number,
+    y: number,
+    stars: StarView[] | null | undefined,
+  ): { angle: number; intensity: number } | null {
+    if (!stars || stars.length === 0) return null;
+    let nearest: { dx: number; dy: number; dist: number; radius: number } | null = null;
+    for (const star of stars) {
+      const dx = star.x - x;
+      const dy = star.y - y;
+      const dist = Math.hypot(dx, dy);
+      if (!nearest || dist < nearest.dist) nearest = { dx, dy, dist, radius: star.radius };
+    }
+    if (!nearest) return null;
+    const distance = nearest.dist;
+    const starRadius = nearest.radius;
+    const heatOuter = starRadius * 1.25;
+    const surface = starRadius;
+    if (distance > heatOuter) return null;
+    const awayAngle = Math.atan2(-nearest.dy, -nearest.dx);
+    const span = Math.max(0.0001, heatOuter - surface);
+    const intensity = Math.max(0, Math.min(1, (heatOuter - distance) / span));
+    return { angle: awayAngle, intensity };
+  }
+
+  // Draw streaming micro-flames around a center, flowing away from star.
+  private drawStarHeatTrails(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    streamAngle: number,
+    intensity: number,
+    cameraZoom: number,
+  ): void {
+    const renderIntensity = Math.max(0, Math.min(1, intensity));
+    const directionX = Math.cos(streamAngle);
+    const directionY = Math.sin(streamAngle);
+
+    // Particle-like streaks count/length scale with intensity
+    const baseCount = 6;
+    const extraCount = 22;
+    const streakCount = Math.floor(baseCount + extraCount * renderIntensity);
+    const baseLength = 34;
+    const length = baseLength * (0.7 + 2.0 * renderIntensity);
+    // Tighter cluster: about one third the previous radius
+    const spawnRadius = (20 * (0.8 + 1.4 * renderIntensity)) / 3;
+    const lineWidth = (1.5 + 2.0 * renderIntensity) / Math.max(0.0001, cameraZoom);
+    const nowMs = Date.now();
+
+    ctx.save();
+    const previous = ctx.globalCompositeOperation;
+    ctx.globalCompositeOperation = "lighter";
+
+    for (let i = 0; i < streakCount; i++) {
+      // Deterministic jitter per frame and index
+      const seed = (nowMs * 0.001 + i * 12.345) % 1;
+      const randA = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
+      const randB = Math.sin(seed * 93.989 + i * 19.19) * 127.531;
+      const rand0to1A = randA - Math.floor(randA); // 0..1
+      const rand0to1B = randB - Math.floor(randB); // 0..1
+
+      // Spawn head point uniformly inside a circle centered on the entity
+      const theta = rand0to1A * Math.PI * 2;
+      const radius = Math.sqrt(rand0to1B) * spawnRadius; // sqrt for uniform disc
+      const headX = centerX + Math.cos(theta) * radius;
+      const headY = centerY + Math.sin(theta) * radius;
+      const fraction = 0.55 + 0.45 * rand0to1A; // 0.55..1.0 length variance
+      // Trails stream away from the star: extend in +dir (away)
+      const tailX = headX + directionX * length * fraction;
+      const tailY = headY + directionY * length * fraction;
+
+      // Gradient from bright white at head to warm yellow at tail with fade
+      const gradient = ctx.createLinearGradient(headX, headY, tailX, tailY);
+      const headAlpha = 0.28 + 0.52 * renderIntensity;
+      const tailAlpha = 0.06 + 0.24 * renderIntensity;
+      gradient.addColorStop(0, `rgba(255,255,255,${headAlpha.toFixed(3)})`);
+      gradient.addColorStop(1, `rgba(255,210,60,${tailAlpha.toFixed(3)})`);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(headX, headY);
+      ctx.stroke();
+
+      // Small head glow dot for extra punch
+      ctx.save();
+      ctx.fillStyle = `rgba(255,255,255,${(headAlpha * 0.8).toFixed(3)})`;
+      const headSize = (1.4 + 2.2 * renderIntensity) / Math.max(0.0001, cameraZoom);
+      ctx.beginPath();
+      ctx.arc(headX, headY, headSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.globalCompositeOperation = previous;
+    ctx.restore();
+  }
 
   render(
     ctx: CanvasRenderingContext2D,
@@ -65,6 +170,11 @@ export class GameRenderer {
     dpr: number,
     gameSession?: MinimalGameSession | null,
   ): void {
+    // Timekeeping for FX
+    const nowMs = Date.now();
+    const dt = this.lastRenderAtMs ? Math.max(0, (nowMs - this.lastRenderAtMs) / 1000) : 0;
+    this.lastRenderAtMs = nowMs;
+
     // Determine current game mode (avoid unbound method call)
     let currentMode: "space" | "planet" = "space";
     if (gameSession && typeof gameSession.getCurrentModeType === "function") {
@@ -93,6 +203,11 @@ export class GameRenderer {
     }
 
     // FX layer hook for later (particles, etc.)
+    // Update lifetimes for burn FX
+    if (dt > 0) {
+      this.burnFx.forEach((fx) => (fx.age += dt));
+      this.burnFx = this.burnFx.filter((fx) => fx.age < fx.duration);
+    }
   }
 
   private renderSpaceMode(
@@ -156,76 +271,76 @@ export class GameRenderer {
     const shipRenderer = new ShipRenderer();
     shipRenderer.render(ctx, player, actions, 48);
 
+    // Consume any new render FX events from session (non-audio) and add to local list
+    if (gameSession && typeof gameSession.getAndClearRenderFxEvents === "function") {
+      const events = gameSession.getAndClearRenderFxEvents();
+      for (const ev of events) {
+        if (ev.type === "burn") this.burnFx.push({ x: ev.x, y: ev.y, age: 0, duration: 0.6 });
+      }
+    }
+
+    // Draw burn-up FX above enemies but below star overlay
+    if (this.burnFx.length > 0) {
+      for (const fx of this.burnFx) {
+        const progress = Math.max(0, Math.min(1, fx.age / fx.duration));
+        // Radius grows and fades
+        const radius = 10 + 60 * progress;
+        const alphaOuter = 0.3 * (1 - progress);
+        const alphaInner = 0.6 * (1 - progress * 0.8);
+        // Outer glow
+        ctx.save();
+        const grad = ctx.createRadialGradient(fx.x, fx.y, 0, fx.x, fx.y, radius);
+        grad.addColorStop(0, `rgba(255,240,120,${alphaInner.toFixed(3)})`);
+        grad.addColorStop(1, `rgba(255,120,0,${alphaOuter.toFixed(3)})`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(fx.x, fx.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        // Spark streaks
+        ctx.save();
+        ctx.globalAlpha = 0.5 * (1 - progress);
+        ctx.strokeStyle = "#ffd36b";
+        ctx.lineWidth = 1.2 / Math.max(0.0001, camera.zoom);
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const len = radius * (0.5 + 0.6 * Math.sin(progress * Math.PI + i));
+          const x2 = fx.x + Math.cos(angle) * len;
+          const y2 = fx.y + Math.sin(angle) * len;
+          ctx.beginPath();
+          ctx.moveTo(fx.x, fx.y);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
     // Star heat overlay (space hazard): render streaming micro-flames away from the star
     if (gameSession && typeof gameSession.getStarHeatOverlay === "function") {
       const heat = gameSession.getStarHeatOverlay();
       if (heat && heat.intensity > 0.001) {
-        const streamAngle = heat.angle;
-        const intensity = Math.max(0, Math.min(1, heat.intensity));
-        const centerX = player.x;
-        const centerY = player.y;
-        const dirX = Math.cos(streamAngle);
-        const dirY = Math.sin(streamAngle);
+        this.drawStarHeatTrails(ctx, player.x, player.y, heat.angle, heat.intensity, camera.zoom);
+      }
+    }
 
-        // Particle-like streaks count/length scale with intensity
-        const baseCount = 6;
-        const extraCount = 22;
-        const streakCount = Math.floor(baseCount + extraCount * intensity);
-        const baseLength = 34;
-        const length = baseLength * (0.7 + 2.0 * intensity);
-        // Tighter cluster: about one third the previous radius
-        const spawnRadius = (20 * (0.8 + 1.4 * intensity)) / 3;
-        const lineWidth = (1.5 + 2.0 * intensity) / Math.max(0.0001, camera.zoom);
-        const nowMs = Date.now();
-
-        ctx.save();
-        const prev = ctx.globalCompositeOperation;
-        ctx.globalCompositeOperation = "lighter";
-
-        for (let i = 0; i < streakCount; i++) {
-          // Deterministic jitter per frame and index
-          const seed = (nowMs * 0.001 + i * 12.345) % 1;
-          const randA = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
-          const randB = Math.sin(seed * 93.989 + i * 19.19) * 127.531;
-          const rand0to1A = randA - Math.floor(randA); // 0..1
-          const rand0to1B = randB - Math.floor(randB); // 0..1
-
-          // Spawn head point uniformly inside a circle centered on the ship
-          const theta = rand0to1A * Math.PI * 2;
-          const radius = Math.sqrt(rand0to1B) * spawnRadius; // sqrt for uniform disc
-          const headX = centerX + Math.cos(theta) * radius;
-          const headY = centerY + Math.sin(theta) * radius;
-          const frac = 0.55 + 0.45 * rand0to1A; // 0.55..1.0 length variance
-          // Trails stream away from the star: extend in +dir (away)
-          const tailX = headX + dirX * length * frac;
-          const tailY = headY + dirY * length * frac;
-
-          // Gradient from bright white at head to warm yellow at tail with fade
-          const grad = ctx.createLinearGradient(headX, headY, tailX, tailY);
-          const headAlpha = 0.28 + 0.52 * intensity;
-          const tailAlpha = 0.06 + 0.24 * intensity;
-          grad.addColorStop(0, `rgba(255,255,255,${headAlpha.toFixed(3)})`);
-          grad.addColorStop(1, `rgba(255,210,60,${tailAlpha.toFixed(3)})`);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = lineWidth;
-          ctx.lineCap = "round";
-          ctx.beginPath();
-          ctx.moveTo(tailX, tailY);
-          ctx.lineTo(headX, headY);
-          ctx.stroke();
-
-          // Small head glow dot for extra punch
-          ctx.save();
-          ctx.fillStyle = `rgba(255,255,255,${(headAlpha * 0.8).toFixed(3)})`;
-          const headSize = (1.4 + 2.2 * intensity) / Math.max(0.0001, camera.zoom);
-          ctx.beginPath();
-          ctx.arc(headX, headY, headSize, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
+    // Enemy heat trails (same visual as player when within star heat radius)
+    if (gameSession && typeof gameSession.getStars === "function") {
+      const stars = gameSession.getStars();
+      if (stars && stars.length > 0) {
+        for (const enemy of enemies) {
+          const overlay = this.computeStarHeatFor(enemy.x, enemy.y, stars);
+          if (overlay && overlay.intensity > 0.001) {
+            this.drawStarHeatTrails(
+              ctx,
+              enemy.x,
+              enemy.y,
+              overlay.angle,
+              overlay.intensity,
+              camera.zoom,
+            );
+          }
         }
-
-        ctx.globalCompositeOperation = prev;
-        ctx.restore();
       }
     }
 

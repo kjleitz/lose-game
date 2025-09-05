@@ -33,6 +33,7 @@ import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainColli
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
 import { createSfxEventCollectorSystem, type SfxEvent } from "./systems/SfxEventCollectorSystem";
+import { applyGravityTo } from "../physics/gravity";
 import { createWeaponSystem } from "./systems/WeaponSystem";
 
 export class GameSessionECS {
@@ -52,6 +53,8 @@ export class GameSessionECS {
   private perkRequests: PerkUnlockRequest[] = [];
   private toastEvents: string[] = [];
   private sfxEvents: SfxEvent[] = [];
+  // Transient render FX events for the renderer (non-audio)
+  private renderFxEvents: Array<{ type: "burn"; x: number; y: number }> = [];
   private deathEvents: number = 0; // count of player-death events since last read
   private interactCooldown: number = 0; // seconds until next interact toggle allowed
   private inPlanetShipAnim: number = 0; // 0..1 takeoff animation progress
@@ -665,6 +668,13 @@ export class GameSessionECS {
     return out;
   }
 
+  // Visual FX events for the renderer (kept separate from audio SFX).
+  getAndClearRenderFxEvents(): Array<{ type: "burn"; x: number; y: number }> {
+    const out = [...this.renderFxEvents];
+    this.renderFxEvents = [];
+    return out;
+  }
+
   requestUnlockPerk(perkId: PerkId): void {
     const players = this.world.query({ player: Components.Player });
     if (players.length === 0) return;
@@ -935,14 +945,8 @@ export class GameSessionECS {
   private applyGravity(dt: number): void {
     // Reset influence flag; will be set if a planet affects the player this frame
     this.underPlanetGravity = false;
-    const players = this.world.query({
-      position: Components.Position,
-      velocity: Components.Velocity,
-      player: Components.Player,
-    });
-    if (players.length === 0) return;
-    const { position: playerPos, velocity: playerVel } = players[0].components;
 
+    // Collect gravitating bodies (planets + stars)
     const bodies: Array<{
       x: number;
       y: number;
@@ -950,7 +954,6 @@ export class GameSessionECS {
       density: number;
       kind: "planet" | "star";
     }> = [];
-    // Planets
     const planetEntities = this.world.query({
       position: Components.Position,
       collider: Components.Collider,
@@ -961,12 +964,10 @@ export class GameSessionECS {
         x: planetEntity.components.position.x,
         y: planetEntity.components.position.y,
         r: planetEntity.components.collider.radius,
-        // Planets are about 4x as dense as stars (see star density below)
-        density: 0.1,
+        density: 0.1, // planets are ~4x star density
         kind: "planet",
       });
     }
-    // Stars (heavier)
     const starEntities = this.world.query({
       position: Components.Position,
       collider: Components.Collider,
@@ -977,56 +978,36 @@ export class GameSessionECS {
         x: starEntity.components.position.x,
         y: starEntity.components.position.y,
         r: starEntity.components.collider.radius,
-        // Baseline star density (planets use ~4x this value)
         density: 0.025,
         kind: "star",
       });
     }
+    if (bodies.length === 0) return;
 
-    const gravityConstant = 120; // tuned gravitational constant
-    for (const body of bodies) {
-      const dx = body.x - playerPos.x;
-      const dy = body.y - playerPos.y;
-      const dist = Math.hypot(dx, dy);
-      const influence = body.r * 3;
-      if (dist > 1e-6 && dist <= influence) {
-        const nx = dx / dist;
-        const ny = dy / dist;
-        // Effective GM with density-based mass: M ∝ density * R^3
-        // Stars are much larger; to keep star gravity playable, normalize star density by radius
-        // so surface gravity doesn't explode with large R (planets remain unnormalized).
-        const referenceR = 100; // typical planet radius used for tuning
-        const effectiveDensity =
-          body.kind === "star" ? body.density * (referenceR / Math.max(1, body.r)) : body.density;
-        const effectiveGM = gravityConstant * effectiveDensity * (body.r * body.r * body.r);
-        // Outside surface: inverse-square. Inside: linearly decreases to zero at center.
-        const accel =
-          dist >= body.r
-            ? effectiveGM / (dist * dist)
-            : (effectiveGM / (body.r * body.r * body.r)) * dist;
+    // Targets: player and enemy ships (space mode). Planet creatures exist only in planet mode.
+    const playerTargets = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      player: Components.Player,
+    });
+    const enemyTargets = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      enemy: Components.Enemy,
+    });
+    if (playerTargets.length === 0 && enemyTargets.length === 0) return;
 
-        playerVel.dx += nx * accel * dt;
-        playerVel.dy += ny * accel * dt;
+    // Apply to player first to preserve underPlanetGravity flag for drag override
+    if (playerTargets.length > 0) {
+      const { position, velocity } = playerTargets[0].components;
+      const res = applyGravityTo(position, velocity, bodies, dt, { assistPlanets: true });
+      if (res.influencedByPlanet) this.underPlanetGravity = true;
+    }
 
-        // Planet-only: gentle orbital assist (only meaningful outside the surface)
-        if (body.kind === "planet") {
-          this.underPlanetGravity = true;
-          if (dist >= body.r) {
-            const desiredTangential = Math.sqrt(Math.max(0, effectiveGM / dist));
-            // Current tangential unit vector (perpendicular to radial outward)
-            const tnx = -ny;
-            const tny = nx;
-            const currentTangential = playerVel.dx * tnx + playerVel.dy * tny;
-            // Nudge toward desired tangential speed with a capped assist
-            const assistGain = 0.8; // how quickly we approach desired v_t per second
-            const maxAssist = accel * 0.7; // do not exceed a fraction of radial accel
-            const deltaVPerSec = (desiredTangential - currentTangential) * assistGain;
-            const clamped = Math.max(-maxAssist, Math.min(maxAssist, deltaVPerSec));
-            playerVel.dx += tnx * clamped * dt;
-            playerVel.dy += tny * clamped * dt;
-          }
-        }
-      }
+    // Apply to all enemies
+    for (const ent of enemyTargets) {
+      const { position, velocity } = ent.components;
+      applyGravityTo(position, velocity, bodies, dt, { assistPlanets: true });
     }
   }
 
@@ -1036,65 +1017,114 @@ export class GameSessionECS {
       this.starHeat = null;
       return;
     }
+
+    // Gather stars once
+    const stars = this.world.query({
+      position: Components.Position,
+      collider: Components.Collider,
+      star: Components.Star,
+    });
+    if (stars.length === 0) {
+      this.starHeat = null;
+      return;
+    }
+
+    // Helper to find nearest star to a position
+    const findNearest = (
+      x: number,
+      y: number,
+    ): { dx: number; dy: number; dist: number; radius: number } | null => {
+      let nearest: { dx: number; dy: number; dist: number; radius: number } | null = null;
+      for (const star of stars) {
+        const sx = star.components.position.x;
+        const sy = star.components.position.y;
+        const starRadius = star.components.collider.radius;
+        const dx = sx - x;
+        const dy = sy - y;
+        const dist = Math.hypot(dx, dy);
+        if (!nearest || dist < nearest.dist) nearest = { dx, dy, dist, radius: starRadius };
+      }
+      return nearest;
+    };
+
+    // Player heat overlay + damage
     const players = this.world.query({
       position: Components.Position,
       velocity: Components.Velocity,
       health: Components.Health,
       player: Components.Player,
     });
-    if (players.length === 0) {
-      this.starHeat = null;
-      return;
-    }
-    const playerPos = players[0].components.position;
-    const playerHealth = players[0].components.health;
+    if (players.length > 0) {
+      const playerPos = players[0].components.position;
+      const playerHealth = players[0].components.health;
+      const nearest = findNearest(playerPos.x, playerPos.y);
+      if (!nearest) {
+        this.starHeat = null;
+      } else {
+        const dist = nearest.dist;
+        const starRadius = nearest.radius;
+        const killRadius = starRadius * 0.75;
+        const heatOuter = starRadius * 1.25;
+        const surface = starRadius; // visual surface reference
 
-    // Find nearest star
-    const starEntities = this.world.query({
+        if (dist <= killRadius) {
+          playerHealth.current = 0;
+          this.starHeat = null;
+        } else if (dist <= heatOuter) {
+          const angle = Math.atan2(-nearest.dy, -nearest.dx);
+          const span = Math.max(0.0001, heatOuter - surface);
+          const intensity = Math.max(0, Math.min(1, (heatOuter - dist) / span));
+          this.starHeat = { angle, intensity };
+          const baseDps = 6;
+          const scaledDps = baseDps * (0.2 + 1.0 * intensity);
+          playerHealth.current = Math.max(0, playerHealth.current - scaledDps * dt);
+        } else {
+          this.starHeat = null;
+        }
+      }
+    }
+
+    // Enemy damage (no overlay needed)
+    const enemies = this.world.query({
       position: Components.Position,
-      collider: Components.Collider,
-      star: Components.Star,
+      health: Components.Health,
+      enemy: Components.Enemy,
     });
-    let nearest: { dx: number; dy: number; dist: number; radius: number } | null = null;
-    for (const star of starEntities) {
-      const sx = star.components.position.x;
-      const sy = star.components.position.y;
-      const starRadius = star.components.collider.radius;
-      const dx = sx - playerPos.x;
-      const dy = sy - playerPos.y;
-      const dist = Math.hypot(dx, dy);
-      if (!nearest || dist < nearest.dist) nearest = { dx, dy, dist, radius: starRadius };
-    }
-    if (!nearest) {
-      this.starHeat = null;
-      return;
-    }
-    const dist = nearest.dist;
-    const starRadius = nearest.radius;
-    const killRadius = starRadius * 0.75;
-    const heatOuter = starRadius * 1.25;
-    const surface = starRadius; // visual surface reference
+    for (const enemy of enemies) {
+      const pos = enemy.components.position;
+      const hp = enemy.components.health;
+      const nearest = findNearest(pos.x, pos.y);
+      if (!nearest) continue;
+      const dist = nearest.dist;
+      const starRadius = nearest.radius;
+      const killRadius = starRadius * 0.75;
+      const heatOuter = starRadius * 1.25;
+      const surface = starRadius;
 
-    if (dist <= killRadius) {
-      // Instant death if too close to stellar core region
-      playerHealth.current = 0;
-      this.starHeat = null;
-      return;
-    }
-    if (dist <= heatOuter) {
-      // Heat overlay and damage scale up as you approach the surface (radius)
-      // Vector away from star = (player - star) = (-dx, -dy)
-      const angle = Math.atan2(-nearest.dy, -nearest.dx);
-      const span = Math.max(0.0001, heatOuter - surface);
-      const intensity = Math.max(0, Math.min(1, (heatOuter - dist) / span));
-      this.starHeat = { angle, intensity };
+      let died = false;
+      if (dist <= killRadius) {
+        hp.current = 0;
+        died = true;
+      } else if (dist <= heatOuter) {
+        const span = Math.max(0.0001, heatOuter - surface);
+        const intensity = Math.max(0, Math.min(1, (heatOuter - dist) / span));
+        const baseDps = 6;
+        const scaledDps = baseDps * (0.2 + 1.0 * intensity);
+        hp.current = Math.max(0, hp.current - scaledDps * dt);
+        died = hp.current <= 0;
+      }
 
-      // Damage per second increases with intensity; mild at edge, harsh at surface
-      const baseDps = 6; // slower damage baseline
-      const scaledDps = baseDps * (0.2 + 1.0 * intensity);
-      playerHealth.current = Math.max(0, playerHealth.current - scaledDps * dt);
-    } else {
-      this.starHeat = null;
+      if (died) {
+        // Emit an impact event so SFX can react
+        this.world
+          .createEntity()
+          .addComponent(Components.Position, { x: pos.x, y: pos.y })
+          .addComponent(Components.ImpactEvent, { kind: "generic" });
+        // Emit a visual burn FX event for the renderer
+        this.renderFxEvents.push({ type: "burn", x: pos.x, y: pos.y });
+        // Remove the enemy entity immediately (no drops in star hazard)
+        this.world.removeEntity(enemy.entity);
+      }
     }
   }
 
