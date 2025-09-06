@@ -95,7 +95,9 @@ export class PlanetModeRenderer {
       const baseShipSize = 56;
       const sizeBoost = 1 + 0.4 * clamped;
       const ship = new ShipRenderer();
-      ship.render(ctx, player, actions, baseShipSize * sizeBoost);
+      const pv = session.getPlayer ? session.getPlayer() : null;
+      const perks = pv?.perks ?? {};
+      ship.render(ctx, player, actions, baseShipSize * sizeBoost, perks);
     } else {
       const characterRenderer = new CharacterRenderer();
       characterRenderer.render(ctx, player, actions, 32);

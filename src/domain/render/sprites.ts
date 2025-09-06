@@ -122,6 +122,8 @@ let thrusterImg: HTMLImageElement | null = null;
 // Smoothed player thruster scale so size transitions are not abrupt
 let playerThrusterScaleSmoothed: number | null = null;
 let playerThrusterScaleLastMs = 0;
+// Offscreen canvas for tinting aux thruster sprite
+let auxThrusterTintCanvas: HTMLCanvasElement | null = null;
 
 // Trail history for thruster effects
 interface PlayerTrailPoint {
@@ -291,7 +293,8 @@ export function drawAuxThruster(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  angle: number,
+  shipAngle: number,
+  flameAngle: number,
   size = 24,
   power = 1,
   tint = "#69aaff",
@@ -302,8 +305,8 @@ export function drawAuxThruster(
     thrusterImg = img;
   }
 
-  // Base scale smaller than main thruster
-  const scale = 0.45 + 0.35 * Math.max(0, Math.min(1, power));
+  // Base scale larger so aux thrusters are more visible
+  const scale = 0.6 + 0.6 * Math.max(0, Math.min(1, power));
   // Match cropping adjustment used by main thruster for consistent sizing
   let scaleAdjust = 12 / 48;
   const src = thrusterImg.src;
@@ -311,48 +314,75 @@ export function drawAuxThruster(
 
   const shipHalf = size / 2;
   const thrHalf = (size * scale * scaleAdjust) / 2;
-  const embed = size * 0.1;
+  const embedFront = size * 0.12;
+  const embedSide = size * 0.14;
+  const inwardShift = size * 0.15; // move slightly inward toward the hull (~15%)
+  const backShift = size * 0.2; // move slightly toward the rear of the ship (~20%) for side thrusters
 
   // Compute center position for the aux thruster based on kind
   let cx = x;
   let cy = y;
   if (kind === "front") {
-    // Place near ship nose
-    cx = x + Math.cos(angle) * (shipHalf + thrHalf - embed * 0.6);
-    cy = y + Math.sin(angle) * (shipHalf + thrHalf - embed * 0.6);
+    // Place near ship nose with near-edge alignment similar to rear thruster
+    const dist = shipHalf + thrHalf - embedFront;
+    cx = x + Math.cos(shipAngle) * dist;
+    cy = y + Math.sin(shipAngle) * dist;
   } else if (kind === "left") {
-    // Left side (Y grows downward): offset along (sin(a), -cos(a))
-    const ox = Math.sin(angle) * (shipHalf - embed * 0.4);
-    const oy = -Math.cos(angle) * (shipHalf - embed * 0.4);
+    // Left side (Y grows downward): offset along side vector (sin(a), -cos(a))
+    const dist = shipHalf + thrHalf - embedSide - inwardShift;
+    const ox = Math.sin(shipAngle) * dist;
+    const oy = -Math.cos(shipAngle) * dist;
     cx = x + ox;
     cy = y + oy;
   } else if (kind === "right") {
     // Right side (Y grows downward): offset along (-sin(a), cos(a))
-    const ox = -Math.sin(angle) * (shipHalf - embed * 0.4);
-    const oy = Math.cos(angle) * (shipHalf - embed * 0.4);
+    const dist = shipHalf + thrHalf - embedSide - inwardShift;
+    const ox = -Math.sin(shipAngle) * dist;
+    const oy = Math.cos(shipAngle) * dist;
     cx = x + ox;
     cy = y + oy;
   }
 
+  // Apply a small backward shift only for side thrusters (strafe) to tuck them slightly rearward
+  if (kind === "left" || kind === "right") {
+    cx -= Math.cos(shipAngle) * backShift;
+    cy -= Math.sin(shipAngle) * backShift;
+  }
+
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  // Draw the base thruster
+  // Rotate to the flame direction (independent of placement basis)
+  ctx.rotate(flameAngle);
+  // Draw a tinted copy of the thruster using an offscreen mask to avoid tinting the ship
   const dw = size * scale * scaleAdjust;
   const dh = dw;
-  ctx.drawImage(
-    thrusterImg,
-    (-size / 2) * scale * scaleAdjust,
-    (-size / 2) * scale * scaleAdjust,
-    dw,
-    dh,
-  );
-  // Tint to the requested color restricted to the sprite's alpha
-  const prev = ctx.globalCompositeOperation;
-  ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = tint;
-  ctx.fillRect((-size / 2) * scale * scaleAdjust, (-size / 2) * scale * scaleAdjust, dw, dh);
-  ctx.globalCompositeOperation = prev;
+  if (!auxThrusterTintCanvas) auxThrusterTintCanvas = document.createElement("canvas");
+  const canvasTint = auxThrusterTintCanvas;
+  const offCtx = canvasTint ? canvasTint.getContext("2d") : null;
+  if (canvasTint && offCtx) {
+    const widthPx = Math.max(1, Math.ceil(dw));
+    const heightPx = Math.max(1, Math.ceil(dh));
+    if (canvasTint.width !== widthPx || canvasTint.height !== heightPx) {
+      canvasTint.width = widthPx;
+      canvasTint.height = heightPx;
+    }
+    offCtx.clearRect(0, 0, widthPx, heightPx);
+    offCtx.drawImage(thrusterImg, 0, 0, widthPx, heightPx);
+    offCtx.globalCompositeOperation = "source-in";
+    offCtx.fillStyle = tint;
+    offCtx.fillRect(0, 0, widthPx, heightPx);
+    offCtx.globalCompositeOperation = "source-over";
+    ctx.drawImage(canvasTint, -widthPx / 2, -heightPx / 2, widthPx, heightPx);
+  } else {
+    // Fallback: draw untinted image
+    ctx.drawImage(
+      thrusterImg,
+      (-size / 2) * scale * scaleAdjust,
+      (-size / 2) * scale * scaleAdjust,
+      dw,
+      dh,
+    );
+  }
   ctx.restore();
 }
 

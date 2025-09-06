@@ -30,12 +30,13 @@ export class ShipRenderer {
     const powerAux = 1;
 
     if (hasStrafe && actions.has("boost") && actions.has("turnLeft") && !actions.has("turnRight")) {
-      // Strafe left => fire right-side thruster outward (angle + 90deg)
+      // Strafe left => fire right-side thruster; reverse sprite so nozzle faces hull
       drawAuxThruster(
         ctx,
         player.x,
         player.y,
-        player.angle + Math.PI / 2,
+        player.angle, // placement
+        player.angle + Math.PI / 2 + Math.PI, // reversed sprite
         size,
         powerAux,
         "#69aaff",
@@ -43,12 +44,13 @@ export class ShipRenderer {
       );
     }
     if (hasStrafe && actions.has("boost") && actions.has("turnRight") && !actions.has("turnLeft")) {
-      // Strafe right => fire left-side thruster outward (angle - 90deg)
+      // Strafe right => fire left-side thruster; reverse sprite so nozzle faces hull
       drawAuxThruster(
         ctx,
         player.x,
         player.y,
-        player.angle - Math.PI / 2,
+        player.angle,
+        player.angle - Math.PI / 2 + Math.PI,
         size,
         powerAux,
         "#69aaff",
@@ -56,8 +58,18 @@ export class ShipRenderer {
       );
     }
     if (hasReverse && actions.has("moveDown")) {
-      // Reverse => fire front thruster forward
-      drawAuxThruster(ctx, player.x, player.y, player.angle, size, powerAux, "#69aaff", "front");
+      // Reverse => fire front thruster; flame out the nose
+      drawAuxThruster(
+        ctx,
+        player.x,
+        player.y,
+        player.angle,
+        player.angle + Math.PI,
+        size,
+        powerAux,
+        "#69aaff",
+        "front",
+      );
     }
   }
 }
