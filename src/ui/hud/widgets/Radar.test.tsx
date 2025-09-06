@@ -31,4 +31,20 @@ describe("Radar", () => {
     );
     expect(container.querySelector("polygon")).not.toBeNull();
   });
+
+  it("renders a rectangular radar in planet mode", () => {
+    const { container } = render(
+      <Radar
+        mode="planet"
+        player={player}
+        planets={[]}
+        enemies={[]}
+        screenW={screenW}
+        screenH={screenH}
+      />,
+    );
+    expect(container.querySelector("svg")).not.toBeNull();
+    // Outer frame rect present in planet mode
+    expect(container.querySelector("rect")).not.toBeNull();
+  });
 });

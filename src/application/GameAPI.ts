@@ -19,6 +19,11 @@ export interface GameOptions {
 }
 
 export interface GameSnapshot {
+  mode: "space" | "planet";
+  planet?: {
+    inShip: boolean;
+    ship: { x: number; y: number; angle: number } | null;
+  };
   player: Kinematics2D & {
     health: number;
     healthMax: number;

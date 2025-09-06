@@ -12,6 +12,8 @@ import { Notification } from "./widgets/Notification";
 import { Radar } from "./widgets/Radar";
 
 interface HudProps {
+  mode?: "space" | "planet";
+  planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
   player: Point2D;
   playerAngle?: number;
   experience?: number;
@@ -41,6 +43,8 @@ interface HudProps {
 }
 
 export function Hud({
+  mode = "space",
+  planet,
   player,
   playerAngle,
   experience = 0,
@@ -71,6 +75,8 @@ export function Hud({
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
       <Radar
+        mode={mode}
+        planet={planet}
         player={player}
         playerAngle={playerAngle}
         planets={planets}

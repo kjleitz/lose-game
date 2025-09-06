@@ -22,7 +22,8 @@ export class PlanetSurfaceRenderer {
 
     // Draw landed ship sprite at the landing site unless hidden (when player is flying it)
     if (options?.showLandedShip !== false) {
-      drawShipTriangle(ctx, surface.landingSite.x, surface.landingSite.y, 0, 64);
+      const angle = typeof surface.shipAngle === "number" ? surface.shipAngle : 0;
+      drawShipTriangle(ctx, surface.landingSite.x, surface.landingSite.y, angle, 64);
     }
 
     // Draw terrain features

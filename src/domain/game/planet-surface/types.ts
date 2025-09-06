@@ -4,6 +4,8 @@ import type { Biome } from "../../../shared/types/Biome";
 export interface PlanetSurface {
   planetId: string;
   landingSite: Point2D;
+  // Ship facing angle when grounded at landingSite (radians). Optional.
+  shipAngle?: number;
   terrain: TerrainFeature[];
   resources: Resource[];
   creatures: Creature[];

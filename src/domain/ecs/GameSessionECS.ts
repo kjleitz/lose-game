@@ -190,7 +190,8 @@ export class GameSessionECS {
         position.y = surface.landingSite.y;
         velocity.dx = 0;
         velocity.dy = 0;
-        rotation.angle = 0;
+        // Preserve ship facing angle from space when landing
+        surface.shipAngle = rotation.angle;
       }
       this.planetSurface = surface;
     }
@@ -216,6 +217,8 @@ export class GameSessionECS {
         if (this.inPlanetShip) {
           // Exit ship anywhere: drop ship at current player position
           surface.landingSite = { x, y };
+          // Remember ship's current facing when parked
+          surface.shipAngle = players[0].components.rotation.angle;
           this.inPlanetShip = false;
           this.interactCooldown = 0.25;
         } else {
@@ -226,6 +229,9 @@ export class GameSessionECS {
           if (nearLanding) {
             this.inPlanetShip = true;
             this.inPlanetShipAnim = 0;
+            // Align ship's facing to the stored grounded angle if available
+            const rot = players[0].components.rotation;
+            if (typeof surface.shipAngle === "number") rot.angle = surface.shipAngle;
             this.interactCooldown = 0.25;
           }
         }
@@ -248,14 +254,14 @@ export class GameSessionECS {
       ? this.getPlanets().find((pl) => pl.id === this.landedPlanetId)
       : undefined;
     if (planet && players.length > 0) {
-      const { position, velocity, rotation } = players[0].components;
+      const { position, velocity } = players[0].components;
       // Hover just outside the planet radius to the east
       position.x = planet.x + planet.radius + 70;
       position.y = planet.y;
       // Reset motion and face right for a clean start
       velocity.dx = 0;
       velocity.dy = 0;
-      rotation.angle = 0;
+      // Preserve current ship facing on takeoff (do not override angle)
       // Snap camera immediately so the ship is centered this frame
       this.camera.x = position.x;
       this.camera.y = position.y;

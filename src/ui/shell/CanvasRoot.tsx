@@ -40,6 +40,8 @@ export function CanvasRoot(): JSX.Element {
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hudState, setHudState] = useState<{
+    mode: "space" | "planet";
+    planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
     player: Point2D;
     experience: number;
     level: number;
@@ -49,6 +51,8 @@ export function CanvasRoot(): JSX.Element {
     healthMax: number;
     planets: Planet[];
   }>(() => ({
+    mode: "space",
+    planet: undefined,
     player: { x: 0, y: 0 },
     experience: 0,
     level: 1,
@@ -83,6 +87,8 @@ export function CanvasRoot(): JSX.Element {
       unsub = ctrl.bus.subscribe("tick", (event): void => {
         const snapshot = event.snapshot;
         setHudState({
+          mode: snapshot.mode,
+          planet: snapshot.planet,
           player: { x: snapshot.player.x, y: snapshot.player.y },
           experience: snapshot.player.experience,
           level: snapshot.player.level,
@@ -163,6 +169,8 @@ export function CanvasRoot(): JSX.Element {
         }}
       />
       <Hud
+        mode={hudState.mode}
+        planet={hudState.planet}
         player={hudState.player}
         playerAngle={controllerRef.current?.getSnapshot().player.angle ?? 0}
         experience={hudState.experience}

@@ -198,6 +198,23 @@ export class GameApp {
       const projectiles = session.getProjectiles();
       const entityCount = session.getEntityCount();
       return {
+        mode: session.getCurrentModeType(),
+        planet:
+          session.getCurrentModeType() === "planet"
+            ? {
+                inShip: session.isInPlanetShip(),
+                ship: ((): { x: number; y: number; angle: number } | null => {
+                  const surface = session.getPlanetSurface?.();
+                  return surface
+                    ? {
+                        x: surface.landingSite.x,
+                        y: surface.landingSite.y,
+                        angle: typeof surface.shipAngle === "number" ? surface.shipAngle : 0,
+                      }
+                    : null;
+                })(),
+              }
+            : undefined,
         player: {
           ...player,
           experience: player.experience ?? 0,

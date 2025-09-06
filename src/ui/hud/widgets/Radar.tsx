@@ -12,6 +12,8 @@ interface RadarEnemy {
 }
 
 interface RadarProps {
+  mode?: "space" | "planet";
+  planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
   player: Point2D;
   playerAngle?: number;
   planets: Planet[];
@@ -22,6 +24,8 @@ interface RadarProps {
 }
 
 export function Radar({
+  mode = "space",
+  planet,
   player,
   playerAngle = 0,
   planets,
@@ -103,6 +107,87 @@ export function Radar({
     const distToCenter = Math.hypot(x - radarCenter, y - radarCenter);
     return distToCenter <= radarRadius + radiusAllowance;
   }
+  // Planet-side rectangular radar (landscape) styled as panel
+  if (mode === "planet") {
+    const RECT_W = Math.round(RADAR_SIZE * 1.8);
+    const RECT_H = Math.round(RADAR_SIZE * 0.9);
+    const cx = RECT_W / 2;
+    const cy = RECT_H / 2;
+    const scale = Math.min(RECT_W, RECT_H) / 2 / radarService.RADAR_RANGE;
+    const toRectRadar = (
+      px: number,
+      py: number,
+      radiusIn: number,
+    ): { x: number; y: number; rr: number } => {
+      const dx = px - player.x;
+      const dy = py - player.y;
+      return { x: cx + dx * scale, y: cy + dy * scale, rr: Math.max(2, radiusIn * scale) };
+    };
+    const trianglePointsAt = (ox: number, oy: number, angleRad: number): string => {
+      const size = 8;
+      const baseHalf = 4;
+      const ux = Math.cos(angleRad);
+      const uy = Math.sin(angleRad);
+      const lx = -Math.sin(angleRad);
+      const ly = Math.cos(angleRad);
+      const tipX = ox + ux * size;
+      const tipY = oy + uy * size;
+      const leftX = ox + lx * baseHalf - ux * 2;
+      const leftY = oy + ly * baseHalf - uy * 2;
+      const rightX = ox - lx * baseHalf - ux * 2;
+      const rightY = oy - ly * baseHalf - uy * 2;
+      return `${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`;
+    };
+    // Precompute parked ship element (if any)
+    let parkedShip: JSX.Element | null = null;
+    if (!planet?.inShip && planet?.ship) {
+      const { x, y } = toRectRadar(planet.ship.x, planet.ship.y, 0);
+      if (!(x < 1 || y < 1 || x > RECT_W - 1 || y > RECT_H - 1)) {
+        parkedShip = (
+          <polygon points={trianglePointsAt(x, y, planet.ship.angle)} fill="#fff" opacity={0.95} />
+        );
+      }
+    }
+    return (
+      <div className="absolute right-8 bottom-8 z-10 hud-panel p-2">
+        <svg width={RECT_W} height={RECT_H} style={{ display: "block" }}>
+          <defs>
+            <clipPath id="rect-radar-clip">
+              <rect x={1} y={1} width={RECT_W - 2} height={RECT_H - 2} rx={4} ry={4} />
+            </clipPath>
+          </defs>
+          <rect
+            x={1}
+            y={1}
+            width={RECT_W - 2}
+            height={RECT_H - 2}
+            rx={4}
+            ry={4}
+            fill="transparent"
+            stroke="#6b7280"
+            strokeWidth={1}
+          />
+          {/* Player/ship markers */}
+          {planet?.inShip ? (
+            // In ship: white triangle at center, rotated by ship angle
+            <polygon points={trianglePointsAt(cx, cy, playerAngle)} fill="#fff" opacity={0.95} />
+          ) : (
+            // On foot: light blue player dot at center
+            <circle cx={cx} cy={cy} r={3} fill="#7dd3fc" opacity={0.95} />
+          )}
+          {/* If on foot and ship is grounded, draw ship triangle at its location */}
+          {parkedShip}
+          {/* Enemies: red dots inside rect only */}
+          {enemies.map((enemy) => {
+            const { x, y } = toRectRadar(enemy.x, enemy.y, enemy.radius);
+            if (x < 1 || y < 1 || x > RECT_W - 1 || y > RECT_H - 1) return null;
+            return <circle key={enemy.id} cx={x} cy={y} r={3} fill="#ff3b30" opacity={0.95} />;
+          })}
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <div className="absolute right-8 bottom-8 z-10">
       <svg width={RADAR_SIZE} height={RADAR_SIZE} style={{ display: "block" }}>
