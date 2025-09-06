@@ -78,6 +78,12 @@ These are the guiding principles for development in this repo. Keep them short, 
 - Use `index.ts` barrels per area to keep imports shallow; do not introduce path aliases.
 - Non-React utilities (e.g., canvas rendering) live under `src/domain/render/`, not `src/ui`.
 
+### Pause & Menus
+
+- Opening any overlay menu/dialog pauses the game (e.g., Settings, Perks). This applies to any future menus as well.
+- Centralize pause/resume logic in the app shell (`src/ui/shell/CanvasRoot.tsx`) using a derived paused flag; individual components should not directly control the loop.
+- Effective paused state is the OR of the explicit pause menu (Esc) and visibility of menu overlays (settings/perks). Closing all menus resumes automatically.
+
 ## Sprites & Rendering Assets
 
 - Sprite SVGs must be tightly bounded to the artwork; do not include empty padding to account for nearby objects (e.g., ship hull). Positioning/alignment belongs in code, not in the asset.

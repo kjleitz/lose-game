@@ -83,6 +83,20 @@ export class GameSessionECS {
     }
   }
 
+  // Update the player's cursor target (world coordinates). Used for separate aim on planets.
+  setCursorTarget(point: { x: number; y: number }): void {
+    const players = this.world.query({ position: Components.Position, player: Components.Player });
+    if (players.length === 0) return;
+    const ent = new Entity(players[0].entity, this.world);
+    const comp = ent.getComponent(Components.CursorTarget);
+    if (comp) {
+      comp.x = point.x;
+      comp.y = point.y;
+    } else {
+      ent.addComponent(Components.CursorTarget, { x: point.x, y: point.y });
+    }
+  }
+
   private createDefaultGame(): void {
     // Create a basic game setup for testing
     const playerEntity = EntityFactories.createBasicPlayer(this.world, 0, 0);
@@ -312,7 +326,13 @@ export class GameSessionECS {
       this.perkRequests,
       perkDefinitions,
       (res) => {
-        if (res.success) this.toastEvents.push("Perk unlocked!");
+        if (res.success) {
+          if (res.perkId === "combat.cursor-aim-planet") {
+            this.toastEvents.push("Cursor aim enabled: move mouse to aim; click to shoot.");
+          } else {
+            this.toastEvents.push("Perk unlocked!");
+          }
+        }
       },
     );
     const collisionSystem = createCollisionSystem(this.world);
@@ -422,6 +442,16 @@ export class GameSessionECS {
   respawnFromDeath(): void {
     if (!this.isAwaitingRespawn()) return;
     this.hardResetToNewGame();
+  }
+
+  setPlayerPerkPoints(unspent: number): void {
+    const value = Math.max(0, Math.floor(unspent));
+    const players = this.world.query({ player: Components.Player });
+    if (players.length === 0) return;
+    const ent = new Entity(players[0].entity, this.world);
+    const points = ent.getComponent(Components.PlayerPerkPoints);
+    if (points) points.unspent = value;
+    else ent.addComponent(Components.PlayerPerkPoints, { unspent: value });
   }
 
   private updateCameraFollowPlayer(): void {
@@ -684,6 +714,40 @@ export class GameSessionECS {
     const players = this.world.query({ player: Components.Player });
     if (players.length === 0) return;
     this.perkRequests.push({ entityId: players[0].entity, perkId });
+  }
+
+  // Run only the perk unlock system once (useful while UI is paused)
+  applyPendingPerkUnlocks(): void {
+    const perkSystem = createPerkUnlockSystem(
+      this.world,
+      this.perkRequests,
+      perkDefinitions,
+      (res) => {
+        if (res.success) {
+          if (res.perkId === "combat.cursor-aim-planet") {
+            this.toastEvents.push("Cursor aim enabled: move mouse to aim; click to shoot.");
+          } else {
+            this.toastEvents.push("Perk unlocked!");
+          }
+        }
+      },
+    );
+    perkSystem.run();
+  }
+
+  // Debug/cheat helper: grant perk points to player
+  grantPerkPoints(amount: number): void {
+    if (amount <= 0) return;
+    const players = this.world.query({ player: Components.Player });
+    if (players.length === 0) return;
+    const ent = new Entity(players[0].entity, this.world);
+    const perk = ent.getComponent(Components.PlayerPerkPoints);
+    if (perk) {
+      perk.unspent += amount;
+    } else {
+      ent.addComponent(Components.PlayerPerkPoints, { unspent: amount });
+    }
+    this.toastEvents.push(`Granted ${amount} perk points.`);
   }
 
   // Mode management (simplified for now)

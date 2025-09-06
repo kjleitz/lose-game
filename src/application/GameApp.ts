@@ -85,6 +85,7 @@ export class GameApp {
     if (last) {
       session.setPlayerPosition({ x: last.player.x, y: last.player.y });
       session.restoreMode({ mode: last.mode, planetId: last.planetId });
+      if (typeof last.perkPoints === "number") session.setPlayerPerkPoints(last.perkPoints);
     }
     const renderer = new GameRenderer();
     // Bridge: maintain a domain inventory for the HUD fed by ECS pickup events
@@ -118,6 +119,39 @@ export class GameApp {
     };
     target.addEventListener("keydown", keydown);
     target.addEventListener("keyup", keyup);
+
+    // Track cursor position over the canvas to support planet-mode cursor aim perk
+    const onMouseMove: EventListener = (evt) => {
+      if (!(evt instanceof MouseEvent)) return;
+      const rect = canvas.getBoundingClientRect();
+      // Mouse coordinates in CSS pixels relative to the canvas element
+      const cssX = evt.clientX - rect.left;
+      const cssY = evt.clientY - rect.top;
+      // Convert to world using camera and current zoom (DPR cancels out)
+      const cam = session.getCamera();
+      const worldX = (cssX - size.width / 2) / cam.zoom + cam.x;
+      const worldY = (cssY - size.height / 2) / cam.zoom + cam.y;
+      session.setCursorTarget({ x: worldX, y: worldY });
+    };
+    canvas.addEventListener("mousemove", onMouseMove);
+
+    // Mouse shooting: left-click holds Fire while pressed
+    const onMouseDown: EventListener = (evt) => {
+      if (!(evt instanceof MouseEvent)) return;
+      if (evt.button !== 0) return; // left button only
+      const next = new Set(input.actions);
+      next.add("fire");
+      input.actions = next;
+    };
+    const onMouseUp: EventListener = (evt) => {
+      if (!(evt instanceof MouseEvent)) return;
+      if (evt.button !== 0) return;
+      const next = new Set(input.actions);
+      next.delete("fire");
+      input.actions = next;
+    };
+    canvas.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
 
     // Size and DPR management
     const size: ViewSize = { ...options.size };
@@ -321,6 +355,7 @@ export class GameApp {
               mode,
               planetId: modeData.planetId,
               inventory: inv,
+              perkPoints: playerView.perkPoints,
             });
           }
           lastSavedAt = now;
@@ -399,6 +434,9 @@ export class GameApp {
         loop.stop();
         target.removeEventListener("keydown", keydown);
         target.removeEventListener("keyup", keyup);
+        canvas.removeEventListener("mousemove", onMouseMove);
+        canvas.removeEventListener("mousedown", onMouseDown);
+        window.removeEventListener("mouseup", onMouseUp);
       },
       setSpeed(multiplier: number): void {
         const clamped = Math.min(MAX_SPEED, Math.max(MIN_SPEED, multiplier));
@@ -444,6 +482,14 @@ export class GameApp {
       },
       unlockPerk(perkId) {
         session.requestUnlockPerk(perkId);
+        // If UI is paused (e.g., perks modal open), apply immediately and emit a tick
+        session.applyPendingPerkUnlocks?.();
+        bus.publish({ type: "tick", snapshot: getSnapshot() });
+      },
+      grantPerkPoints(amount: number) {
+        // Clamp to a reasonable positive number to avoid overflow
+        const clampedAmount = Math.max(0, Math.min(1_000_000, Math.floor(amount)));
+        if (clampedAmount > 0) session.grantPerkPoints(clampedAmount);
       },
     };
 

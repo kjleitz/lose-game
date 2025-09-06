@@ -15,6 +15,7 @@ export interface SessionState {
   mode: "space" | "planet";
   planetId?: string;
   inventory?: InventoryEntry[];
+  perkPoints?: number;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -33,6 +34,7 @@ const sessionCodec = createJsonCodec<SessionState>((raw) => {
   if (modeVal !== "space" && modeVal !== "planet") throw new Error("Invalid mode");
   const planetId = record["planetId"];
   const inv = record["inventory"];
+  const savedPerkPoints = record["perkPoints"];
   let inventory: InventoryEntry[] | undefined;
   if (Array.isArray(inv)) {
     const out: InventoryEntry[] = [];
@@ -55,6 +57,10 @@ const sessionCodec = createJsonCodec<SessionState>((raw) => {
     mode: modeVal,
     planetId: typeof planetId === "string" ? planetId : undefined,
     inventory,
+    perkPoints:
+      typeof savedPerkPoints === "number" && Number.isFinite(savedPerkPoints)
+        ? savedPerkPoints
+        : undefined,
   };
 });
 

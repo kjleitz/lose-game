@@ -8,6 +8,8 @@ import {
   Rotation,
   Velocity,
   WeaponCooldown,
+  Perks,
+  CursorTarget,
 } from "../components";
 
 export function createPlayerControlSystem(
@@ -31,10 +33,15 @@ export function createPlayerControlSystem(
 
   return defineSystem(world)
     .withComponents({ position: Position, velocity: Velocity, rotation: Rotation, player: Player })
-    .withOptionalComponents({ weaponCooldown: WeaponCooldown, mods: PlayerModifiers })
+    .withOptionalComponents({
+      weaponCooldown: WeaponCooldown,
+      mods: PlayerModifiers,
+      perks: Perks,
+      cursor: CursorTarget,
+    })
     .execute((entities): void => {
       entities.forEach(({ components }) => {
-        const { velocity, rotation, weaponCooldown, mods } = components;
+        const { position, velocity, rotation, weaponCooldown, mods } = components;
 
         if (mode === "planet") {
           // Top-down walking controls
@@ -54,12 +61,29 @@ export function createPlayerControlSystem(
             moveY /= len;
             velocity.dx = moveX * speed;
             velocity.dy = moveY * speed;
-            rotation.angle = Math.atan2(moveY, moveX);
+            // If separate-aim perk is NOT enabled, face movement direction.
+            const cursorAimEnabled =
+              (components.perks?.unlocked["combat.cursor-aim-planet"] ?? 0) > 0;
+            if (!cursorAimEnabled) {
+              rotation.angle = Math.atan2(moveY, moveX);
+            }
           } else {
             // No input: gradually stop
             const friction = FRICTION * (mods?.frictionMult ?? 1);
             velocity.dx *= friction;
             velocity.dy *= friction;
+          }
+
+          // If separate-aim perk is enabled, aim at cursor when available
+          const cursorAimEnabled =
+            (components.perks?.unlocked["combat.cursor-aim-planet"] ?? 0) > 0;
+          const target = components.cursor;
+          if (cursorAimEnabled && target) {
+            const aimDx = target.x - position.x;
+            const aimDy = target.y - position.y;
+            if (Number.isFinite(aimDx) && Number.isFinite(aimDy)) {
+              rotation.angle = Math.atan2(aimDy, aimDx);
+            }
           }
         } else {
           // Space (ship) controls

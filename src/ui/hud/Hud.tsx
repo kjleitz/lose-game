@@ -40,6 +40,7 @@ interface HudProps {
   onOpenPerks?: () => void;
   onItemUse?: (item: Item) => void;
   onItemDrop?: (item: Item, quantity: number) => void;
+  onGrantPerkPoints?: (amount: number) => void;
 }
 
 export function Hud({
@@ -71,6 +72,7 @@ export function Hud({
   onOpenPerks,
   onItemUse,
   onItemDrop,
+  onGrantPerkPoints,
 }: HudProps): JSX.Element {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
@@ -105,6 +107,7 @@ export function Hud({
           playerSpeed={playerSpeed}
           onChangeSpeed={onChangeSpeed}
           onOpenSettings={onOpenSettings}
+          onGrantPerkPoints={onGrantPerkPoints}
         />
       </div>
       {/* Speedometer moved into ControlsPanel (top-right) */}

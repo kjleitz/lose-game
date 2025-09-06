@@ -39,6 +39,10 @@ export function CanvasRoot(): JSX.Element {
   const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // When any UI menu is open, the game should be paused.
+  // We centralize pause/resume side effects based on this derived state.
+  const uiPaused = paused || settingsOpen || perksOpen;
+  const lastAppliedPause = useRef<boolean>(false);
   const [hudState, setHudState] = useState<{
     mode: "space" | "planet";
     planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
@@ -66,6 +70,9 @@ export function CanvasRoot(): JSX.Element {
   const [hudActions, setHudActions] = useState<Set<Action>>(() => new Set());
   const [speed, setSpeed] = useState<number>(1);
   const [playerSpeed, setPlayerSpeed] = useState<number>(0);
+  const [cursorAimEnabled, setCursorAimEnabled] = useState<boolean>(false);
+  const [showCursorHint, setShowCursorHint] = useState<boolean>(false);
+  const cursorHintShown = useRef<boolean>(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -99,6 +106,20 @@ export function CanvasRoot(): JSX.Element {
           planets: snapshot.planets,
         });
         setPlayerSpeed(Math.hypot(snapshot.player.vx, snapshot.player.vy));
+        // Detect perk for cursor aim and trigger one-time hint
+        const enabled = (snapshot.player.perks["combat.cursor-aim-planet"] ?? 0) > 0;
+        setCursorAimEnabled(enabled);
+        if (
+          enabled &&
+          snapshot.mode === "planet" &&
+          snapshot.planet &&
+          !snapshot.planet.inShip &&
+          !cursorHintShown.current
+        ) {
+          cursorHintShown.current = true;
+          setShowCursorHint(true);
+          window.setTimeout(() => setShowCursorHint(false), 2500);
+        }
       });
       unsubNotif = ctrl.bus.subscribe("notification", (event): void => {
         setNotification(event.message);
@@ -126,12 +147,8 @@ export function CanvasRoot(): JSX.Element {
 
     const onEsc = (event: KeyboardEvent): void => {
       if (event.code === "Escape") {
-        setPaused((prev) => {
-          const next = !prev;
-          if (next) controllerRef.current?.pause();
-          else controllerRef.current?.resume();
-          return next;
-        });
+        // Toggle the explicit pause menu; actual pause/resume is handled by the effect below.
+        setPaused((prev) => !prev);
       }
     };
     window.addEventListener("keydown", onEsc);
@@ -158,9 +175,29 @@ export function CanvasRoot(): JSX.Element {
     console.log("Dropping item:", item.name, "quantity:", quantity);
   }
 
+  // Pause/resume the game loop whenever any menu is open (settings/perks or explicit pause)
+  useEffect(() => {
+    const ctrl = controllerRef.current;
+    if (!ctrl) return;
+    if (uiPaused !== lastAppliedPause.current) {
+      if (uiPaused) ctrl.pause();
+      else ctrl.resume();
+      lastAppliedPause.current = uiPaused;
+    }
+  }, [uiPaused]);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden" data-testid="game-root">
       <canvas ref={canvasRef} className="block w-full h-full" />
+      {/* Crosshair overlay for cursor aim perk on planet (on foot) */}
+      {hudState.mode === "planet" && hudState.planet && !hudState.planet.inShip ? (
+        <CrosshairOverlay
+          enabled={cursorAimEnabled}
+          canvasRef={canvasRef}
+          showHint={showCursorHint}
+          onHintDone={(): void => setShowCursorHint(false)}
+        />
+      ) : null}
       <DeathOverlay
         open={dead}
         onRespawn={(): void => {
@@ -193,7 +230,7 @@ export function CanvasRoot(): JSX.Element {
         screenH={size.height}
         notification={notification}
         actions={hudActions}
-        paused={paused}
+        paused={uiPaused}
         speedMultiplier={speed}
         playerSpeed={playerSpeed}
         inventory={controllerRef.current?.getInventory?.()}
@@ -204,6 +241,9 @@ export function CanvasRoot(): JSX.Element {
         onToggleInventory={(): void => setInventoryVisible((prev) => prev)}
         onItemUse={handleItemUse}
         onItemDrop={handleItemDrop}
+        onGrantPerkPoints={(amount: number): void =>
+          controllerRef.current?.grantPerkPoints?.(amount)
+        }
       />
       {/* Toasts overlay (stack) */}
       {toasts.length > 0 ? (
@@ -222,13 +262,11 @@ export function CanvasRoot(): JSX.Element {
         <PauseMenu
           onResume={(): void => {
             setPaused(false);
-            controllerRef.current?.resume();
           }}
           onDeleteData={(): void => {
             // Keep settings/keybindings; only clear saved session via settings menu
             controllerRef.current?.respawn?.();
             setPaused(false);
-            controllerRef.current?.resume();
           }}
         />
       ) : null}
@@ -237,6 +275,9 @@ export function CanvasRoot(): JSX.Element {
         onClose={(): void => setSettingsOpen(false)}
         speed={speed}
         onChangeSpeed={(nextSpeed: number): void => controllerRef.current?.setSpeed(nextSpeed)}
+        onGrantPerkPoints={(amount: number): void =>
+          controllerRef.current?.grantPerkPoints?.(amount)
+        }
       />
       <PerkModal
         open={perksOpen}
@@ -249,3 +290,4 @@ export function CanvasRoot(): JSX.Element {
     </div>
   );
 }
+import { CrosshairOverlay } from "../hud/widgets/CrosshairOverlay";

@@ -24,6 +24,7 @@ interface SettingsModalProps {
   onClose: () => void;
   speed: number;
   onChangeSpeed: (nextSpeed: number) => void;
+  onGrantPerkPoints?: (amount: number) => void;
 }
 
 const ACTION_LABELS: Record<Action, string> = {
@@ -61,6 +62,7 @@ export function SettingsModal({
   onClose,
   speed,
   onChangeSpeed,
+  onGrantPerkPoints,
 }: SettingsModalProps): JSX.Element | null {
   const [listeningAction, setListeningAction] = useState<Action | null>(null);
   // Sprite theme state is sourced from storage on open and written back immediately on change
@@ -145,6 +147,20 @@ export function SettingsModal({
                 onChange={(evt): void => onChangeSpeed(parseFloat(evt.target.value))}
               />
               <span className="hud-text text-xs opacity-80">{speed.toFixed(2)}x</span>
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="hud-text text-xs opacity-80">Debug</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={(): void => {
+                  if (onGrantPerkPoints) onGrantPerkPoints(999);
+                }}
+              >
+                Grant 999 Perk Points
+              </Button>
+              <span className="text-[11px] text-gray-400">For testing perks quickly.</span>
             </div>
           </section>
 

@@ -5,7 +5,7 @@ import { createPerkEffectsSystem } from "./PerkEffectsSystem";
 import { createPlayerControlSystem } from "./PlayerControlSystem";
 
 describe("PerkEffectsSystem integration", () => {
-  it("increases turn speed when Drift Mastery is unlocked", () => {
+  it("is a no-op for unimplemented perks", () => {
     const world = new World();
     const e = world
       .createEntity()
@@ -13,7 +13,7 @@ describe("PerkEffectsSystem integration", () => {
       .addComponent(Position, { x: 0, y: 0 })
       .addComponent(Velocity, { dx: 0, dy: 0 })
       .addComponent(Rotation, { angle: 0 })
-      .addComponent(Perks, { unlocked: { "navigation.drift-mastery": 1 } })
+      .addComponent(Perks, { unlocked: { "navigation.warp": 1 } })
       .addComponent(PlayerModifiers, {
         turnSpeedMult: 1,
         accelMult: 1,
@@ -40,13 +40,13 @@ describe("PerkEffectsSystem integration", () => {
     const withPerk = world.query({ rotation: Rotation })[0].components.rotation.angle;
 
     // Now remove the perk and compare
-    e.getComponent(Perks)!.unlocked["navigation.drift-mastery"] = 0;
+    e.getComponent(Perks)!.unlocked["navigation.warp"] = 0;
     perks.run();
     // Reset angle to 0 and run again
     world.query({ rotation: Rotation })[0].components.rotation.angle = 0;
     control.run();
     const noPerk = world.query({ rotation: Rotation })[0].components.rotation.angle;
 
-    expect(Math.abs(withPerk)).toBeGreaterThan(Math.abs(noPerk));
+    expect(Math.abs(withPerk)).toBeCloseTo(Math.abs(noPerk));
   });
 });

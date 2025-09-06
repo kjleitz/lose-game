@@ -52,6 +52,15 @@ export function createPerkUnlockSystem(
           });
           continue;
         }
+        if (!def.implemented) {
+          onResult({
+            entityId: req.entityId,
+            perkId: req.perkId,
+            success: false,
+            reason: "unimplemented",
+          });
+          continue;
+        }
         const currentTier = unlocked[def.id] ?? 0;
         const nextTierIdx = currentTier; // tiers are 1-based; index 0 -> tier 1
         if (nextTierIdx >= def.tiers.length) {

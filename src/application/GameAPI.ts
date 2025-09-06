@@ -90,5 +90,6 @@ export interface GameController {
   // Optional extras exposed by some controllers
   getInventory?: () => PlayerInventory;
   unlockPerk?: (perkId: PerkId) => void;
+  grantPerkPoints?: (amount: number) => void;
   respawn?: () => void;
 }

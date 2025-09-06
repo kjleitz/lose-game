@@ -7,6 +7,8 @@ import type { DropTable } from "../../game/damage/DamageableEntity";
 export const Position = defineComponent<Point2D>();
 export const Velocity = defineComponent<{ dx: number; dy: number }>();
 export const Rotation = defineComponent<{ angle: number }>();
+// Cursor target (world coords). Used for separate aim in planet mode.
+export const CursorTarget = defineComponent<Point2D>();
 
 // Physics components
 export const Collider = defineComponent<{ radius: number }>();

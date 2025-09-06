@@ -71,17 +71,31 @@ export function PerkModal({
                       perkPoints >= (nextTier?.cost ?? Infinity),
                   );
                   return (
-                    <li key={def.id} className="flex items-start justify-between">
-                      <div>
-                        <div className="text-white text-sm leading-tight">{def.name}</div>
-                        <div className="text-gray-400 text-[11px] leading-tight">
+                    <li
+                      key={def.id}
+                      className={
+                        "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 text-left py-1 border-t border-hud-accent/10 first:border-t-0" +
+                        (def.implemented ? "" : " opacity-40 select-none")
+                      }
+                    >
+                      <div className="min-w-0">
+                        <div className="text-white text-sm leading-tight font-medium">
+                          {def.name}
+                        </div>
+                        <div className="text-gray-400 text-[11px] leading-snug whitespace-normal break-words">
                           {def.description}
                         </div>
-                        <div className="text-gray-500 text-[10px] leading-tight">
+                        {!def.implemented ? (
+                          <div className="mt-1 flex items-center space-x-1 text-[10px] text-amber-300">
+                            <UnderDevelopmentIcon />
+                            <span>under development</span>
+                          </div>
+                        ) : null}
+                        <div className="text-gray-500 text-[10px] leading-tight mt-0.5">
                           Tier: {currentTier}/{def.tiers.length}
                         </div>
                         {nextTier ? (
-                          <div className="text-[10px] text-gray-400 mt-0.5">
+                          <div className="text-[10px] text-gray-400 mt-0.5 space-y-0.5">
                             <div>
                               Cost {nextTier.cost}
                               {nextTier.requiresLevel ? ` · Lv ${nextTier.requiresLevel}` : ""}
@@ -103,7 +117,7 @@ export function PerkModal({
                               </div>
                             ) : null}
                             {nextTier.effects && nextTier.effects.length > 0 ? (
-                              <div className="mt-0.5">
+                              <div>
                                 Effects:
                                 <ul className="list-disc ml-4">
                                   {nextTier.effects.map((eff, idx) => (
@@ -120,7 +134,7 @@ export function PerkModal({
                           <div className="text-[10px] text-gray-500 mt-1">Maxed</div>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center justify-end space-x-2">
                         {locked ? (
                           <span className="text-[10px] text-gray-400">
                             Cost {nextTier?.cost ?? 0}
@@ -129,11 +143,11 @@ export function PerkModal({
                         <Button
                           size="sm"
                           className={
-                            canUnlock
+                            canUnlock && def.implemented
                               ? "bg-hud-warning text-black border border-hud-warning"
                               : undefined
                           }
-                          disabled={!canUnlock}
+                          disabled={!canUnlock || !def.implemented}
                           onClick={(): void => onUnlock(def.id)}
                         >
                           {locked ? "Unlock" : currentTier < def.tiers.length ? "Upgrade" : "Maxed"}
@@ -151,3 +165,56 @@ export function PerkModal({
   );
 }
 import { Panel, Button } from "../../controls";
+
+function UnderDevelopmentIcon(): JSX.Element {
+  // Inline SVG: yellow/black diamond road-work sign with a simple two-frame shovel animation
+  // Uses discrete keyframes to emulate a GIF-like two-frame toggle
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      role="img"
+      focusable="false"
+      className="shrink-0"
+    >
+      {/* Diamond sign */}
+      <rect
+        x="5"
+        y="5"
+        width="22"
+        height="22"
+        transform="rotate(45 16 16)"
+        fill="#FACC15"
+        stroke="#111827"
+        strokeWidth="2"
+        rx="2"
+        ry="2"
+      />
+      {/* Simple worker */}
+      <g transform="translate(8,9)" stroke="#111827" strokeWidth="1.5" strokeLinecap="round">
+        {/* head */}
+        <circle cx="6" cy="4" r="2" fill="#111827" />
+        {/* body */}
+        <path d="M6 6 L6 11 M6 8 L3 10 M6 8 L9 10" fill="none" />
+        {/* shovel group with tiny two-frame tilt */}
+        <g id="shovel" transform="translate(10,11)">
+          <g>
+            <path d="M0 0 L4 -4" />
+            <path d="M4 -4 L6 -2 L4 0 Z" fill="#111827" />
+          </g>
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="-10 2 -2;10 2 -2;-10 2 -2"
+            keyTimes="0;0.5;1"
+            dur="0.8s"
+            repeatCount="indefinite"
+            calcMode="discrete"
+          />
+        </g>
+      </g>
+    </svg>
+  );
+}
