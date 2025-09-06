@@ -94,26 +94,60 @@ export function createPlayerControlSystem(
           velocity.dx *= drag;
           velocity.dy *= drag;
 
-          if (actions.has("turnLeft")) {
+          // Perk gates
+          const hasStrafe = (components.perks?.unlocked["thrusters.strafing-thrusters"] ?? 0) > 0;
+          const hasReverse = (components.perks?.unlocked["thrusters.reverse-thrusters"] ?? 0) > 0;
+
+          // Compute base acceleration (shared across forward/reverse/strafe)
+          const boostMult = actions.has("boost") ? 2 : 1; // boost doubles acceleration
+          const accelBoost = options?.spaceAccelMult ?? 1;
+          const ACCELERATION = BASE_ACCELERATION * boostMult * accelBoost * (mods?.accelMult ?? 1);
+
+          // Turning vs strafing logic
+          const strafingLeft = hasStrafe && actions.has("boost") && actions.has("turnLeft");
+          const strafingRight = hasStrafe && actions.has("boost") && actions.has("turnRight");
+
+          if (!strafingLeft && actions.has("turnLeft")) {
             const turnBoost = options?.spaceTurnMult ?? 1;
             const turn = BASE_TURN_SPEED * turnBoost * (mods?.turnSpeedMult ?? 1);
             rotation.angle -= turn * dt;
           }
-          if (actions.has("turnRight")) {
+          if (!strafingRight && actions.has("turnRight")) {
             const turnBoost = options?.spaceTurnMult ?? 1;
             const turn = BASE_TURN_SPEED * turnBoost * (mods?.turnSpeedMult ?? 1);
             rotation.angle += turn * dt;
           }
 
+          // Forward thrust
           if (actions.has("thrust")) {
-            const boost = actions.has("boost") ? 2 : 1; // boost doubles acceleration
-            const accelBoost = options?.spaceAccelMult ?? 1;
-            const ACCELERATION = BASE_ACCELERATION * boost * accelBoost * (mods?.accelMult ?? 1);
             const thrustX = Math.cos(rotation.angle) * ACCELERATION * dt;
             const thrustY = Math.sin(rotation.angle) * ACCELERATION * dt;
-
             velocity.dx += thrustX;
             velocity.dy += thrustY;
+          }
+
+          // Reverse thrusters mapped to moveDown when unlocked
+          if (hasReverse && actions.has("moveDown")) {
+            const thrustX = -Math.cos(rotation.angle) * ACCELERATION * dt;
+            const thrustY = -Math.sin(rotation.angle) * ACCELERATION * dt;
+            velocity.dx += thrustX;
+            velocity.dy += thrustY;
+          }
+
+          // Strafing applies lateral acceleration while not rotating
+          if (strafingLeft) {
+            // left-of-ship vector when Y grows downward: (sin(a), -cos(a))
+            const sx = Math.sin(rotation.angle) * ACCELERATION * dt;
+            const sy = -Math.cos(rotation.angle) * ACCELERATION * dt;
+            velocity.dx += sx;
+            velocity.dy += sy;
+          }
+          if (strafingRight) {
+            // right-of-ship vector when Y grows downward: (-sin(a), cos(a))
+            const sx = -Math.sin(rotation.angle) * ACCELERATION * dt;
+            const sy = Math.cos(rotation.angle) * ACCELERATION * dt;
+            velocity.dx += sx;
+            velocity.dy += sy;
           }
 
           // Drag already applied at start of space update

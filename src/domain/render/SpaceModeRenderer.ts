@@ -46,7 +46,10 @@ export class SpaceModeRenderer {
     this.renderStars(ctx, session);
     this.renderPlanets(ctx, planets);
     this.renderEnemies(ctx, enemies);
-    this.renderShipSprite(ctx, player, actions, 48);
+    // Gather player perks for auxiliary thruster rendering
+    const pv = session.getPlayer?.();
+    const perks = pv?.perks ?? {};
+    this.renderShipSprite(ctx, player, actions, 48, perks);
 
     // Player heat trails
     const heat = session.getPlayerStarHeatOverlay ? session.getPlayerStarHeatOverlay() : null;
@@ -189,9 +192,10 @@ export class SpaceModeRenderer {
     player: Kinematics2D,
     actions: Set<Action>,
     sizePx: number,
+    perks: Record<string, number>,
   ): void {
     const shipRenderer = new ShipRenderer();
-    shipRenderer.render(ctx, player, actions, sizePx);
+    shipRenderer.render(ctx, player, actions, sizePx, perks);
   }
 
   private renderSpaceProjectiles(

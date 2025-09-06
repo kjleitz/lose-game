@@ -106,14 +106,14 @@ export const perkDefinitions: readonly PerkDefinition[] = [
     "Strafing Thrusters",
     "Add lateral thrusters for true strafing.",
     "thrusters",
-    false,
+    true,
   ),
   makePerkDef(
     "thrusters.reverse-thrusters",
     "Reverse Thrusters",
     "Dedicated reverse thrust for braking/reverse.",
     "thrusters",
-    false,
+    true,
   ),
   makePerkDef(
     "maneuvers.aerobatics",

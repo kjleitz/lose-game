@@ -285,6 +285,77 @@ export function drawThruster(
 
 // (Enemy ship SVG uses shared cache via getSpriteByKey)
 
+// Draw a small auxiliary thruster with a color tint (e.g., blue) without trails.
+// kind controls position offset relative to the ship: left, right, or front.
+export function drawAuxThruster(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  angle: number,
+  size = 24,
+  power = 1,
+  tint = "#69aaff",
+  kind: "left" | "right" | "front" = "left",
+): void {
+  if (!thrusterImg) {
+    const { img } = getSpriteByKey("thruster");
+    thrusterImg = img;
+  }
+
+  // Base scale smaller than main thruster
+  const scale = 0.45 + 0.35 * Math.max(0, Math.min(1, power));
+  // Match cropping adjustment used by main thruster for consistent sizing
+  let scaleAdjust = 12 / 48;
+  const src = thrusterImg.src;
+  if (src.includes("art-deco")) scaleAdjust = 18 / 48;
+
+  const shipHalf = size / 2;
+  const thrHalf = (size * scale * scaleAdjust) / 2;
+  const embed = size * 0.1;
+
+  // Compute center position for the aux thruster based on kind
+  let cx = x;
+  let cy = y;
+  if (kind === "front") {
+    // Place near ship nose
+    cx = x + Math.cos(angle) * (shipHalf + thrHalf - embed * 0.6);
+    cy = y + Math.sin(angle) * (shipHalf + thrHalf - embed * 0.6);
+  } else if (kind === "left") {
+    // Left side (Y grows downward): offset along (sin(a), -cos(a))
+    const ox = Math.sin(angle) * (shipHalf - embed * 0.4);
+    const oy = -Math.cos(angle) * (shipHalf - embed * 0.4);
+    cx = x + ox;
+    cy = y + oy;
+  } else if (kind === "right") {
+    // Right side (Y grows downward): offset along (-sin(a), cos(a))
+    const ox = -Math.sin(angle) * (shipHalf - embed * 0.4);
+    const oy = Math.cos(angle) * (shipHalf - embed * 0.4);
+    cx = x + ox;
+    cy = y + oy;
+  }
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  // Draw the base thruster
+  const dw = size * scale * scaleAdjust;
+  const dh = dw;
+  ctx.drawImage(
+    thrusterImg,
+    (-size / 2) * scale * scaleAdjust,
+    (-size / 2) * scale * scaleAdjust,
+    dw,
+    dh,
+  );
+  // Tint to the requested color restricted to the sprite's alpha
+  const prev = ctx.globalCompositeOperation;
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = tint;
+  ctx.fillRect((-size / 2) * scale * scaleAdjust, (-size / 2) * scale * scaleAdjust, dw, dh);
+  ctx.globalCompositeOperation = prev;
+  ctx.restore();
+}
+
 export function drawEnemyShip(
   ctx: CanvasRenderingContext2D,
   x: number,

@@ -329,6 +329,10 @@ export class GameSessionECS {
         if (res.success) {
           if (res.perkId === "combat.cursor-aim-planet") {
             this.toastEvents.push("Cursor aim enabled: move mouse to aim; click to shoot.");
+          } else if (res.perkId === "thrusters.reverse-thrusters") {
+            this.toastEvents.push("Reverse thrusters: in space, hold S/Down to brake.");
+          } else if (res.perkId === "thrusters.strafing-thrusters") {
+            this.toastEvents.push("Strafing: in space, hold Shift + A/D or Left/Right.");
           } else {
             this.toastEvents.push("Perk unlocked!");
           }
@@ -726,6 +730,10 @@ export class GameSessionECS {
         if (res.success) {
           if (res.perkId === "combat.cursor-aim-planet") {
             this.toastEvents.push("Cursor aim enabled: move mouse to aim; click to shoot.");
+          } else if (res.perkId === "thrusters.reverse-thrusters") {
+            this.toastEvents.push("Reverse thrusters: in space, hold S/Down to brake.");
+          } else if (res.perkId === "thrusters.strafing-thrusters") {
+            this.toastEvents.push("Strafing: in space, hold Shift + A/D or Left/Right.");
           } else {
             this.toastEvents.push("Perk unlocked!");
           }
