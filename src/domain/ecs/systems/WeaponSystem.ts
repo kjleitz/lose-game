@@ -19,6 +19,7 @@ import { PlayerModifiers } from "../components";
 import { Entity as ECSEntity } from "../../../lib/ecs";
 import { Perks, SelectedAmmo, ProjectileAmmo } from "../components";
 import type { AmmoType } from "../../../shared/types/combat";
+import { getAmmoProfile } from "../../../shared/types/combat";
 
 export function createWeaponSystem(world: World, actions: Set<Action>): System {
   return defineSystem(world)
@@ -37,7 +38,7 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
           // Determine ammo profile (perk-gated). Default baseline values.
           const perkTier = components.perks?.unlocked["combat.new-ammo-and-weapons"] ?? 0;
 
-          // Baseline weapon stats
+          // Baseline weapon stats (may be overridden by ammo profile)
           let speed = 600;
           let damage = 25;
           // Visual hint remains handled by renderer; Sprite color is not read in space mode.
@@ -51,17 +52,10 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
             if (selected != null) ammoUsed = selected;
           }
 
-          // Map ammo to stats
-          if (ammoUsed === "kinetic") {
-            speed = 760;
-            damage = 20;
-          } else if (ammoUsed === "plasma") {
-            speed = 520;
-            damage = 32;
-          } else if (ammoUsed === "ion") {
-            speed = 650;
-            damage = 25;
-          }
+          // Map ammo to stats and cooldown
+          const profile = getAmmoProfile(ammoUsed);
+          speed = profile.speed;
+          damage = profile.damage;
 
           // Create projectile
           const baseSpread = 0.12; // ~7 degrees
@@ -94,8 +88,9 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
           // Tag projectile with ammo type for renderers
           builder.addComponent(ProjectileAmmo, { type: ammoUsed });
 
-          // Set weapon cooldown if component exists
+          // Set weapon cooldown if component exists (duration follows ammo)
           if (weaponCooldown) {
+            weaponCooldown.duration = profile.cooldown;
             weaponCooldown.remaining = weaponCooldown.duration;
           }
         }
