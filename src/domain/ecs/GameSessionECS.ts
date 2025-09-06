@@ -887,28 +887,78 @@ export class GameSessionECS {
   }
 
   private createSolarNeighborhood(): void {
-    // Place a few very large stars, spaced far apart
+    // Place a few very large stars, spaced farther apart to allow generous orbits
     const starDefs = [
-      { id: "star_a", x: 2000, y: 0, r: 480, color: "#ffd27a" },
-      { id: "star_b", x: 0, y: -2300, r: 600, color: "#ffbb55" },
-      { id: "star_c", x: -2200, y: 1700, r: 420, color: "#ffe08a" },
+      { id: "star_a", x: 4000, y: 0, r: 480, color: "#ffd27a" },
+      { id: "star_b", x: 0, y: -4800, r: 600, color: "#ffbb55" },
+      { id: "star_c", x: -4400, y: 3600, r: 420, color: "#ffe08a" },
     ];
-    for (const starDef of starDefs) {
+
+    // Create stars first so we can compute safe orbit limits per system
+    const createdStars: Array<{
+      id: string;
+      x: number;
+      y: number;
+      r: number;
+      color: string;
+      entityId: number;
+    }> = [];
+
+    for (const def of starDefs) {
       const starEnt = EntityFactories.createStar(
         this.world,
-        starDef.id,
-        starDef.x,
-        starDef.y,
-        starDef.r,
-        starDef.color,
+        def.id,
+        def.x,
+        def.y,
+        def.r,
+        def.color,
       );
-      const starId = this.getEntityId(starEnt);
-      // 2-5 planets per star
-      const planetCount = 2 + Math.floor(Math.random() * 4);
-      const baseOrbit = starDef.r + 400; // push first orbit further from huge star
-      for (let i = 0; i < planetCount; i++) {
-        // Wider orbit spacing to suit larger stars and farther systems
-        const orbitRadius = baseOrbit + i * (200 + Math.random() * 280);
+      createdStars.push({
+        id: def.id,
+        x: def.x,
+        y: def.y,
+        r: def.r,
+        color: def.color,
+        entityId: this.getEntityId(starEnt),
+      });
+    }
+
+    // Safety margin between solar systems' outermost orbits
+    const INTER_SYSTEM_MARGIN = 300; // world units
+
+    // Generate planets for each star with an orbit cap to avoid cross-system overlap
+    for (const star of createdStars) {
+      // Compute half of the minimum distance to any other star, minus a margin
+      let minDist = Infinity;
+      for (const other of createdStars) {
+        if (other.id === star.id) continue;
+        const dist = Math.hypot(other.x - star.x, other.y - star.y);
+        if (dist < minDist) minDist = dist;
+      }
+      // If it's isolated or single, pick a large cap; otherwise half-distance minus margin
+      const availableOrbitLimit = Number.isFinite(minDist)
+        ? Math.max(0, 0.5 * minDist - INTER_SYSTEM_MARGIN)
+        : star.r + 4000;
+
+      // 2–5 planets per star, but we will stop if we hit the orbit cap
+      const requestedCount = 2 + Math.floor(Math.random() * 4);
+
+      // First orbit sits comfortably away from the star, but within the cap
+      const MIN_GAP_FROM_STAR = 320; // keep away from surface glow
+      const BASE_ORBIT_GAP = 500; // preferred starting gap
+      const baseOrbit = Math.min(
+        availableOrbitLimit,
+        star.r + Math.max(MIN_GAP_FROM_STAR, BASE_ORBIT_GAP),
+      );
+
+      // If base orbit already exceeds the cap, skip planets for this star
+      if (baseOrbit <= star.r + MIN_GAP_FROM_STAR) continue;
+
+      // Subsequent orbits space out moderately
+      let placed = 0;
+      let nextOrbit = baseOrbit;
+      while (placed < requestedCount && nextOrbit <= availableOrbitLimit) {
+        const orbitRadius = nextOrbit;
         const speed = (0.2 + Math.random() * 0.25) * (Math.random() < 0.5 ? 1 : -1);
         const angle = Math.random() * Math.PI * 2;
         const radius = 40 + Math.random() * 60;
@@ -928,15 +978,20 @@ export class GameSessionECS {
           "spotted",
         ];
         EntityFactories.createOrbitingPlanet(this.world, {
-          id: `${starDef.id}_p${i + 1}`,
+          id: `${star.id}_p${placed + 1}`,
           color: colors[Math.floor(Math.random() * colors.length)],
           design: designs[Math.floor(Math.random() * designs.length)],
           radius,
-          centerId: starId,
+          centerId: star.entityId,
           orbitRadius,
           orbitSpeed: speed,
           angle,
         });
+        placed += 1;
+
+        // Advance to next orbit with spacing, but don't overshoot available limit unnecessarily
+        const spacing = 220 + Math.random() * 260;
+        nextOrbit = orbitRadius + spacing;
       }
     }
   }
