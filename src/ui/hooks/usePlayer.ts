@@ -31,7 +31,7 @@ export function usePlayer(
   useEffect((): void => {
     try {
       const raw = window.localStorage.getItem("lose.speedMultiplier");
-      if (raw) {
+      if (raw != null && raw !== "") {
         const val = parseFloat(raw);
         if (Number.isFinite(val)) playerRef.current.setSpeedMultiplier(val);
         prevSpeedRef.current = playerRef.current.getSpeedMultiplier();

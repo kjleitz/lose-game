@@ -201,33 +201,34 @@ export class GameApp {
         xpToNextLevel: number;
         perkPoints: number;
         perks: Record<string, number>;
-      } = playerView
-        ? {
-            x: playerView.x,
-            y: playerView.y,
-            vx: playerView.vx,
-            vy: playerView.vy,
-            angle: playerView.angle,
-            health: playerView.health,
-            healthMax: playerView.healthMax,
-            experience: playerView.experience,
-            level: playerView.level,
-            xpToNextLevel: playerView.xpToNextLevel,
-            perkPoints: playerView.perkPoints,
-            perks: playerView.perks,
-          }
-        : {
-            ...defaultKinematicsWithHealth(),
-            healthMax: 100,
-            experience: 0,
-            level: 1,
-            xpToNextLevel: 100,
-            perkPoints: 0,
-            perks: {},
-          };
+      } =
+        playerView != null
+          ? {
+              x: playerView.x,
+              y: playerView.y,
+              vx: playerView.vx,
+              vy: playerView.vy,
+              angle: playerView.angle,
+              health: playerView.health,
+              healthMax: playerView.healthMax,
+              experience: playerView.experience,
+              level: playerView.level,
+              xpToNextLevel: playerView.xpToNextLevel,
+              perkPoints: playerView.perkPoints,
+              perks: playerView.perks,
+            }
+          : {
+              ...defaultKinematicsWithHealth(),
+              healthMax: 100,
+              experience: 0,
+              level: 1,
+              xpToNextLevel: 100,
+              perkPoints: 0,
+              perks: {},
+            };
       const camera = session.getCamera();
       const planets = session.getPlanets();
-      const stars = session.getStars ? session.getStars() : [];
+      const stars = typeof session.getStars === "function" ? session.getStars() : [];
       const enemies = session.getEnemies();
       const projectiles = session.getProjectiles();
       const entityCount = session.getEntityCount();
@@ -345,7 +346,7 @@ export class GameApp {
             const modeData = session.getModeSnapshot();
             const inv: InventoryEntry[] = hudInventory
               .getSlots()
-              .filter((slot) => slot.item !== null && slot.quantity > 0)
+              .filter((slot) => slot.item != null && slot.quantity > 0)
               .map((slot) => {
                 const item = slot.item!;
                 return { type: item.type, quantity: slot.quantity };
@@ -363,7 +364,7 @@ export class GameApp {
         // Bridge picked-up items to HUD inventory
         const picked = session.getAndClearPickupEvents();
         for (const ev of picked) {
-          if (!ev.autoUsed) hudInventory.addItem(ev.item, ev.quantity);
+          if (ev.autoUsed !== true) hudInventory.addItem(ev.item, ev.quantity);
         }
         // Play SFX events emitted by session
         const sfx = session.getAndClearSfxEvents();
@@ -394,13 +395,14 @@ export class GameApp {
         if (!ctx) return;
         const awaiting = session.isAwaitingRespawn();
         const pv = session.getPlayer();
-        const playerForRender: Kinematics2D = pv
-          ? { x: pv.x, y: pv.y, vx: pv.vx, vy: pv.vy, angle: pv.angle }
-          : awaiting && lastRenderPV
-            ? lastRenderPV
-            : defaultKinematics();
+        const playerForRender: Kinematics2D =
+          pv != null
+            ? { x: pv.x, y: pv.y, vx: pv.vx, vy: pv.vy, angle: pv.angle }
+            : awaiting && lastRenderPV != null
+              ? lastRenderPV
+              : defaultKinematics();
         // Remember last seen PV when valid
-        if (pv) lastRenderPV = playerForRender;
+        if (pv != null) lastRenderPV = playerForRender;
         renderer.render(
           ctx,
           playerForRender,

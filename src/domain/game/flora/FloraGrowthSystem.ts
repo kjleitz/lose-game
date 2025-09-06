@@ -73,21 +73,21 @@ export class FloraGrowthSystem {
     let growthRate = 1.0;
 
     // Temperature factor
-    const temperature = plant.environmentalFactors.get("temperature") || 0.5;
+    const temperature = plant.environmentalFactors.get("temperature") ?? 0.5;
     const tempOptimal = (habitat.minTemperature + habitat.maxTemperature) / 2;
     const tempDeviation = Math.abs(temperature - tempOptimal);
     const tempFactor = Math.max(0.1, 1.0 - tempDeviation * 2);
     growthRate *= tempFactor;
 
     // Moisture factor
-    const moisture = plant.environmentalFactors.get("moisture") || 0.5;
+    const moisture = plant.environmentalFactors.get("moisture") ?? 0.5;
     const moistureOptimal = (habitat.minMoisture + habitat.maxMoisture) / 2;
     const moistureDeviation = Math.abs(moisture - moistureOptimal);
     const moistureFactor = Math.max(0.1, 1.0 - moistureDeviation * 2);
     growthRate *= moistureFactor;
 
     // Light factor
-    const lightLevel = plant.environmentalFactors.get("light") || 0.5;
+    const lightLevel = plant.environmentalFactors.get("light") ?? 0.5;
     const lightRequirement = this.getLightLevelValue(habitat.lightRequirement);
     const lightDeviation = Math.abs(lightLevel - lightRequirement);
     const lightFactor = Math.max(0.2, 1.0 - lightDeviation);
@@ -199,7 +199,7 @@ export class FloraGrowthSystem {
     const habitat = species.habitat;
 
     // Temperature damage
-    const temperature = plant.environmentalFactors.get("temperature") || 0.5;
+    const temperature = plant.environmentalFactors.get("temperature") ?? 0.5;
     if (temperature < habitat.minTemperature || temperature > habitat.maxTemperature) {
       const temperatureDamage =
         Math.abs(temperature - (habitat.minTemperature + habitat.maxTemperature) / 2) * 10 * dt;
@@ -257,7 +257,7 @@ export class FloraGrowthSystem {
     let stress = 0;
 
     // Environmental stress
-    const temperature = plant.environmentalFactors.get("temperature") || 0.5;
+    const temperature = plant.environmentalFactors.get("temperature") ?? 0.5;
     if (temperature < habitat.minTemperature || temperature > habitat.maxTemperature) {
       stress += 1.0;
     }

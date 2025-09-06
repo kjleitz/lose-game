@@ -20,7 +20,7 @@ export function CrosshairOverlay({
   useEffect(() => {
     const handle = (evt: MouseEvent): void => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (canvas == null) return;
       const rect = canvas.getBoundingClientRect();
       setPos({ x: evt.clientX - rect.left, y: evt.clientY - rect.top });
     };
@@ -34,20 +34,20 @@ export function CrosshairOverlay({
   useEffect(() => {
     if (!enabled) return;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (canvas == null) return;
     const rect = canvas.getBoundingClientRect();
     setPos({ x: rect.width / 2, y: rect.height / 2 });
   }, [enabled, canvasRef]);
 
   useEffect(() => {
-    if (!showHint) return;
+    if (showHint !== true) return;
     // Auto-hide hint after a short duration
-    if (hintTimer.current) window.clearTimeout(hintTimer.current);
+    if (hintTimer.current != null) window.clearTimeout(hintTimer.current);
     hintTimer.current = window.setTimeout(() => {
-      if (onHintDone) onHintDone();
+      if (onHintDone != null) onHintDone();
     }, 2500);
     return (): void => {
-      if (hintTimer.current) window.clearTimeout(hintTimer.current);
+      if (hintTimer.current != null) window.clearTimeout(hintTimer.current);
     };
   }, [showHint, onHintDone]);
 

@@ -182,7 +182,7 @@ export class GameSessionECS {
 
   private handleSpaceModeTransitions(actions: Set<Action>): void {
     const nearbyPlanetId = this.findNearbyPlanetId();
-    if (!(nearbyPlanetId && actions.has("land"))) return;
+    if (!(nearbyPlanetId != null && actions.has("land"))) return;
 
     // Enter planet mode
     this.mode = "planet";
@@ -264,10 +264,11 @@ export class GameSessionECS {
     if (!this.inPlanetShip) return;
 
     // Place player hovering over the planet in space coordinates
-    const planet = this.landedPlanetId
-      ? this.getPlanets().find((pl) => pl.id === this.landedPlanetId)
-      : undefined;
-    if (planet && players.length > 0) {
+    const planet =
+      this.landedPlanetId != null
+        ? this.getPlanets().find((pl) => pl.id === this.landedPlanetId)
+        : undefined;
+    if (planet != null && players.length > 0) {
       const { position, velocity } = players[0].components;
       // Hover just outside the planet radius to the east
       position.x = planet.x + planet.radius + 70;
@@ -459,7 +460,7 @@ export class GameSessionECS {
   }
 
   private updateCameraFollowPlayer(): void {
-    if (!this.playerEntityId) return;
+    if (this.playerEntityId == null) return;
 
     const playerEntities = this.world.query({
       position: Components.Position,
@@ -930,14 +931,14 @@ export class GameSessionECS {
 
   private updateNotifications(): void {
     // Planet mode: show exploring hint; exit ship anywhere; enter/takeoff near ship
-    if (this.mode === "planet" && this.landedPlanetId) {
+    if (this.mode === "planet" && this.landedPlanetId != null) {
       const players = this.world.query({
         position: Components.Position,
         player: Components.Player,
       });
       const surface = this.planetSurface;
       let nearLanding = false;
-      if (surface && players.length > 0) {
+      if (surface != null && players.length > 0) {
         const { x, y } = players[0].components.position;
         const dx = x - surface.landingSite.x;
         const dy = y - surface.landingSite.y;
@@ -956,12 +957,12 @@ export class GameSessionECS {
     }
     // Space mode proximity hint to land
     const player = this.getPlayer();
-    if (!player) {
+    if (player == null) {
       this.notification = null;
       return;
     }
     const nearbyPlanetId = this.findNearbyPlanetId();
-    this.notification = nearbyPlanetId ? `Press L to land on ${nearbyPlanetId}` : null;
+    this.notification = nearbyPlanetId != null ? `Press L to land on ${nearbyPlanetId}` : null;
   }
 
   private createSolarNeighborhood(): void {
@@ -1308,9 +1309,9 @@ export class GameSessionECS {
     if (data.mode === "planet") {
       this.mode = "planet";
       this.landedPlanetId = data.planetId ?? null;
-      if (this.landedPlanetId) {
+      if (this.landedPlanetId != null) {
         const planet = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
-        if (planet)
+        if (planet != null)
           this.planetSurface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
       }
     } else {

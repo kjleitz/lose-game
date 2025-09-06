@@ -117,14 +117,15 @@ describe("InventoryPanel", (): void => {
     const onItemUse = vi.fn();
     render(<InventoryPanel inventory={inventory} visible={true} onItemUse={onItemUse} />);
 
-    const itemSlot = screen
-      .getAllByTestId(/inventory-slot-/)
-      .find((slot) => !slot.getAttribute("data-testid")?.includes("empty"));
+    const itemSlot = screen.getAllByTestId(/inventory-slot-/).find((slot) => {
+      const dt = slot.getAttribute("data-testid");
+      return dt != null && !dt.includes("empty");
+    });
 
-    if (itemSlot) {
+    if (itemSlot != null) {
       fireEvent.mouseEnter(itemSlot);
       const useButton = screen.queryByTestId("use-item-button");
-      if (useButton) {
+      if (useButton != null) {
         fireEvent.click(useButton);
         expect(onItemUse).toHaveBeenCalled();
       }
@@ -136,14 +137,15 @@ describe("InventoryPanel", (): void => {
     const onItemDrop = vi.fn();
     render(<InventoryPanel inventory={inventory} visible={true} onItemDrop={onItemDrop} />);
 
-    const itemSlot = screen
-      .getAllByTestId(/inventory-slot-/)
-      .find((slot) => !slot.getAttribute("data-testid")?.includes("empty"));
+    const itemSlot = screen.getAllByTestId(/inventory-slot-/).find((slot) => {
+      const dt = slot.getAttribute("data-testid");
+      return dt != null && !dt.includes("empty");
+    });
 
-    if (itemSlot) {
+    if (itemSlot != null) {
       fireEvent.mouseEnter(itemSlot);
       const dropButton = screen.queryByTestId("drop-item-button");
-      if (dropButton) {
+      if (dropButton != null) {
         fireEvent.click(dropButton);
         expect(onItemDrop).toHaveBeenCalled();
       }
@@ -171,13 +173,14 @@ describe("InventoryPanel", (): void => {
     const inventory = createTestInventory();
     render(<InventoryPanel inventory={inventory} visible={true} />);
 
-    const slots = screen
-      .getAllByTestId(/inventory-slot-/)
-      .filter((slot) => !slot.getAttribute("data-testid")?.includes("empty"));
+    const slots = screen.getAllByTestId(/inventory-slot-/).filter((slot) => {
+      const dt = slot.getAttribute("data-testid");
+      return dt != null && !dt.includes("empty");
+    });
 
     for (const slot of slots) {
       fireEvent.mouseEnter(slot);
-      if (screen.queryByText(/Durability:/)) {
+      if (screen.queryByText(/Durability:/) != null) {
         expect(screen.getByText(/80\/100/)).toBeInTheDocument();
         break;
       }

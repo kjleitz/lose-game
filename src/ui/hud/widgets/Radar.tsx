@@ -140,7 +140,7 @@ export function Radar({
     };
     // Precompute parked ship element (if any)
     let parkedShip: JSX.Element | null = null;
-    if (!planet?.inShip && planet?.ship) {
+    if (planet?.inShip !== true && planet?.ship != null) {
       const { x, y } = toRectRadar(planet.ship.x, planet.ship.y, 0);
       if (!(x < 1 || y < 1 || x > RECT_W - 1 || y > RECT_H - 1)) {
         parkedShip = (
@@ -168,7 +168,7 @@ export function Radar({
             strokeWidth={1}
           />
           {/* Player/ship markers */}
-          {planet?.inShip ? (
+          {planet?.inShip === true ? (
             // In ship: white triangle at center, rotated by ship angle
             <polygon points={trianglePointsAt(cx, cy, playerAngle)} fill="#fff" opacity={0.95} />
           ) : (

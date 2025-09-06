@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useMemo } from "react";
-import type { PerkDefinition, PerkId } from "../../../domain/leveling/types";
+import type { PerkDefinition, PerkEffect, PerkId } from "../../../domain/leveling/types";
 import { perkDefinitions } from "../../../domain/leveling/perksConfig";
 
 interface PerkModalProps {
@@ -21,13 +21,29 @@ export function PerkModal({
   onUnlock,
 }: PerkModalProps): JSX.Element | null {
   const groups = useMemo(() => {
-    const byCategory = new Map<string, PerkDefinition[]>();
+    const byCategory = new Map<PerkDefinition["category"], PerkDefinition[]>();
     for (const defn of perkDefinitions) {
       const list = byCategory.get(defn.category) ?? [];
       list.push(defn);
       byCategory.set(defn.category, list);
     }
-    return Array.from(byCategory.entries()).map(([category, defs]) => ({ category, defs }));
+
+    const groupsArr = Array.from(byCategory.entries()).map(([category, defs]) => ({
+      category,
+      defs,
+    }));
+
+    groupsArr.sort((left, right) => {
+      const leftImpl = left.defs.filter((defn) => defn.implemented).length;
+      const rightImpl = right.defs.filter((defn) => defn.implemented).length;
+      const leftPct = leftImpl / left.defs.length;
+      const rightPct = rightImpl / right.defs.length;
+      if (rightPct !== leftPct) return rightPct - leftPct; // primary: higher implemented percentage first
+      if (rightImpl !== leftImpl) return rightImpl - leftImpl; // secondary: higher absolute count
+      return left.category.localeCompare(right.category); // tertiary: stable alphabetical
+    });
+
+    return groupsArr;
   }, []);
 
   const nameById = useMemo(() => {
@@ -65,11 +81,10 @@ export function PerkModal({
                   const currentTier = unlocked[def.id] ?? 0;
                   const nextTier = def.tiers[currentTier];
                   const locked = currentTier === 0;
-                  const canUnlock = Boolean(
-                    nextTier &&
-                      (nextTier.requiresLevel ? level >= nextTier.requiresLevel : true) &&
-                      perkPoints >= (nextTier?.cost ?? Infinity),
-                  );
+                  const canUnlock =
+                    nextTier != null &&
+                    (nextTier.requiresLevel != null ? level >= nextTier.requiresLevel : true) &&
+                    perkPoints >= (nextTier?.cost ?? Infinity);
                   return (
                     <li
                       key={def.id}
@@ -94,13 +109,15 @@ export function PerkModal({
                         <div className="text-gray-500 text-[10px] leading-tight mt-0.5">
                           Tier: {currentTier}/{def.tiers.length}
                         </div>
-                        {nextTier ? (
+                        {nextTier != null ? (
                           <div className="text-[10px] text-gray-400 mt-0.5 space-y-0.5">
                             <div>
                               Cost {nextTier.cost}
-                              {nextTier.requiresLevel ? ` · Lv ${nextTier.requiresLevel}` : ""}
+                              {nextTier.requiresLevel != null
+                                ? ` · Lv ${nextTier.requiresLevel}`
+                                : ""}
                             </div>
-                            {nextTier.requires && nextTier.requires.length > 0 ? (
+                            {Array.isArray(nextTier.requires) && nextTier.requires.length > 0 ? (
                               <div>
                                 Requires:{" "}
                                 {nextTier.requires
@@ -108,7 +125,7 @@ export function PerkModal({
                                   .join(", ")}
                               </div>
                             ) : null}
-                            {nextTier.excludes && nextTier.excludes.length > 0 ? (
+                            {Array.isArray(nextTier.excludes) && nextTier.excludes.length > 0 ? (
                               <div>
                                 Conflicts:{" "}
                                 {nextTier.excludes
@@ -116,11 +133,11 @@ export function PerkModal({
                                   .join(", ")}
                               </div>
                             ) : null}
-                            {nextTier.effects && nextTier.effects.length > 0 ? (
+                            {Array.isArray(nextTier.effects) && nextTier.effects.length > 0 ? (
                               <div>
                                 Effects:
                                 <ul className="list-disc ml-4">
-                                  {nextTier.effects.map((eff, idx) => (
+                                  {nextTier.effects.map((eff: PerkEffect, idx: number) => (
                                     <li key={idx} className="text-gray-400 leading-tight">
                                       {eff.kind}: {eff.target} {eff.value >= 0 ? "+" : ""}
                                       {eff.value}

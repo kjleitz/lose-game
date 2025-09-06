@@ -34,7 +34,7 @@ describe("GameApp settings integration", () => {
     // read raw storage via our helper
     const raw = window.localStorage.getItem("lose.settings::app");
     expect(typeof raw).toBe("string");
-    const parsed = raw ? JSON.parse(raw) : null;
+    const parsed = raw != null && raw !== "" ? JSON.parse(raw) : null;
     expect(parsed).not.toBeNull();
     expect(parsed.speed).toBeCloseTo(3.25, 5);
     // sprite settings should be present with defaults if not changed

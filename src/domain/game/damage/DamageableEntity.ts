@@ -167,12 +167,12 @@ export abstract class BaseDamageableEntity implements DamageableEntity {
     let finalDamage = damage.amount;
 
     // Apply resistances/vulnerabilities
-    const resistance = this.health.resistances.get(damage.type) || 0;
-    const vulnerability = this.health.vulnerabilities.get(damage.type) || 1;
+    const resistance = this.health.resistances.get(damage.type) ?? 0;
+    const vulnerability = this.health.vulnerabilities.get(damage.type) ?? 1;
     finalDamage = finalDamage * (1 - resistance) * vulnerability;
 
     // Apply critical hit multiplier
-    if (damage.critical) {
+    if (damage.critical === true) {
       finalDamage *= 1.5; // 50% bonus damage for crits
     }
 

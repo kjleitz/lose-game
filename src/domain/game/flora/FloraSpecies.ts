@@ -352,7 +352,7 @@ export class FloraInstanceImpl implements FloraInstance {
 
   private generateGeneticColor(): string {
     // Generate a variation of the base species color
-    const baseHue = parseInt(this.species.appearance.baseColor.match(/\d+/)?.[0] || "120");
+    const baseHue = parseInt(this.species.appearance.baseColor.match(/\d+/)?.[0] ?? "120");
     const variation = Math.random() * 40 - 20; // ±20 degrees hue variation
     const newHue = (baseHue + variation + 360) % 360;
     return `hsl(${newHue}, 70%, 50%)`;

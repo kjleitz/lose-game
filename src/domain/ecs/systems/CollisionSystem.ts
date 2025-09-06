@@ -128,12 +128,12 @@ function rollDrops(
         Math.floor(Math.random() * (entry.maxQuantity - entry.minQuantity + 1)) + entry.minQuantity;
       const item = createItemFromType(entry.itemType);
       const scaledQty = Math.max(1, Math.floor(qty * quantityMult));
-      if (item && scaledQty > 0) drops.push({ item, quantity: scaledQty });
+      if (item != null && scaledQty > 0) drops.push({ item, quantity: scaledQty });
     }
   };
-  for (const entry of dropTable.guaranteed || []) consider(entry);
-  for (const entry of dropTable.possible || []) consider(entry);
-  for (const entry of dropTable.rare || []) consider(entry);
+  for (const entry of dropTable.guaranteed ?? []) consider(entry);
+  for (const entry of dropTable.possible ?? []) consider(entry);
+  for (const entry of dropTable.rare ?? []) consider(entry);
   return drops;
 }
 

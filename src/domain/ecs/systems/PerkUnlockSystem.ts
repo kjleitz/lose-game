@@ -74,7 +74,7 @@ export function createPerkUnlockSystem(
         }
         const nextTier = def.tiers[nextTierIdx];
         // Check level requirement
-        if (nextTier.requiresLevel && experience.level < nextTier.requiresLevel) {
+        if (nextTier.requiresLevel != null && experience.level < nextTier.requiresLevel) {
           onResult({
             entityId: req.entityId,
             perkId: req.perkId,
@@ -86,7 +86,7 @@ export function createPerkUnlockSystem(
         // Check prerequisites
         const requires = nextTier.requires ?? [];
         const missing = requires.find((rid) => (unlocked[rid] ?? 0) <= 0);
-        if (missing) {
+        if (missing != null) {
           onResult({
             entityId: req.entityId,
             perkId: req.perkId,

@@ -98,10 +98,14 @@ export function createPlayerControlSystem(
           const hasStrafe = (components.perks?.unlocked["thrusters.strafing-thrusters"] ?? 0) > 0;
           const hasReverse = (components.perks?.unlocked["thrusters.reverse-thrusters"] ?? 0) > 0;
 
-          // Compute base acceleration (shared across forward/reverse/strafe)
-          const boostMult = actions.has("boost") ? 2 : 1; // boost doubles acceleration
+          // Compute accelerations
+          // - Forward thrust is affected by boost
+          // - Aux thrusters (reverse + strafe) should NOT be boosted
+          const boostMult = actions.has("boost") ? 2 : 1; // boost doubles forward accel
           const accelBoost = options?.spaceAccelMult ?? 1;
-          const ACCELERATION = BASE_ACCELERATION * boostMult * accelBoost * (mods?.accelMult ?? 1);
+          const baseAccel = BASE_ACCELERATION * accelBoost * (mods?.accelMult ?? 1);
+          const ACCEL_FORWARD = baseAccel * boostMult;
+          const ACCEL_AUX = baseAccel;
 
           // Turning vs strafing logic
           const strafingLeft = hasStrafe && actions.has("boost") && actions.has("turnLeft");
@@ -120,16 +124,16 @@ export function createPlayerControlSystem(
 
           // Forward thrust
           if (actions.has("thrust")) {
-            const thrustX = Math.cos(rotation.angle) * ACCELERATION * dt;
-            const thrustY = Math.sin(rotation.angle) * ACCELERATION * dt;
+            const thrustX = Math.cos(rotation.angle) * ACCEL_FORWARD * dt;
+            const thrustY = Math.sin(rotation.angle) * ACCEL_FORWARD * dt;
             velocity.dx += thrustX;
             velocity.dy += thrustY;
           }
 
           // Reverse thrusters mapped to moveDown when unlocked
           if (hasReverse && actions.has("moveDown")) {
-            const thrustX = -Math.cos(rotation.angle) * ACCELERATION * dt;
-            const thrustY = -Math.sin(rotation.angle) * ACCELERATION * dt;
+            const thrustX = -Math.cos(rotation.angle) * ACCEL_AUX * dt;
+            const thrustY = -Math.sin(rotation.angle) * ACCEL_AUX * dt;
             velocity.dx += thrustX;
             velocity.dy += thrustY;
           }
@@ -137,15 +141,15 @@ export function createPlayerControlSystem(
           // Strafing applies lateral acceleration while not rotating
           if (strafingLeft) {
             // left-of-ship vector when Y grows downward: (sin(a), -cos(a))
-            const sx = Math.sin(rotation.angle) * ACCELERATION * dt;
-            const sy = -Math.cos(rotation.angle) * ACCELERATION * dt;
+            const sx = Math.sin(rotation.angle) * ACCEL_AUX * dt;
+            const sy = -Math.cos(rotation.angle) * ACCEL_AUX * dt;
             velocity.dx += sx;
             velocity.dy += sy;
           }
           if (strafingRight) {
             // right-of-ship vector when Y grows downward: (-sin(a), cos(a))
-            const sx = -Math.sin(rotation.angle) * ACCELERATION * dt;
-            const sy = Math.cos(rotation.angle) * ACCELERATION * dt;
+            const sx = -Math.sin(rotation.angle) * ACCEL_AUX * dt;
+            const sy = Math.cos(rotation.angle) * ACCEL_AUX * dt;
             velocity.dx += sx;
             velocity.dy += sy;
           }

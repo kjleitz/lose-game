@@ -350,7 +350,7 @@ describe("GameRenderer player hit ring", () => {
       session,
     );
 
-    const ring = strokes.find((s) => s.arc && Math.abs(s.arc.r - 26) < 0.5);
+    const ring = strokes.find((s) => s.arc != null && Math.abs(s.arc.r - 26) < 0.5);
     expect(ring).toBeTruthy();
     expect(ring!.arc).toBeTruthy();
     expect(ring!.arc!.x).toBeCloseTo(player.x, 1);

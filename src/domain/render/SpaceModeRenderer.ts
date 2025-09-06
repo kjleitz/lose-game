@@ -34,7 +34,7 @@ export class SpaceModeRenderer {
   ): void {
     // FX timing
     const nowMs = Date.now();
-    const dt = this.lastRenderAtMs ? Math.max(0, (nowMs - this.lastRenderAtMs) / 1000) : 0;
+    const dt = this.lastRenderAtMs != null ? Math.max(0, (nowMs - this.lastRenderAtMs) / 1000) : 0;
     this.lastRenderAtMs = nowMs;
 
     // Background and parallax
@@ -59,18 +59,18 @@ export class SpaceModeRenderer {
 
     // Enemy heat trails from session (parity with player)
     const overlays = session.getEnemyStarHeatOverlays();
-    if (overlays && overlays.length > 0) {
+    if (overlays != null && overlays.length > 0) {
       const byId = new Map(overlays.map((overlay) => [overlay.id, overlay]));
       for (const enemy of enemies) {
         const ov = byId.get(enemy.id);
-        if (ov && ov.intensity > 0.001) {
+        if (ov != null && ov.intensity > 0.001) {
           this.drawStarHeatTrails(ctx, enemy.x, enemy.y, ov.angle, ov.intensity, camera.zoom);
         }
       }
     }
 
     // Session visual FX (e.g., burn-up flares)
-    if (session.getAndClearRenderFxEvents) {
+    if (typeof session.getAndClearRenderFxEvents === "function") {
       const events = session.getAndClearRenderFxEvents();
       for (const ev of events)
         if (ev.type === "burn") this.burnFx.push({ x: ev.x, y: ev.y, age: 0, duration: 0.6 });
@@ -99,10 +99,10 @@ export class SpaceModeRenderer {
     this.renderSpaceProjectiles(ctx, projectiles, session);
 
     // Player hit flash overlay (space)
-    if (session && typeof session.getPlayer === "function") {
+    if (typeof session.getPlayer === "function") {
       const pv = session.getPlayer();
       const hit = pv?.hitFlash;
-      if (hit) {
+      if (hit != null) {
         const alpha = Math.max(0, 0.9 * (1 - hit.progress));
         if (alpha > 0.02) {
           ctx.save();

@@ -180,22 +180,22 @@ export class PlayerInventoryManager implements PlayerInventory {
       return { success: false, reason: "Source slot is empty" };
     }
 
-    if (!target) {
+    if (target == null) {
       return { success: false, reason: "Target slot not found" };
     }
 
     // Validate move
     const validation = this.validateMove(source, target, quantity);
-    if (!validation.valid) {
+    if (validation.valid !== true) {
       return { success: false, reason: validation.reason };
     }
 
-    const moveQuantity = quantity || source.quantity;
+    const moveQuantity = quantity ?? source.quantity;
 
-    if (target.item && this.canStack(source.item, target.item)) {
+    if (target.item != null && this.canStack(source.item, target.item)) {
       // Stack items
       return this.stackItems(source, target, moveQuantity);
-    } else if (!target.item) {
+    } else if (target.item == null) {
       // Move to empty slot
       return this.moveToEmptySlot(source, target, moveQuantity);
     } else {
@@ -207,7 +207,7 @@ export class PlayerInventoryManager implements PlayerInventory {
   findItems(predicate: (item: Item) => boolean): InventorySlot[] {
     const results: InventorySlot[] = [];
     for (const slot of this._slots.values()) {
-      if (slot.item && predicate(slot.item)) {
+      if (slot.item != null && predicate(slot.item)) {
         results.push(slot);
       }
     }
@@ -350,7 +350,7 @@ export class PlayerInventoryManager implements PlayerInventory {
       return { valid: false, reason: "Slot is locked" };
     }
 
-    if (quantity && quantity > source.quantity) {
+    if (typeof quantity === "number" && quantity > source.quantity) {
       return { valid: false, reason: "Not enough items in source slot" };
     }
 

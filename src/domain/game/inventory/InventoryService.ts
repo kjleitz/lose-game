@@ -203,7 +203,7 @@ export class InventoryService {
   }
 
   getSpaceInfo(): { used: number; max: number; available: number } {
-    const usedSlots = this.inventory.getSlots().filter((slot) => slot.item !== null).length;
+    const usedSlots = this.inventory.getSlots().filter((slot) => slot.item != null).length;
     const maxSlots = this.inventory.maxSlots;
     const available = maxSlots - usedSlots;
 
@@ -217,7 +217,7 @@ export class InventoryService {
       .getQuickslots()
       .find((quickSlotEntry) => quickSlotEntry.id === quickSlotId);
 
-    if (!slot?.item || !quickSlot) {
+    if (slot?.item == null || quickSlot == null) {
       return false;
     }
 

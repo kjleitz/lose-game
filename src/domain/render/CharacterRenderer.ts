@@ -43,14 +43,14 @@ const characterFrames: Map<string, FrameRecord> = new Map();
 function getCharacterFrame(variant: string): HTMLImageElement | null {
   const key = `character:${variant}`;
   const existing = characterFrames.get(key);
-  if (existing) return existing.img;
+  if (existing != null) return existing.img;
   let url: string | null = null;
   if (variant === "classic-1") url = classic1Url;
   else if (variant === "classic-2") url = classic2Url;
   else if (variant === "classic-3") url = classic3Url;
   else if (variant === "classic-4") url = classic4Url;
   else url = null;
-  if (!url) return null;
+  if (url == null || url === "") return null;
   const img = new window.Image();
   const record: FrameRecord = { img, loaded: false };
   img.onload = (): void => {

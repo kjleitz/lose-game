@@ -35,11 +35,11 @@ describe("ItemFactory", () => {
       expect(excellentAxe.name).toBe("Superior Iron Axe");
 
       // Excellent quality should have 25% better stats
-      if (commonAxe.stats.effectiveness && excellentAxe.stats.effectiveness) {
+      if (commonAxe.stats.effectiveness != null && excellentAxe.stats.effectiveness != null) {
         expect(excellentAxe.stats.effectiveness).toBeCloseTo(commonAxe.stats.effectiveness * 1.25);
       }
 
-      if (commonAxe.stats.value && excellentAxe.stats.value) {
+      if (commonAxe.stats.value != null && excellentAxe.stats.value != null) {
         expect(excellentAxe.stats.value).toBeCloseTo(commonAxe.stats.value * 1.25);
       }
     });
@@ -51,7 +51,7 @@ describe("ItemFactory", () => {
       expect(legendaryAxe.properties.quality).toBe(ItemQuality.LEGENDARY);
 
       // Legendary quality should double the effectiveness
-      if (legendaryAxe.stats.effectiveness) {
+      if (legendaryAxe.stats.effectiveness != null) {
         expect(legendaryAxe.stats.effectiveness).toBeCloseTo(4.0); // base 2.0 * 2.0
       }
     });

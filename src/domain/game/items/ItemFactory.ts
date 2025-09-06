@@ -72,19 +72,19 @@ export class ItemFactory {
 
     // Enhance stats based on quality
     const enhancedStats = { ...item.stats };
-    if (enhancedStats.effectiveness) {
+    if (typeof enhancedStats.effectiveness === "number") {
       enhancedStats.effectiveness *= multiplier;
     }
-    if (enhancedStats.durability) {
+    if (typeof enhancedStats.durability === "number") {
       enhancedStats.durability *= multiplier;
     }
-    if (enhancedStats.value) {
+    if (typeof enhancedStats.value === "number") {
       enhancedStats.value *= multiplier;
     }
 
     // Update durability properties if item has them
     let enhancedProperties = { ...item.properties };
-    if (item.properties.durability) {
+    if (item.properties.durability != null) {
       enhancedProperties = {
         ...enhancedProperties,
         durability: {
@@ -266,7 +266,7 @@ export class ItemFactory {
       materialType,
       processingMethods: template.processingMethods,
       derivatives: template.derivatives,
-      purityLevel: template.purityLevel || 1.0,
+      purityLevel: template.purityLevel ?? 1.0,
     };
   }
 
@@ -287,7 +287,7 @@ export class ItemFactory {
       consumableType,
       effects: template.effects,
       duration: template.duration,
-      cooldown: template.cooldown || 0,
+      cooldown: template.cooldown ?? 0,
     };
   }
 }

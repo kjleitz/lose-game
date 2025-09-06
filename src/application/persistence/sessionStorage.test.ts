@@ -52,13 +52,13 @@ describe("sessionStorage + GameApp integration", () => {
     const ctrl = await GameApp.create(canvas, { size: { width: 800, height: 600 } });
     const invGetter = ctrl.getInventory;
     expect(typeof invGetter).toBe("function");
-    const inv = invGetter ? invGetter() : null;
+    const inv = typeof invGetter === "function" ? invGetter() : null;
     expect(inv).not.toBeNull();
     if (inv) {
       const count = (type: string): number =>
         inv
           .getSlots()
-          .filter((s) => s.item && s.item.type === type)
+          .filter((s) => s.item != null && s.item.type === type)
           .reduce((sum, s) => sum + s.quantity, 0);
       expect(count("iron_ore")).toBeGreaterThanOrEqual(3);
       expect(count("cooked_meat")).toBeGreaterThanOrEqual(1);

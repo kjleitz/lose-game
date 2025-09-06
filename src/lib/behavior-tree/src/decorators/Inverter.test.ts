@@ -8,7 +8,7 @@ interface BB {
 
 describe("Inverter", () => {
   it("flips Success/Failure and passes through Running", () => {
-    const cond = Condition<BB>("truthy", (b) => !!b.x);
+    const cond = Condition<BB>("truthy", (b) => (typeof b.x === "number" ? b.x !== 0 : false));
     const inv = Inverter<BB>("not", cond);
     expect(inv.tick({ x: 1 }, 0)).toBe("Failure");
     expect(inv.tick({ x: 0 }, 0)).toBe("Success");

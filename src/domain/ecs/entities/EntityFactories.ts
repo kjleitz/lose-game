@@ -14,7 +14,7 @@ export function createPlayerEntity(world: World, player: OldPlayer): EntityBuild
     .addComponent(Components.Velocity, { dx: player.state.vx, dy: player.state.vy })
     .addComponent(Components.Rotation, { angle: player.state.angle })
     .addComponent(Components.Health, {
-      current: player.state.health || 100,
+      current: player.state.health ?? 100,
       max: 100,
     })
     .addComponent(Components.Player)
@@ -27,7 +27,7 @@ export function createPlayerEntity(world: World, player: OldPlayer): EntityBuild
     .addComponent(Components.PlayerPerkPoints, { unspent: 0 })
     .addComponent(Components.Perks, { unlocked: {} })
     .addComponent(Components.PlayerExperience, {
-      current: player.state.experience || 0,
+      current: player.state.experience ?? 0,
       level: 1,
       toNextLevel: xpRequired(1),
     })

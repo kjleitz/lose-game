@@ -98,7 +98,8 @@ function getSpriteByKey(key: string): CachedSprite {
 // Expose URL builder for UI previews. If variant is provided, use it instead
 // of the currently configured one.
 export function getSpriteUrlForKey(key: string, variant?: SpriteVariant): string {
-  if (variant) return resolveSpriteUrl(key, variant) ?? `/__missing_sprite__/${key}/${variant}.svg`;
+  if (variant != null)
+    return resolveSpriteUrl(key, variant) ?? `/__missing_sprite__/${key}/${variant}.svg`;
   return spritePath(key);
 }
 
@@ -358,21 +359,32 @@ export function drawAuxThruster(
   const dh = dw;
   if (!auxThrusterTintCanvas) auxThrusterTintCanvas = document.createElement("canvas");
   const canvasTint = auxThrusterTintCanvas;
-  const offCtx = canvasTint ? canvasTint.getContext("2d") : null;
-  if (canvasTint && offCtx) {
-    const widthPx = Math.max(1, Math.ceil(dw));
-    const heightPx = Math.max(1, Math.ceil(dh));
-    if (canvasTint.width !== widthPx || canvasTint.height !== heightPx) {
-      canvasTint.width = widthPx;
-      canvasTint.height = heightPx;
+  if (canvasTint != null) {
+    const offCtx = canvasTint.getContext("2d");
+    if (offCtx != null) {
+      const widthPx = Math.max(1, Math.ceil(dw));
+      const heightPx = Math.max(1, Math.ceil(dh));
+      if (canvasTint.width !== widthPx || canvasTint.height !== heightPx) {
+        canvasTint.width = widthPx;
+        canvasTint.height = heightPx;
+      }
+      offCtx.clearRect(0, 0, widthPx, heightPx);
+      offCtx.drawImage(thrusterImg, 0, 0, widthPx, heightPx);
+      offCtx.globalCompositeOperation = "source-in";
+      offCtx.fillStyle = tint;
+      offCtx.fillRect(0, 0, widthPx, heightPx);
+      offCtx.globalCompositeOperation = "source-over";
+      ctx.drawImage(canvasTint, -widthPx / 2, -heightPx / 2, widthPx, heightPx);
+    } else {
+      // Fallback: draw untinted image
+      ctx.drawImage(
+        thrusterImg,
+        (-size / 2) * scale * scaleAdjust,
+        (-size / 2) * scale * scaleAdjust,
+        dw,
+        dh,
+      );
     }
-    offCtx.clearRect(0, 0, widthPx, heightPx);
-    offCtx.drawImage(thrusterImg, 0, 0, widthPx, heightPx);
-    offCtx.globalCompositeOperation = "source-in";
-    offCtx.fillStyle = tint;
-    offCtx.fillRect(0, 0, widthPx, heightPx);
-    offCtx.globalCompositeOperation = "source-over";
-    ctx.drawImage(canvasTint, -widthPx / 2, -heightPx / 2, widthPx, heightPx);
   } else {
     // Fallback: draw untinted image
     ctx.drawImage(

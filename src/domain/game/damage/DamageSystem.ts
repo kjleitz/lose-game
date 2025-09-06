@@ -68,13 +68,13 @@ export class DropService {
   }
 
   private meetsCondition(condition: DropCondition | undefined, killingBlow: DamageEvent): boolean {
-    if (!condition) return true;
+    if (condition == null) return true;
 
-    if (condition.damageType && condition.damageType !== killingBlow.type) {
+    if (condition.damageType != null && condition.damageType !== killingBlow.type) {
       return false;
     }
 
-    if (condition.tool && condition.tool !== killingBlow.source.weaponType) {
+    if (condition.tool != null && condition.tool !== killingBlow.source.weaponType) {
       return false;
     }
 

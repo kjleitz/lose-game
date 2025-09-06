@@ -109,6 +109,10 @@ These are the guiding principles for development in this repo. Keep them short, 
 - No path aliases; always use relative ES module imports.
 - Formatting and style: 2-space indent, semicolons on, double quotes.
 
+### Nullish Checks
+
+- Use `x == null` and `x != null` exclusively for nullish checks so both `null` and `undefined` are handled. Use `===`/`!==` everywhere else. ESLint is configured (`eqeqeq` with `{ null: "ignore" }`) to enforce this.
+
 > Core mantra: “Fix your types first.” If types are too complicated, simplify the code.
 
 ## Space Flight Physics

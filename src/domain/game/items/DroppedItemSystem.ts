@@ -155,20 +155,26 @@ export class DroppedItemSystem {
   private rollDrops(dropTable: DropTable): Array<{ item: Item; quantity: number }> {
     const drops: Array<{ item: Item; quantity: number }> = [];
 
-    if (!dropTable || (!dropTable.guaranteed && !dropTable.possible && !dropTable.rare)) {
-      return drops;
-    }
+    const noEntries =
+      (dropTable.guaranteed == null || dropTable.guaranteed.length === 0) &&
+      (dropTable.possible == null || dropTable.possible.length === 0) &&
+      (dropTable.rare == null || dropTable.rare.length === 0);
+    if (noEntries) return drops;
 
     // Guaranteed drops
-    if (dropTable.guaranteed) {
+    if (dropTable.guaranteed != null) {
       for (const drop of dropTable.guaranteed) {
-        if (drop.itemType && Math.random() < drop.probability) {
+        if (
+          typeof drop.itemType === "string" &&
+          drop.itemType.length > 0 &&
+          Math.random() < drop.probability
+        ) {
           const quantity =
             Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) +
             drop.minQuantity;
 
           const item = this.createItemFromType(drop.itemType);
-          if (item && quantity > 0) {
+          if (item != null && quantity > 0) {
             drops.push({ item, quantity });
           }
         }
@@ -176,15 +182,19 @@ export class DroppedItemSystem {
     }
 
     // Possible drops (chance-based)
-    if (dropTable.possible) {
+    if (dropTable.possible != null) {
       for (const drop of dropTable.possible) {
-        if (drop.itemType && Math.random() < drop.probability) {
+        if (
+          typeof drop.itemType === "string" &&
+          drop.itemType.length > 0 &&
+          Math.random() < drop.probability
+        ) {
           const quantity =
             Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) +
             drop.minQuantity;
 
           const item = this.createItemFromType(drop.itemType);
-          if (item && quantity > 0) {
+          if (item != null && quantity > 0) {
             drops.push({ item, quantity });
           }
         }
@@ -192,15 +202,19 @@ export class DroppedItemSystem {
     }
 
     // Rare drops (low chance but high value)
-    if (dropTable.rare) {
+    if (dropTable.rare != null) {
       for (const drop of dropTable.rare) {
-        if (drop.itemType && Math.random() < drop.probability) {
+        if (
+          typeof drop.itemType === "string" &&
+          drop.itemType.length > 0 &&
+          Math.random() < drop.probability
+        ) {
           const quantity =
             Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) +
             drop.minQuantity;
 
           const item = this.createItemFromType(drop.itemType);
-          if (item && quantity > 0) {
+          if (item != null && quantity > 0) {
             drops.push({ item, quantity });
           }
         }

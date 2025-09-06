@@ -99,7 +99,7 @@ export function applyGravityTo(
     vel.dx += sample.ax * dt;
     vel.dy += sample.ay * dt;
 
-    if (options?.assistPlanets && body.kind === "planet" && sample.dist >= body.r) {
+    if (options?.assistPlanets === true && body.kind === "planet" && sample.dist >= body.r) {
       const assist = planetOrbitalAssist(vel, sample, dt);
       vel.dx += assist.dvx;
       vel.dy += assist.dvy;

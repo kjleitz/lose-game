@@ -242,7 +242,7 @@ describe("PlayerInventory", () => {
       inventory.sortInventory("category");
 
       // Get only non-empty slots after sorting
-      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item !== null);
+      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item != null);
 
       expect(nonEmptySlots.length).toBe(3);
       // Tools should come first, then materials, then food
@@ -260,7 +260,7 @@ describe("PlayerInventory", () => {
 
       inventory.sortInventory("name");
 
-      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item !== null);
+      const nonEmptySlots = inventory.getSlots().filter((slot) => slot.item != null);
 
       // "Iron Axe" should come before "Wood" alphabetically
       expect(nonEmptySlots[0].item?.name).toBe("Iron Axe");
@@ -280,7 +280,7 @@ describe("PlayerInventory", () => {
 
       // Higher value items should come first
       expect(nonEmptySlots[0].item?.stats.value).toBeGreaterThan(
-        nonEmptySlots[1].item?.stats.value || 0,
+        nonEmptySlots[1].item?.stats.value ?? 0,
       );
     });
   });

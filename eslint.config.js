@@ -31,6 +31,8 @@ export default tseslint.config([
       },
     },
     rules: {
+      // Enforce strict equality everywhere except explicit nullish checks (`x == null` / `x != null`)
+      eqeqeq: ["error", "always", { null: "ignore" }],
       // Allow intentionally unused variables/args when prefixed with _
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -55,11 +57,7 @@ export default tseslint.config([
         },
       ],
 
-      // TODO: Enable this whenever we next dedicate time to eslint fixes and
-      // not some other task. This is going to cause a lot of errors, which is
-      // good, but it's a big job, so we should only do it when we're about to
-      // do an eslint job anyway.
-      // "@typescript-eslint/strict-boolean-expressions": "error",
+      "@typescript-eslint/strict-boolean-expressions": "error",
 
       // Prefer interfaces over type aliases for object types
       "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
