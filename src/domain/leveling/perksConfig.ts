@@ -36,7 +36,7 @@ export const perkDefinitions: readonly PerkDefinition[] = [
     "New Ammunition + Weapons",
     "Unlocks exotic ammo types and weapon classes.",
     "combat",
-    false,
+    true,
   ),
   makePerkDef(
     "ship.new-variants",

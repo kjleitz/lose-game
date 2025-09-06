@@ -35,6 +35,7 @@ import { createProjectileSystem } from "./systems/ProjectileSystem";
 import { createSfxEventCollectorSystem, type SfxEvent } from "./systems/SfxEventCollectorSystem";
 import { applyGravityTo } from "../physics/gravity";
 import { createWeaponSystem } from "./systems/WeaponSystem";
+import type { AmmoType } from "../../shared/types/combat";
 
 export class GameSessionECS {
   private world = new World();
@@ -158,6 +159,23 @@ export class GameSessionECS {
     this.updateNotifications();
     this.checkDeathAndMarkIfNeeded();
     // Active Position is authoritative for the current mode; no cross-mode syncing here
+  }
+
+  getSelectedAmmo(): AmmoType {
+    const players = this.world.query({ player: Components.Player });
+    if (players.length === 0) return "standard";
+    const ent = new Entity(players[0].entity, this.world);
+    const sel = ent.getComponent(Components.SelectedAmmo);
+    return sel ? sel.type : "standard";
+  }
+
+  setSelectedAmmo(type: AmmoType): void {
+    const players = this.world.query({ player: Components.Player });
+    if (players.length === 0) return;
+    const ent = new Entity(players[0].entity, this.world);
+    const sel = ent.getComponent(Components.SelectedAmmo);
+    if (sel) sel.type = type;
+    else ent.addComponent(Components.SelectedAmmo, { type });
   }
 
   // --- Frame helpers ---
@@ -330,6 +348,8 @@ export class GameSessionECS {
         if (res.success) {
           if (res.perkId === "combat.cursor-aim-planet") {
             this.toastEvents.push("Cursor aim enabled: move mouse to aim; click to shoot.");
+          } else if (res.perkId === "combat.new-ammo-and-weapons") {
+            this.toastEvents.push("New ammo unlocked: projectiles vary by weapon type.");
           } else if (res.perkId === "thrusters.reverse-thrusters") {
             this.toastEvents.push("Reverse thrusters: in space, hold S/Down to brake.");
           } else if (res.perkId === "thrusters.strafing-thrusters") {
@@ -612,6 +632,7 @@ export class GameSessionECS {
     vx: number;
     vy: number;
     faction?: "player" | "enemy" | "neutral";
+    ammo?: import("../../shared/types/combat").AmmoType;
   }> {
     return this.world
       .query({
@@ -632,6 +653,7 @@ export class GameSessionECS {
           vx: velocity.dx,
           vy: velocity.dy,
           faction: ent.getComponent(Components.Faction)?.team,
+          ammo: ent.getComponent(Components.ProjectileAmmo)?.type,
         };
       });
   }
@@ -731,6 +753,8 @@ export class GameSessionECS {
         if (res.success) {
           if (res.perkId === "combat.cursor-aim-planet") {
             this.toastEvents.push("Cursor aim enabled: move mouse to aim; click to shoot.");
+          } else if (res.perkId === "combat.new-ammo-and-weapons") {
+            this.toastEvents.push("New ammo unlocked: projectiles vary by weapon type.");
           } else if (res.perkId === "thrusters.reverse-thrusters") {
             this.toastEvents.push("Reverse thrusters: in space, hold S/Down to brake.");
           } else if (res.perkId === "thrusters.strafing-thrusters") {

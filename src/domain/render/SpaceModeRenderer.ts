@@ -9,6 +9,14 @@ import { ShipRenderer } from "./ShipRenderer";
 import { StarfieldRenderer } from "./StarfieldRenderer";
 import { StarRenderer } from "./StarRenderer";
 import { drawProjectile } from "./sprites";
+import {
+  ammoCoreColor,
+  ammoTrailHeadColor,
+  trailTailFromHead,
+  drawIonAura,
+  drawWavyLine,
+  projectileAngle,
+} from "./projectiles";
 import type { Camera } from "./camera";
 import type { RenderSession } from "./RenderSession";
 
@@ -203,6 +211,18 @@ export class SpaceModeRenderer {
     projectiles: Array<Circle2D>,
     session: SessionLike,
   ): void {
+    const drawOrientedSprite = (
+      x: number,
+      y: number,
+      vx: number,
+      vy: number,
+      radius: number,
+    ): void => {
+      const angle = projectileAngle(vx, vy);
+      const drawSize = Math.max(8, radius * 3);
+      drawProjectile(ctx, x, y, angle, drawSize);
+    };
+
     const now = Date.now();
     const detailed =
       typeof session.getProjectilesDetailed === "function"
@@ -224,16 +244,28 @@ export class SpaceModeRenderer {
           const start = trail[trail.length - 1];
           const end = trail[0];
           const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
-          gradient.addColorStop(0, "rgba(255, 80, 80, 0.9)");
-          gradient.addColorStop(1, "rgba(255, 0, 0, 0)");
+          const foundTrail = detailed.find((projItem) => projItem.id === proj.id);
+          const ammo = foundTrail?.ammo;
+          const col0 = ammoTrailHeadColor(ammo ?? "standard", proj.faction);
+          const col1 = trailTailFromHead(col0);
+          gradient.addColorStop(0, col0);
+          gradient.addColorStop(1, col1);
           ctx.strokeStyle = gradient;
           ctx.lineWidth = Math.max(3, proj.radius * 2);
           ctx.lineCap = "round";
           ctx.beginPath();
-          for (let i = trail.length - 1; i >= 0; i--) {
-            const tp = trail[i];
-            if (i === trail.length - 1) ctx.moveTo(tp.x, tp.y);
-            else ctx.lineTo(tp.x, tp.y);
+          // For plasma, render a wavy trail rather than straight
+          if (ammo === "plasma") {
+            const speed = Math.hypot(proj.vx, proj.vy) || 1;
+            const amplitude = 4 + Math.min(8, speed * 0.01);
+            const phase = ((Date.now() % 1000) / 1000) * Math.PI * 2;
+            drawWavyLine(ctx, end.x, end.y, start.x, start.y, amplitude, 3, phase);
+          } else {
+            for (let i = trail.length - 1; i >= 0; i--) {
+              const tp = trail[i];
+              if (i === trail.length - 1) ctx.moveTo(tp.x, tp.y);
+              else ctx.lineTo(tp.x, tp.y);
+            }
           }
           ctx.stroke();
           ctx.restore();
@@ -249,17 +281,34 @@ export class SpaceModeRenderer {
         ctx.save();
         const previousOp = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = "lighter";
-        const color =
-          proj.faction === "player" ? "#ffcf3b" : proj.faction === "enemy" ? "#ff3b3b" : "#ffffff";
+        const found = detailed.find((projItem) => projItem.id === proj.id);
+        const color = ammoCoreColor(found?.ammo ?? "standard", proj.faction);
         ctx.strokeStyle = color;
         ctx.lineWidth = Math.max(3, proj.radius * 2.2);
         ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(tailX, tailY);
-        ctx.lineTo(proj.x, proj.y);
+        // For plasma, also render the core as a wavy beam
+        const ammoCore = found?.ammo;
+        if (ammoCore === "plasma") {
+          const amplitude = 3.5;
+          const phase = ((Date.now() % 1000) / 1000) * Math.PI * 2;
+          drawWavyLine(ctx, tailX, tailY, proj.x, proj.y, amplitude, 3, phase);
+        } else {
+          ctx.moveTo(tailX, tailY);
+          ctx.lineTo(proj.x, proj.y);
+        }
         ctx.stroke();
         ctx.globalCompositeOperation = previousOp;
         ctx.restore();
+
+        // Ion glow aura
+        const ammoGlow = found?.ammo;
+        if (ammoGlow === "ion") {
+          drawIonAura(ctx, proj.x, proj.y, 22);
+        }
+
+        // Draw oriented sprite to match travel direction
+        drawOrientedSprite(proj.x, proj.y, proj.vx, proj.vy, proj.radius);
       }
       const liveIds = new Set(detailed.map((proj) => proj.id));
       for (const key of this.spaceProjectileTrails.keys()) {

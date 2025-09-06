@@ -10,6 +10,7 @@ import { InventoryPanel } from "./panels/InventoryPanel";
 import { StatusPanel } from "./panels/StatusPanel";
 import { Notification } from "./widgets/Notification";
 import { Radar } from "./widgets/Radar";
+import type { AmmoType } from "../../shared/types/combat";
 
 interface HudProps {
   mode?: "space" | "planet";
@@ -41,6 +42,9 @@ interface HudProps {
   onItemUse?: (item: Item) => void;
   onItemDrop?: (item: Item, quantity: number) => void;
   onGrantPerkPoints?: (amount: number) => void;
+  selectedAmmo?: AmmoType;
+  ammoOptions?: ReadonlyArray<AmmoType>;
+  onSelectAmmo?: (type: AmmoType) => void;
 }
 
 export function Hud({
@@ -73,6 +77,9 @@ export function Hud({
   onItemUse,
   onItemDrop,
   onGrantPerkPoints,
+  selectedAmmo,
+  ammoOptions,
+  onSelectAmmo,
 }: HudProps): JSX.Element {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
@@ -108,6 +115,9 @@ export function Hud({
           onChangeSpeed={onChangeSpeed}
           onOpenSettings={onOpenSettings}
           onGrantPerkPoints={onGrantPerkPoints}
+          selectedAmmo={selectedAmmo}
+          ammoOptions={ammoOptions}
+          onSelectAmmo={onSelectAmmo}
         />
       </div>
       {/* Speedometer moved into ControlsPanel (top-right) */}

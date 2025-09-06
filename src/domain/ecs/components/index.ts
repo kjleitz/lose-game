@@ -28,6 +28,8 @@ export const Orbit = defineComponent<{
   angle: number; // current angle in radians
 }>();
 export const Projectile = defineComponent<Record<string, never>>(() => ({}));
+import type { AmmoType } from "../../../shared/types/combat";
+export const ProjectileAmmo = defineComponent<{ type: AmmoType }>();
 
 // Faction/team alignment for friendly-fire rules
 export const Faction = defineComponent<{ team: "player" | "enemy" | "neutral" }>();
@@ -123,6 +125,9 @@ export const WeaponCooldown = defineComponent<{
   remaining: number;
   duration: number;
 }>();
+
+// Player-selected ammo type (affects projectile behavior when unlocked)
+export const SelectedAmmo = defineComponent<{ type: AmmoType }>();
 
 // Enemy combat stats (ranged)
 export const RangedWeapon = defineComponent<{

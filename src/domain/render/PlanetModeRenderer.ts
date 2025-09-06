@@ -9,6 +9,7 @@ import { CreatureRenderer } from "./CreatureRenderer";
 import { DroppedItemRenderer } from "./DroppedItemRenderer";
 import { PlanetSurfaceRenderer } from "./PlanetSurfaceRenderer";
 import { drawProjectile } from "./sprites";
+import { ammoCoreColor, drawIonAura, drawWavyLine, projectileAngle } from "./projectiles";
 import type { Biome } from "../../shared/types/Biome";
 import { ShipRenderer } from "./ShipRenderer";
 
@@ -147,8 +148,30 @@ export class PlanetModeRenderer {
     size: ViewSize,
     dpr: number,
   ): void {
-    const list = session.getProjectiles();
-    if (!Array.isArray(list) || list.length === 0) return;
+    const detailed =
+      typeof session.getProjectilesDetailed === "function"
+        ? session.getProjectilesDetailed()
+        : null;
+    const projectilesForRender: Array<{
+      x: number;
+      y: number;
+      radius: number;
+      vx?: number;
+      vy?: number;
+      ammo?: import("../../shared/types/combat").AmmoType;
+    }> = detailed
+      ? detailed.map((projItem) => ({
+          x: projItem.x,
+          y: projItem.y,
+          radius: projItem.radius,
+          vx: projItem.vx,
+          vy: projItem.vy,
+          ammo: projItem.ammo,
+        }))
+      : session
+          .getProjectiles()
+          .map((projItem) => ({ x: projItem.x, y: projItem.y, radius: projItem.radius }));
+    if (projectilesForRender.length === 0) return;
     // Ensure world transform before drawing projectiles
     const [m11, m12, m21, m22, dx, dy] = CameraTransform.getTransform(
       camera,
@@ -157,16 +180,59 @@ export class PlanetModeRenderer {
       dpr,
     );
     ctx.setTransform(m11, m12, m21, m22, dx, dy);
-    for (const projectile of list) {
-      const drawSize = Math.max(8, projectile.radius * 3);
+    for (const projectile of projectilesForRender) {
+      const x = projectile.x;
+      const y = projectile.y;
+      const vx = projectile.vx;
+      const vy = projectile.vy;
+      const radius = projectile.radius;
+      const drawSize = Math.max(8, radius * 3);
+      const ammo = projectile.ammo;
+      const color = ammoCoreColor(ammo ?? "standard", "player");
+
+      // Oriented core/beam trail (planet parity with space)
+      if (typeof vx === "number" && typeof vy === "number") {
+        const speed = Math.hypot(vx, vy) || 1;
+        const dirX = vx / speed;
+        const dirY = vy / speed;
+        const length = 18; // similar to space core length
+        const tailX = x - dirX * length;
+        const tailY = y - dirY * length;
+        ctx.save();
+        const prevOp = ctx.globalCompositeOperation;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(3, drawSize * 0.25);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        if (ammo === "plasma") {
+          const amplitude = Math.max(2, drawSize * 0.2);
+          const phase = ((Date.now() % 1000) / 1000) * Math.PI * 2;
+          drawWavyLine(ctx, tailX, tailY, x, y, amplitude, 3, phase);
+        } else {
+          ctx.moveTo(tailX, tailY);
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.globalCompositeOperation = prevOp;
+        ctx.restore();
+      }
+
+      // Glow disc under sprite
       ctx.save();
       ctx.globalAlpha = 0.6;
-      ctx.fillStyle = "#ffff66";
+      ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(projectile.x, projectile.y, drawSize * 0.6, 0, Math.PI * 2);
+      ctx.arc(x, y, drawSize * 0.6, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      drawProjectile(ctx, projectile.x, projectile.y, 0, drawSize);
+
+      // Ion aura
+      if (ammo === "ion") drawIonAura(ctx, x, y, drawSize * 1.4);
+
+      // Draw oriented sprite
+      const angle = typeof vx === "number" && typeof vy === "number" ? projectileAngle(vx, vy) : 0;
+      drawProjectile(ctx, x, y, angle, drawSize);
     }
   }
 

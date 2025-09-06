@@ -201,6 +201,7 @@ export class GameApp {
         xpToNextLevel: number;
         perkPoints: number;
         perks: Record<string, number>;
+        ammo: import("../shared/types/combat").AmmoType;
       } =
         playerView != null
           ? {
@@ -216,6 +217,7 @@ export class GameApp {
               xpToNextLevel: playerView.xpToNextLevel,
               perkPoints: playerView.perkPoints,
               perks: playerView.perks,
+              ammo: session.getSelectedAmmo(),
             }
           : {
               ...defaultKinematicsWithHealth(),
@@ -225,6 +227,7 @@ export class GameApp {
               xpToNextLevel: 100,
               perkPoints: 0,
               perks: {},
+              ammo: session.getSelectedAmmo(),
             };
       const camera = session.getCamera();
       const planets = session.getPlanets();
@@ -370,7 +373,7 @@ export class GameApp {
         const sfx = session.getAndClearSfxEvents();
         let maxAttract = 0;
         for (const ev of sfx) {
-          if (ev.type === "shoot") audio.playShoot(ev.team);
+          if (ev.type === "shoot") audio.playShoot(ev.team, ev.ammo);
           else if (ev.type === "playerHit") audio.playPlayerHit();
           else if (ev.type === "hit") audio.playHit();
           else if (ev.type === "pickup") audio.playPickup();
@@ -492,6 +495,11 @@ export class GameApp {
         // Clamp to a reasonable positive number to avoid overflow
         const clampedAmount = Math.max(0, Math.min(1_000_000, Math.floor(amount)));
         if (clampedAmount > 0) session.grantPerkPoints(clampedAmount);
+      },
+      setAmmo(type) {
+        session.setSelectedAmmo(type);
+        // Emit update so HUD reflects the change immediately
+        bus.publish({ type: "tick", snapshot: getSnapshot() });
       },
     };
 

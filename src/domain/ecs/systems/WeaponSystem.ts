@@ -17,11 +17,13 @@ import {
 } from "../components";
 import { PlayerModifiers } from "../components";
 import { Entity as ECSEntity } from "../../../lib/ecs";
+import { Perks, SelectedAmmo, ProjectileAmmo } from "../components";
+import type { AmmoType } from "../../../shared/types/combat";
 
 export function createWeaponSystem(world: World, actions: Set<Action>): System {
   return defineSystem(world)
     .withComponents({ position: Position, rotation: Rotation, player: Player })
-    .withOptionalComponents({ weaponCooldown: WeaponCooldown, mods: PlayerModifiers })
+    .withOptionalComponents({ weaponCooldown: WeaponCooldown, mods: PlayerModifiers, perks: Perks })
     .execute((entities): void => {
       entities.forEach(({ entity, components }) => {
         const { position, rotation, weaponCooldown, mods } = components;
@@ -32,8 +34,36 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
         const wantsToFire = actions.has("fire");
 
         if (wantsToFire && canFire) {
+          // Determine ammo profile (perk-gated). Default baseline values.
+          const perkTier = components.perks?.unlocked["combat.new-ammo-and-weapons"] ?? 0;
+
+          // Baseline weapon stats
+          let speed = 600;
+          let damage = 25;
+          // Visual hint remains handled by renderer; Sprite color is not read in space mode.
+
+          // Resolve ammo to use for this shot
+          let ammoUsed: AmmoType = "standard";
+          if (perkTier > 0) {
+            const ent = new ECSEntity(entity, world);
+            const selected: AmmoType | undefined = ent.getComponent(SelectedAmmo)?.type;
+            // If the player has selected an ammo, use it; otherwise keep Standard.
+            if (selected != null) ammoUsed = selected;
+          }
+
+          // Map ammo to stats
+          if (ammoUsed === "kinetic") {
+            speed = 760;
+            damage = 20;
+          } else if (ammoUsed === "plasma") {
+            speed = 520;
+            damage = 32;
+          } else if (ammoUsed === "ion") {
+            speed = 650;
+            damage = 25;
+          }
+
           // Create projectile
-          const speed = 600;
           const baseSpread = 0.12; // ~7 degrees
           const spread = baseSpread * (mods?.projectileSpreadMult ?? 1);
           const jitter = (Math.random() * 2 - 1) * spread;
@@ -43,7 +73,7 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
           const spawnDistance = 28;
 
           const shooterFaction = new ECSEntity(entity, world).getComponent(Faction)?.team;
-          world
+          const builder = world
             .createEntity()
             .addComponent(Position, {
               x: position.x + dirX * spawnDistance,
@@ -55,11 +85,14 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
             })
             .addComponent(Projectile)
             .addComponent(TimeToLive, { remaining: 1.5, initial: 1.5 })
-            .addComponent(Damage, { amount: 25 })
+            .addComponent(Damage, { amount: damage })
             .addComponent(Collider, { radius: 2 })
             .addComponent(Sprite, { color: "#ffff00", scale: 0.5 })
             .addComponent(Faction, { team: shooterFaction ?? "player" })
             .addComponent(JustFired, { team: shooterFaction ?? "player" });
+
+          // Tag projectile with ammo type for renderers
+          builder.addComponent(ProjectileAmmo, { type: ammoUsed });
 
           // Set weapon cooldown if component exists
           if (weaponCooldown) {

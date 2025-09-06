@@ -15,20 +15,114 @@ export class AudioService {
     return this.ctx;
   }
 
-  playShoot(team: Team): void {
+  playShoot(team: Team, ammo?: import("../../shared/types/combat").AmmoType): void {
     const ctx = this.ensure();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
     const now = ctx.currentTime;
-    const base = team === "player" ? 880 : team === "enemy" ? 520 : 660;
-    osc.type = team === "player" ? "square" : "sawtooth";
-    osc.frequency.setValueAtTime(base, now);
-    osc.frequency.exponentialRampToValueAtTime(base * 0.8, now + 0.05);
-    gain.gain.setValueAtTime(0.11, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(now + 0.1);
+    // Enemy/neutral keep simpler legacy sound
+    if (team !== "player") {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const base = team === "enemy" ? 520 : 660;
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(base, now);
+      osc.frequency.exponentialRampToValueAtTime(base * 0.8, now + 0.05);
+      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(now + 0.1);
+      return;
+    }
+
+    // Player ammo-specific variations
+    const ammoType = ammo ?? "standard";
+    if (ammoType === "standard") {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(720, now + 0.06);
+      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(now + 0.1);
+      return;
+    }
+    if (ammoType === "kinetic") {
+      // Punchy percussive click/shot
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(760, now);
+      osc.frequency.exponentialRampToValueAtTime(540, now + 0.04);
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(now + 0.08);
+      return;
+    }
+    if (ammoType === "plasma") {
+      // Smooth laser with vibrato
+      const osc = ctx.createOscillator();
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(720, now);
+      // mild frequency down-sweep
+      osc.frequency.linearRampToValueAtTime(640, now + 0.12);
+      // Vibrato LFO
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(18, now);
+      lfoGain.gain.setValueAtTime(12, now); // +/- 12 Hz
+      lfo.connect(lfoGain).connect(osc.frequency);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      lfo.start();
+      osc.stop(now + 0.16);
+      lfo.stop(now + 0.16);
+      return;
+    }
+    if (ammoType === "ion") {
+      // Electric zap: detuned dual-osc + short noise burst
+      const o1 = ctx.createOscillator();
+      const o2 = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      o1.type = "triangle";
+      o2.type = "triangle";
+      o1.frequency.setValueAtTime(660, now);
+      o2.frequency.setValueAtTime(680, now);
+      gainNode.gain.setValueAtTime(0.1, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      o1.connect(gainNode);
+      o2.connect(gainNode);
+      const noise = ctx.createBufferSource();
+      const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 3000;
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.06, now);
+      ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+      noise.buffer = buffer;
+      noise.connect(hp).connect(ng).connect(ctx.destination);
+      o1.connect(ctx.destination);
+      o2.connect(ctx.destination);
+      o1.connect(gainNode).connect(ctx.destination);
+      o2.connect(gainNode).connect(ctx.destination);
+      o1.start();
+      o2.start();
+      noise.start();
+      o1.stop(now + 0.14);
+      o2.stop(now + 0.14);
+      return;
+    }
   }
 
   playHit(): void {

@@ -54,6 +54,8 @@ export function CanvasRoot(): JSX.Element {
     health: number;
     healthMax: number;
     planets: Planet[];
+    ammo: import("../../shared/types/combat").AmmoType;
+    perks: Record<string, number>;
   }>(() => ({
     mode: "space",
     planet: undefined,
@@ -65,6 +67,8 @@ export function CanvasRoot(): JSX.Element {
     health: 100,
     healthMax: 100,
     planets: [],
+    ammo: "standard",
+    perks: {},
   }));
   // HUD actions readout and speed mirror
   const [hudActions, setHudActions] = useState<Set<Action>>(() => new Set());
@@ -104,6 +108,8 @@ export function CanvasRoot(): JSX.Element {
           health: snapshot.player.health,
           healthMax: snapshot.player.healthMax,
           planets: snapshot.planets,
+          ammo: snapshot.player.ammo,
+          perks: snapshot.player.perks,
         });
         setPlayerSpeed(Math.hypot(snapshot.player.vx, snapshot.player.vy));
         // Detect perk for cursor aim and trigger one-time hint
@@ -244,6 +250,14 @@ export function CanvasRoot(): JSX.Element {
         onGrantPerkPoints={(amount: number): void =>
           controllerRef.current?.grantPerkPoints?.(amount)
         }
+        selectedAmmo={hudState.ammo}
+        ammoOptions={((): ReadonlyArray<import("../../shared/types/combat").AmmoType> => {
+          const base: Array<import("../../shared/types/combat").AmmoType> = ["standard"];
+          const tier = hudState.perks["combat.new-ammo-and-weapons"] ?? 0;
+          if (tier > 0) base.push("kinetic", "plasma", "ion");
+          return base;
+        })()}
+        onSelectAmmo={(type): void => controllerRef.current?.setAmmo?.(type)}
       />
       {/* Toasts overlay (stack) */}
       {toasts.length > 0 ? (

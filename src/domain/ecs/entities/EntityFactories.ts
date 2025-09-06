@@ -36,6 +36,7 @@ export function createPlayerEntity(world: World, player: OldPlayer): EntityBuild
     .addComponent(Components.Faction, { team: "player" })
     .addComponent(Components.SpaceMode)
     .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 })
+    .addComponent(Components.SelectedAmmo, { type: "standard" })
     .addComponent(Components.PlayerModifiers, {
       turnSpeedMult: 1,
       accelMult: 1,
@@ -171,6 +172,7 @@ export function createBasicPlayer(world: World, x = 0, y = 0): EntityBuilder {
     .addComponent(Components.Faction, { team: "player" })
     .addComponent(Components.SpaceMode)
     .addComponent(Components.WeaponCooldown, { remaining: 0, duration: 0.2 })
+    .addComponent(Components.SelectedAmmo, { type: "standard" })
     .addComponent(Components.PlayerModifiers, {
       turnSpeedMult: 1,
       accelMult: 1,

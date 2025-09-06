@@ -3,6 +3,7 @@ import type { PlayerInventory } from "../domain/game/inventory/PlayerInventory";
 import type { Planet } from "../domain/game/planets";
 import type { Camera } from "../domain/render/camera";
 import type { Circle2D, Kinematics2D, ViewSize } from "../shared/types/geometry";
+import type { AmmoType } from "../shared/types/combat";
 import type { Action } from "./input/ActionTypes";
 import type { PerkId } from "../domain/leveling/types";
 
@@ -32,6 +33,7 @@ export interface GameSnapshot {
     xpToNextLevel: number;
     perkPoints: number;
     perks: Record<string, number>;
+    ammo: AmmoType;
   };
   camera: Camera;
   planets: Array<Planet>;
@@ -92,4 +94,5 @@ export interface GameController {
   unlockPerk?: (perkId: PerkId) => void;
   grantPerkPoints?: (amount: number) => void;
   respawn?: () => void;
+  setAmmo?: (type: AmmoType) => void;
 }

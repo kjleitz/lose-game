@@ -32,6 +32,7 @@ export interface RenderSession {
     vx: number;
     vy: number;
     faction?: "player" | "enemy" | "neutral";
+    ammo?: import("../../shared/types/combat").AmmoType;
   }>;
 
   // FX events

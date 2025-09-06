@@ -9,3 +9,4 @@ export * from "./widgets/ExperienceBar";
 export * from "./widgets/ActionReadout";
 export * from "./widgets/SettingsButton";
 export * from "./widgets/PauseIndicator";
+export * from "./widgets/AmmoSelector";
