@@ -11,6 +11,9 @@ export interface Item {
   readonly requirements: ItemRequirements;
   readonly effects: ItemEffect[];
   readonly metadata: ItemMetadata;
+  // Whether this item's gameplay effect is implemented.
+  // When false, UI should disable the Use action.
+  readonly implemented: boolean;
 }
 
 export const BaseItemType = {
@@ -142,6 +145,12 @@ export interface ItemMetadata {
   readonly craftedBy?: string; // who crafted it
   readonly discoveredAt?: number; // timestamp
   readonly modifications?: ItemModification[];
+  // Optional icon path (served by Vite/public or imported asset)
+  readonly icon?: string;
+  // Optional category hint used by inventory pockets (e.g., "medical", "explosives")
+  readonly category?: string;
+  // If true, item should be auto-used on pickup (handled by pickup system)
+  readonly autoUseOnPickup?: boolean;
 }
 
 export interface ItemModification {

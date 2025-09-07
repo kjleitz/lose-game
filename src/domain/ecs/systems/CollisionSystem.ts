@@ -172,7 +172,8 @@ function createItemFromType(itemType: string): Item | null {
         stats: { value: 2 },
         requirements: {},
         effects: [],
-        metadata: { discoveredAt: Date.now() },
+        metadata: { discoveredAt: Date.now(), icon: "/items/body_parts.svg", category: "materials" },
+        implemented: false,
       };
     case "alien_hide":
       return {
@@ -194,7 +195,8 @@ function createItemFromType(itemType: string): Item | null {
         stats: { value: 15 },
         requirements: {},
         effects: [],
-        metadata: { discoveredAt: Date.now() },
+        metadata: { discoveredAt: Date.now(), icon: "/items/placeholder.svg", category: "materials" },
+        implemented: false,
       };
     case "rare_essence":
       return {
@@ -216,7 +218,8 @@ function createItemFromType(itemType: string): Item | null {
         stats: { value: 100 },
         requirements: {},
         effects: [],
-        metadata: { discoveredAt: Date.now() },
+        metadata: { discoveredAt: Date.now(), icon: "/items/placeholder.svg", category: "materials" },
+        implemented: false,
       };
     default:
       return null;

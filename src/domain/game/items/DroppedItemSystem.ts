@@ -251,7 +251,10 @@ export class DroppedItemSystem {
           effects: [],
           metadata: {
             discoveredAt: Date.now(),
+            icon: "/items/body_parts.svg",
+            category: "materials",
           },
+          implemented: false,
         };
 
       case "alien_hide":
@@ -278,7 +281,10 @@ export class DroppedItemSystem {
           effects: [],
           metadata: {
             discoveredAt: Date.now(),
+            icon: "/items/placeholder.svg",
+            category: "materials",
           },
+          implemented: false,
         };
 
       case "rare_essence":
@@ -305,7 +311,10 @@ export class DroppedItemSystem {
           effects: [],
           metadata: {
             discoveredAt: Date.now(),
+            icon: "/items/placeholder.svg",
+            category: "materials",
           },
+          implemented: false,
         };
 
       default:

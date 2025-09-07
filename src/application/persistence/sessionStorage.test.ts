@@ -44,8 +44,8 @@ describe("sessionStorage + GameApp integration", () => {
       player: { x: 0, y: 0 },
       mode: "space",
       inventory: [
-        { type: "iron_ore", quantity: 3 },
-        { type: "cooked_meat", quantity: 1 },
+        { type: "rocket_fuel", quantity: 3 },
+        { type: "alien_beer", quantity: 1 },
       ],
     });
     const canvas = createCanvas();
@@ -60,8 +60,8 @@ describe("sessionStorage + GameApp integration", () => {
           .getSlots()
           .filter((s) => s.item != null && s.item.type === type)
           .reduce((sum, s) => sum + s.quantity, 0);
-      expect(count("iron_ore")).toBeGreaterThanOrEqual(3);
-      expect(count("cooked_meat")).toBeGreaterThanOrEqual(1);
+      expect(count("rocket_fuel")).toBeGreaterThanOrEqual(3);
+      expect(count("alien_beer")).toBeGreaterThanOrEqual(1);
     }
     ctrl.dispose();
   });

@@ -63,7 +63,11 @@ export class ItemFactory {
       effects: template.effects || [],
       metadata: {
         discoveredAt: Date.now(),
+        icon: template.icon,
+        category: template.category,
+        autoUseOnPickup: template.autoUseOnPickup,
       },
+      implemented: false,
     };
   }
 
@@ -204,6 +208,7 @@ export class ItemFactory {
       requirements: base.requirements,
       effects: base.effects,
       metadata: base.metadata,
+      implemented: base.implemented,
       toolType,
       effectiveness: new Map(template.effectiveness),
       energyCost: template.energyCost,
@@ -227,6 +232,7 @@ export class ItemFactory {
       requirements: base.requirements,
       effects: base.effects,
       metadata: base.metadata,
+      implemented: base.implemented,
       weaponType,
       damage: template.damage,
       attackSpeed: template.attackSpeed,
@@ -263,6 +269,7 @@ export class ItemFactory {
       requirements: base.requirements,
       effects: base.effects,
       metadata: base.metadata,
+      implemented: base.implemented,
       materialType,
       processingMethods: template.processingMethods,
       derivatives: template.derivatives,
@@ -284,6 +291,7 @@ export class ItemFactory {
       stats: base.stats,
       requirements: base.requirements,
       metadata: base.metadata,
+      implemented: base.implemented,
       consumableType,
       effects: template.effects,
       duration: template.duration,
@@ -302,6 +310,9 @@ export interface ItemTemplate {
   readonly stats: ItemStats;
   readonly requirements?: ItemRequirements;
   readonly effects?: ItemEffect[];
+  readonly icon?: string;
+  readonly category?: string;
+  readonly autoUseOnPickup?: boolean;
 }
 
 export interface ItemModifier {

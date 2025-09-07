@@ -90,9 +90,9 @@ export class GameApp {
     const renderer = new GameRenderer();
     // Bridge: maintain a domain inventory for the HUD fed by ECS pickup events
     const hudInventory = new PlayerInventoryManager(20, 100);
-    // Restore saved inventory entries if any
+    // Prepare item factory and restore saved inventory entries if any
+    const factory = new ItemFactory();
     if (last?.inventory && last.inventory.length > 0) {
-      const factory = new ItemFactory();
       for (const entry of last.inventory) {
         const { type, quantity } = entry;
         // Recreate item from templates by type
@@ -103,6 +103,14 @@ export class GameApp {
           // ignore unknown templates
         }
       }
+    } else {
+      // Seed a simple starting inventory if none saved
+      try {
+        hudInventory.addItem(factory.createItem("ten_foot_pole"), 1);
+      } catch {}
+      try {
+        hudInventory.addItem(factory.createItem("towel"), 1);
+      } catch {}
     }
 
     // Attach DOM listeners

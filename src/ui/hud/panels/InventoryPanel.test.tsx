@@ -39,15 +39,18 @@ describe("InventoryPanel", (): void => {
       effects: [],
       metadata: {
         discoveredAt: Date.now(),
+        icon: "/items/melee_knife.svg",
+        category: "weapons",
       },
+      implemented: false,
     };
 
     const consumable: Item = {
       id: "test-food-1",
-      type: "food",
+      type: "alien_beer",
       baseType: BaseItemType.CONSUMABLE,
-      name: "Energy Bar",
-      description: "Restores energy",
+      name: "Alien Beer",
+      description: "A curious alien brew",
       properties: {
         weight: 0.1,
         volume: 0.5,
@@ -66,7 +69,10 @@ describe("InventoryPanel", (): void => {
       effects: [],
       metadata: {
         discoveredAt: Date.now(),
+        icon: "/items/alien_beer.svg",
+        category: "consumables",
       },
+      implemented: false,
     };
 
     inventory.addItem(tool);
@@ -112,10 +118,9 @@ describe("InventoryPanel", (): void => {
     expect(onToggle).toHaveBeenCalled();
   });
 
-  it("should call onItemUse when use button clicked", (): void => {
+  it("disables Use for unimplemented items", (): void => {
     const inventory = createTestInventory();
-    const onItemUse = vi.fn();
-    render(<InventoryPanel inventory={inventory} visible={true} onItemUse={onItemUse} />);
+    render(<InventoryPanel inventory={inventory} visible={true} onItemUse={vi.fn()} />);
 
     const itemSlot = screen.getAllByTestId(/inventory-slot-/).find((slot) => {
       const dt = slot.getAttribute("data-testid");
@@ -126,8 +131,7 @@ describe("InventoryPanel", (): void => {
       fireEvent.mouseEnter(itemSlot);
       const useButton = screen.queryByTestId("use-item-button");
       if (useButton != null) {
-        fireEvent.click(useButton);
-        expect(onItemUse).toHaveBeenCalled();
+        expect(useButton).toHaveAttribute("disabled");
       }
     }
   });

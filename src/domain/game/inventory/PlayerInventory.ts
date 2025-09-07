@@ -34,12 +34,16 @@ export interface QuickSlot {
 }
 
 export type InventoryCategory =
-  | "tools"
+  | "medical"
+  | "boosters"
+  | "explosives"
   | "weapons"
+  | "tools"
+  | "equipment"
+  | "utilities"
+  | "traps"
   | "materials"
-  | "food"
-  | "medicine"
-  | "seeds"
+  | "consumables"
   | "artifacts"
   | "misc";
 
@@ -90,12 +94,16 @@ export class PlayerInventoryManager implements PlayerInventory {
   readonly maxSlots: number;
   readonly maxWeight: number;
   readonly categories: InventoryCategory[] = [
-    "tools",
+    "medical",
+    "boosters",
+    "explosives",
     "weapons",
+    "tools",
+    "equipment",
+    "utilities",
+    "traps",
     "materials",
-    "food",
-    "medicine",
-    "seeds",
+    "consumables",
     "artifacts",
     "misc",
   ];
@@ -413,13 +421,17 @@ export class PlayerInventoryManager implements PlayerInventory {
   private compareByCategory(slotLeft: InventorySlot, slotRight: InventorySlot): number {
     if (!slotLeft.item || !slotRight.item) return 0;
 
-    const categoryOrder = [
-      "tools",
+    const categoryOrder: InventoryCategory[] = [
+      "medical",
+      "boosters",
+      "explosives",
       "weapons",
+      "tools",
+      "equipment",
+      "utilities",
+      "traps",
       "materials",
-      "food",
-      "medicine",
-      "seeds",
+      "consumables",
       "artifacts",
       "misc",
     ];
@@ -434,6 +446,14 @@ export class PlayerInventoryManager implements PlayerInventory {
   }
 
   private getItemCategory(item: Item): InventoryCategory {
+    // Honor explicit category hint when provided
+    const c = item.metadata.category;
+    if (
+      typeof c === "string" &&
+      (this.categories as ReadonlyArray<string>).includes(c)
+    ) {
+      return c as InventoryCategory;
+    }
     switch (item.baseType) {
       case "tool":
         return "tools";
@@ -442,14 +462,7 @@ export class PlayerInventoryManager implements PlayerInventory {
       case "material":
         return "materials";
       case "consumable":
-        if (item.type.includes("food")) {
-          return "food";
-        } else if (item.type.includes("medicine")) {
-          return "medicine";
-        }
-        return "misc";
-      case "seed":
-        return "seeds";
+        return "consumables";
       case "artifact":
         return "artifacts";
       default:

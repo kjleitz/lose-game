@@ -16,8 +16,20 @@ interface InventoryPanelProps {
 }
 
 function ItemIcon({ item }: { item: Item }): JSX.Element {
-  const getItemColor = (item: Item): string => {
-    switch (item.baseType) {
+  const icon = item.metadata.icon;
+  if (icon) {
+    return (
+      <img
+        src={icon}
+        alt={item.name}
+        className="w-8 h-8 rounded border-2 border-gray-400 object-contain bg-black/30"
+        title={`${item.name} - ${item.description}`}
+      />
+    );
+  }
+  // Fallback: colored initial
+  const getItemColor = (it: Item): string => {
+    switch (it.baseType) {
       case "tool":
         return "#4ECDC4";
       case "consumable":
@@ -30,7 +42,6 @@ function ItemIcon({ item }: { item: Item }): JSX.Element {
         return "#666";
     }
   };
-
   return (
     <div
       className="w-8 h-8 rounded border-2 border-gray-400 flex items-center justify-center text-xs font-bold"
@@ -94,7 +105,12 @@ function InventorySlotComponent({
 
           <div className="flex flex-col gap-1">
             {onItemUse && (
-              <Button onClick={(): void => onItemUse(slot.item!)} data-testid="use-item-button">
+              <Button
+                onClick={(): void => onItemUse(slot.item!)}
+                data-testid="use-item-button"
+                disabled={slot.item.implemented !== true}
+                title={slot.item.implemented === true ? "Use" : "Not implemented yet"}
+              >
                 Use
               </Button>
             )}

@@ -53,11 +53,11 @@ export function createPickupSystem(
 
         // If within pickup radius, collect immediately
         if (dist <= range) {
-          // Auto-use certain items on pickup (e.g., XP orbs)
+          // Auto-use certain items on pickup (e.g., XP orbs or flagged items)
           let autoUsed = false;
           // Emit a final strong attraction cue so autoused items still wwomp
           if (onAttractStrength) onAttractStrength(1);
-          if (dropped.item.type === "xp_energy") {
+          if (dropped.item.type === "xp_energy" || dropped.item.metadata.autoUseOnPickup === true) {
             const xpEntities = world.query({ player: Player, experience: PlayerExperience });
             if (xpEntities.length > 0) {
               const exp = xpEntities[0].components.experience;

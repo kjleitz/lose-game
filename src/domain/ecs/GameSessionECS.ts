@@ -959,7 +959,8 @@ export class GameSessionECS {
           stats: { value: amount },
           requirements: {},
           effects: [],
-          metadata: { discoveredAt: Date.now() },
+          metadata: { discoveredAt: Date.now(), icon: "/items/xp_pack_small.svg", category: "boosters" },
+          implemented: false,
         },
         quantity: amount,
       } as const;
@@ -985,7 +986,8 @@ export class GameSessionECS {
           stats: { value: 2 },
           requirements: {},
           effects: [],
-          metadata: { discoveredAt: Date.now() },
+          metadata: { discoveredAt: Date.now(), icon: "/items/body_parts.svg", category: "materials" },
+          implemented: false,
         },
         quantity: Math.max(1, Math.floor(amount / 10)),
       } as const;
@@ -1010,7 +1012,8 @@ export class GameSessionECS {
         stats: { value: 4 },
         requirements: {},
         effects: [],
-        metadata: { discoveredAt: Date.now() },
+        metadata: { discoveredAt: Date.now(), icon: "/items/placeholder.svg", category: "materials" },
+        implemented: false,
       },
       quantity: Math.max(1, Math.floor(amount / 8)),
     } as const;
