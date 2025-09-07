@@ -39,7 +39,7 @@ describe("InventoryPanel", (): void => {
       effects: [],
       metadata: {
         discoveredAt: Date.now(),
-        icon: "/items/melee_knife.svg",
+        icon: "items/melee_knife.svg",
         category: "weapons",
       },
       implemented: false,
@@ -69,7 +69,7 @@ describe("InventoryPanel", (): void => {
       effects: [],
       metadata: {
         discoveredAt: Date.now(),
-        icon: "/items/alien_beer.svg",
+        icon: "items/alien_beer.svg",
         category: "consumables",
       },
       implemented: false,

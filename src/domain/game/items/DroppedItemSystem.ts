@@ -251,7 +251,7 @@ export class DroppedItemSystem {
           effects: [],
           metadata: {
             discoveredAt: Date.now(),
-            icon: "/items/body_parts.svg",
+            icon: "items/body_parts.svg",
             category: "materials",
           },
           implemented: false,
@@ -281,7 +281,7 @@ export class DroppedItemSystem {
           effects: [],
           metadata: {
             discoveredAt: Date.now(),
-            icon: "/items/placeholder.svg",
+            icon: "items/placeholder.svg",
             category: "materials",
           },
           implemented: false,
@@ -311,7 +311,7 @@ export class DroppedItemSystem {
           effects: [],
           metadata: {
             discoveredAt: Date.now(),
-            icon: "/items/placeholder.svg",
+            icon: "items/placeholder.svg",
             category: "materials",
           },
           implemented: false,

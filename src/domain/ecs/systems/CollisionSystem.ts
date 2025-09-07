@@ -174,7 +174,7 @@ function createItemFromType(itemType: string): Item | null {
         effects: [],
         metadata: {
           discoveredAt: Date.now(),
-          icon: "/items/body_parts.svg",
+          icon: "items/body_parts.svg",
           category: "materials",
         },
         implemented: false,
@@ -201,7 +201,7 @@ function createItemFromType(itemType: string): Item | null {
         effects: [],
         metadata: {
           discoveredAt: Date.now(),
-          icon: "/items/placeholder.svg",
+          icon: "items/placeholder.svg",
           category: "materials",
         },
         implemented: false,
@@ -228,7 +228,7 @@ function createItemFromType(itemType: string): Item | null {
         effects: [],
         metadata: {
           discoveredAt: Date.now(),
-          icon: "/items/placeholder.svg",
+          icon: "items/placeholder.svg",
           category: "materials",
         },
         implemented: false,
