@@ -18,7 +18,7 @@ export function ammoCoreColor(ammo: AmmoType, team: Team = "player"): string {
   if (team !== "player") return team === "enemy" ? "#ff3b3b" : "#ffffff";
   switch (ammo) {
     case "kinetic":
-      return "#ffb347"; // orange
+      return "#a66b2a"; // darker bullet-like orange/brown
     case "plasma":
       return "#31d3ff"; // cyan
     case "ion":
@@ -32,7 +32,7 @@ export function ammoTrailHeadColor(ammo: AmmoType, team: Team = "player"): strin
   if (team !== "player") return team === "enemy" ? "rgba(255,80,80,0.9)" : "rgba(255,255,255,0.9)";
   switch (ammo) {
     case "kinetic":
-      return "rgba(255,180,80,0.9)";
+      return "rgba(200,120,50,0.9)"; // darker trail
     case "plasma":
       return "rgba(80,220,255,0.9)";
     case "ion":

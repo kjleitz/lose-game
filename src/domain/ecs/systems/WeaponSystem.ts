@@ -58,7 +58,7 @@ export function createWeaponSystem(world: World, actions: Set<Action>): System {
           damage = profile.damage;
 
           // Create projectile
-          const baseSpread = 0.12; // ~7 degrees
+          const baseSpread = profile.spread; // ammo-driven accuracy
           const spread = baseSpread * (mods?.projectileSpreadMult ?? 1);
           const jitter = (Math.random() * 2 - 1) * spread;
           const fireAngle = rotation.angle + jitter;

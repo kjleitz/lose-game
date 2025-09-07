@@ -202,7 +202,8 @@ export class PlanetModeRenderer {
         const prevOp = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = "lighter";
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(3, drawSize * 0.25);
+        const widthFactor = ammo === "kinetic" ? 0.18 : 0.25;
+        ctx.lineWidth = Math.max(3, drawSize * widthFactor);
         ctx.lineCap = "round";
         ctx.beginPath();
         if (ammo === "plasma") {

@@ -251,7 +251,8 @@ export class SpaceModeRenderer {
           gradient.addColorStop(0, col0);
           gradient.addColorStop(1, col1);
           ctx.strokeStyle = gradient;
-          ctx.lineWidth = Math.max(3, proj.radius * 2);
+          const trailWidth = foundTrail?.ammo === "kinetic" ? 1.4 : 2;
+          ctx.lineWidth = Math.max(3, proj.radius * trailWidth);
           ctx.lineCap = "round";
           ctx.beginPath();
           // For plasma, render a wavy trail rather than straight
@@ -284,7 +285,8 @@ export class SpaceModeRenderer {
         const found = detailed.find((projItem) => projItem.id === proj.id);
         const color = ammoCoreColor(found?.ammo ?? "standard", proj.faction);
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(3, proj.radius * 2.2);
+        const widthFactor = found?.ammo === "kinetic" ? 1.4 : 2.2;
+        ctx.lineWidth = Math.max(3, proj.radius * widthFactor);
         ctx.lineCap = "round";
         ctx.beginPath();
         // For plasma, also render the core as a wavy beam
