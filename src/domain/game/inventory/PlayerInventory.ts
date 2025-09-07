@@ -448,10 +448,7 @@ export class PlayerInventoryManager implements PlayerInventory {
   private getItemCategory(item: Item): InventoryCategory {
     // Honor explicit category hint when provided
     const c = item.metadata.category;
-    if (
-      typeof c === "string" &&
-      (this.categories as ReadonlyArray<string>).includes(c)
-    ) {
+    if (typeof c === "string" && (this.categories as ReadonlyArray<string>).includes(c)) {
       return c as InventoryCategory;
     }
     switch (item.baseType) {
