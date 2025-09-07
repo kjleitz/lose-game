@@ -491,6 +491,12 @@ export class GameApp {
         session.applyPendingPerkUnlocks?.();
         bus.publish({ type: "tick", snapshot: getSnapshot() });
       },
+      sellPerk(perkId) {
+        session.requestSellPerk(perkId);
+        // If UI is paused (e.g., perks modal open), apply immediately and emit a tick
+        session.applyPendingPerkSells?.();
+        bus.publish({ type: "tick", snapshot: getSnapshot() });
+      },
       grantPerkPoints(amount: number) {
         // Clamp to a reasonable positive number to avoid overflow
         const clampedAmount = Math.max(0, Math.min(1_000_000, Math.floor(amount)));

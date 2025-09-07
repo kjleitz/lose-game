@@ -10,6 +10,7 @@ interface PerkModalProps {
   perkPoints: number;
   unlocked: Record<string, number>;
   onUnlock: (perkId: PerkId) => void;
+  onSell?: (perkId: PerkId) => void;
 }
 
 export function PerkModal({
@@ -19,6 +20,7 @@ export function PerkModal({
   perkPoints,
   unlocked,
   onUnlock,
+  onSell,
 }: PerkModalProps): JSX.Element | null {
   const groups = useMemo(() => {
     const byCategory = new Map<PerkDefinition["category"], PerkDefinition[]>();
@@ -85,6 +87,7 @@ export function PerkModal({
                     nextTier != null &&
                     (nextTier.requiresLevel != null ? level >= nextTier.requiresLevel : true) &&
                     perkPoints >= (nextTier?.cost ?? Infinity);
+                  const canSell = currentTier > 0;
                   return (
                     <li
                       key={def.id}
@@ -156,6 +159,16 @@ export function PerkModal({
                           <span className="text-[10px] text-gray-400">
                             Cost {nextTier?.cost ?? 0}
                           </span>
+                        ) : null}
+                        {canSell && onSell ? (
+                          <Button
+                            size="sm"
+                            className="border border-hud-accent/30 bg-transparent text-gray-200 hover:border-hud-warning hover:text-hud-warning"
+                            onClick={(): void => onSell(def.id)}
+                            title="Sell this perk tier to refund points"
+                          >
+                            Sell
+                          </Button>
                         ) : null}
                         <Button
                           size="sm"

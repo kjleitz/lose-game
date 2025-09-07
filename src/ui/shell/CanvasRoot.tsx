@@ -300,6 +300,7 @@ export function CanvasRoot(): JSX.Element {
         perkPoints={hudState.perkPoints}
         unlocked={controllerRef.current?.getSnapshot().player.perks ?? {}}
         onUnlock={(perkId): void => controllerRef.current?.unlockPerk?.(perkId)}
+        onSell={(perkId): void => controllerRef.current?.sellPerk?.(perkId)}
       />
     </div>
   );

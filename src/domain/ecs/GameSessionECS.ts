@@ -29,6 +29,7 @@ import { createMeleeStrikeAnimSystem } from "./systems/MeleeStrikeAnimSystem";
 import { createMovementSystem } from "./systems/MovementSystem";
 import { createPerkEffectsSystem } from "./systems/PerkEffectsSystem";
 import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
+import { createPerkSellSystem, type PerkSellRequest } from "./systems/PerkSellSystem";
 import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
@@ -52,6 +53,7 @@ export class GameSessionECS {
   private pickupEvents: PickupEvent[] = [];
   private levelUpEvents: LevelUpEvent[] = [];
   private perkRequests: PerkUnlockRequest[] = [];
+  private perkSellRequests: PerkSellRequest[] = [];
   private toastEvents: string[] = [];
   private sfxEvents: SfxEvent[] = [];
   // Transient render FX events for the renderer (non-audio)
@@ -360,6 +362,16 @@ export class GameSessionECS {
         }
       },
     );
+    const perkSellSystem = createPerkSellSystem(
+      this.world,
+      this.perkSellRequests,
+      perkDefinitions,
+      (res) => {
+        if (res.success) {
+          this.toastEvents.push("Perk sold. Refunded perk points.");
+        }
+      },
+    );
     const collisionSystem = createCollisionSystem(this.world);
     const dropAgingSystem = createDroppedItemAgingSystem(this.world, dt);
     const sfxSystem = createSfxEventCollectorSystem(this.world, (ev) => {
@@ -408,9 +420,11 @@ export class GameSessionECS {
     pickupSystem.run();
     levelUpSystem.run();
     perkSystem.run();
+    perkSellSystem.run();
     // Re-check after any late XP changes
     levelUpSystem.run();
     perkSystem.run();
+    perkSellSystem.run();
   }
 
   private checkDeathAndMarkIfNeeded(): void {
@@ -766,6 +780,25 @@ export class GameSessionECS {
       },
     );
     perkSystem.run();
+  }
+
+  requestSellPerk(perkId: PerkId): void {
+    const players = this.world.query({ player: Components.Player });
+    if (players.length === 0) return;
+    this.perkSellRequests.push({ entityId: players[0].entity, perkId });
+  }
+
+  // Run only the perk sell system once (useful while UI is paused)
+  applyPendingPerkSells(): void {
+    const sellSystem = createPerkSellSystem(
+      this.world,
+      this.perkSellRequests,
+      perkDefinitions,
+      (res) => {
+        if (res.success) this.toastEvents.push("Perk sold. Refunded perk points.");
+      },
+    );
+    sellSystem.run();
   }
 
   // Debug/cheat helper: grant perk points to player
