@@ -66,6 +66,14 @@ export class GameSessionECS {
 
   // Camera (keep as is for now)
   camera: Camera;
+  // Internal camera velocity for smooth follow in ship
+  private cameraVx: number = 0;
+  private cameraVy: number = 0;
+  // Lookahead state derived from acceleration (fades to zero at steady motion)
+  private lookaheadX: number = 0;
+  private lookaheadY: number = 0;
+  private prevPlayerVx: number = 0;
+  private prevPlayerVy: number = 0;
   size: ViewSize;
   notification: string | null = null;
 
@@ -157,7 +165,7 @@ export class GameSessionECS {
     this.updateTimers(dt);
     this.handleModeTransitions(actions);
     this.runEcsSystems(actions, dt);
-    this.updateCameraFollowPlayer();
+    this.updateCameraFollowPlayer(dt);
     this.updateNotifications();
     this.checkDeathAndMarkIfNeeded();
     // Active Position is authoritative for the current mode; no cross-mode syncing here
@@ -300,6 +308,10 @@ export class GameSessionECS {
       // Snap camera immediately so the ship is centered this frame
       this.camera.x = position.x;
       this.camera.y = position.y;
+      this.cameraVx = 0;
+      this.cameraVy = 0;
+      this.lookaheadX = 0;
+      this.lookaheadY = 0;
     }
     this.mode = "space";
     this.landedPlanetId = null;
@@ -460,6 +472,12 @@ export class GameSessionECS {
     // Camera back to origin
     this.camera.x = 0;
     this.camera.y = 0;
+    this.cameraVx = 0;
+    this.cameraVy = 0;
+    this.lookaheadX = 0;
+    this.lookaheadY = 0;
+    this.prevPlayerVx = 0;
+    this.prevPlayerVy = 0;
     // Build a fresh default game state
     this.createDefaultGame();
     // Clear awaitingRespawn marker
@@ -493,17 +511,63 @@ export class GameSessionECS {
     else ent.addComponent(Components.PlayerPerkPoints, { unspent: value });
   }
 
-  private updateCameraFollowPlayer(): void {
+  private updateCameraFollowPlayer(dt: number): void {
     if (this.playerEntityId == null) return;
 
     const playerEntities = this.world.query({
       position: Components.Position,
+      velocity: Components.Velocity,
       player: Components.Player,
     });
     if (playerEntities.length > 0) {
       const playerPos = playerEntities[0].components.position;
-      this.camera.x = playerPos.x;
-      this.camera.y = playerPos.y;
+      const playerVel = playerEntities[0].components.velocity;
+      // Compute lookahead target offset based on acceleration only (no turn anticipation)
+      const safeDt = Math.max(1e-5, dt);
+      const ax = (playerVel.dx - this.prevPlayerVx) / safeDt;
+      const ay = (playerVel.dy - this.prevPlayerVy) / safeDt;
+      // Predictive lookahead: 0.5 * a * t^2 in world coords
+      const tLead = 0.9; // seconds, feel of how far to peek ahead
+      const maxLead = 160; // clamp radius
+      const targetLeadX = 0.5 * ax * tLead * tLead;
+      const targetLeadY = 0.5 * ay * tLead * tLead;
+      // Ease lookahead toward target and decay when inputs calm down
+      const leadAlpha = 1 - Math.exp(-safeDt / 0.12); // quick but smooth
+      // Clamp the target before blending to avoid sudden spikes
+      const targetMag = Math.hypot(targetLeadX, targetLeadY);
+      const clampedTX = targetMag > maxLead ? (targetLeadX * maxLead) / targetMag : targetLeadX;
+      const clampedTY = targetMag > maxLead ? (targetLeadY * maxLead) / targetMag : targetLeadY;
+      this.lookaheadX += (clampedTX - this.lookaheadX) * leadAlpha;
+      this.lookaheadY += (clampedTY - this.lookaheadY) * leadAlpha;
+      // Ship camera: smooth follow with a gentle lag; on foot: snap follow
+      const inShip = this.mode === "space" || (this.mode === "planet" && this.inPlanetShip);
+      if (inShip) {
+        // Critically-damped spring toward the player's position and velocity.
+        // This produces an initial lag that fully catches up (no steady-state error)
+        // even at constant player velocity.
+        const wn = 3.8; // natural frequency (~1s settle to center)
+        const damping = 2 * wn; // critical damping (zeta = 1)
+        const tx = playerPos.x + this.lookaheadX;
+        const ty = playerPos.y + this.lookaheadY;
+        const axCam = -damping * (this.cameraVx - playerVel.dx) - wn * wn * (this.camera.x - tx);
+        const ayCam = -damping * (this.cameraVy - playerVel.dy) - wn * wn * (this.camera.y - ty);
+        this.cameraVx += axCam * dt;
+        this.cameraVy += ayCam * dt;
+        this.camera.x += this.cameraVx * dt;
+        this.camera.y += this.cameraVy * dt;
+      } else {
+        // On foot, keep the camera locked to the player
+        this.camera.x = playerPos.x;
+        this.camera.y = playerPos.y;
+        // Keep velocity aligned so re-entering ship starts from a stable state
+        this.cameraVx = playerVel.dx;
+        this.cameraVy = playerVel.dy;
+        this.lookaheadX = 0;
+        this.lookaheadY = 0;
+      }
+      // Remember for next frame
+      this.prevPlayerVx = playerVel.dx;
+      this.prevPlayerVy = playerVel.dy;
     }
   }
 
@@ -1356,6 +1420,10 @@ export class GameSessionECS {
     // Reset camera to follow immediately
     this.camera.x = pos.x;
     this.camera.y = pos.y;
+    this.cameraVx = 0;
+    this.cameraVy = 0;
+    this.lookaheadX = 0;
+    this.lookaheadY = 0;
   }
 
   getModeSnapshot(): { mode: "space" | "planet"; planetId?: string } {
