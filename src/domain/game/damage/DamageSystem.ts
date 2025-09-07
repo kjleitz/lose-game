@@ -1,4 +1,5 @@
 import type { Point2D } from "../../../shared/types/geometry";
+import type { TemplateId } from "../items/ItemTemplates";
 import type {
   DamageableEntity,
   DamageEvent,
@@ -14,7 +15,7 @@ export class DamageSystem {
 }
 
 export interface ItemDrop {
-  readonly itemType: string; // TODO: string literal union
+  readonly itemTemplateId: TemplateId;
   readonly quantity: number;
   readonly position: Point2D;
   readonly condition?: import("../items/Item").ItemCondition; // item condition/quality
@@ -29,7 +30,7 @@ export class DropService {
       if (this.meetsCondition(entry.condition, killingBlow)) {
         const quantity = this.rollQuantity(entry.minQuantity, entry.maxQuantity);
         drops.push({
-          itemType: entry.itemType,
+          itemTemplateId: entry.itemTemplateId,
           quantity,
           position: entity.position,
         });
@@ -41,7 +42,7 @@ export class DropService {
       if (Math.random() < entry.probability && this.meetsCondition(entry.condition, killingBlow)) {
         const quantity = this.rollQuantity(entry.minQuantity, entry.maxQuantity);
         drops.push({
-          itemType: entry.itemType,
+          itemTemplateId: entry.itemTemplateId,
           quantity,
           position: entity.position,
         });
@@ -56,7 +57,7 @@ export class DropService {
       ) {
         const quantity = this.rollQuantity(entry.minQuantity, entry.maxQuantity);
         drops.push({
-          itemType: entry.itemType,
+          itemTemplateId: entry.itemTemplateId,
           quantity,
           position: entity.position,
         });

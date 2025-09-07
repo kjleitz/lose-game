@@ -14,8 +14,55 @@ import {
 } from "./Item";
 import type { ItemModifier, ItemTemplate } from "./ItemFactory";
 
+export type TemplateId =
+  | "health_pack_small"
+  | "health_pack_large"
+  | "xp_pack_small"
+  | "xp_pack_large"
+  | "body_parts"
+  | "rocket_fuel"
+  | "shield_mk1"
+  | "shield_mk2"
+  | "armor_combat"
+  | "night_vision_goggles"
+  | "translator_device"
+  | "space_suit"
+  | "flashlight"
+  | "tent"
+  | "inflatable_raft"
+  | "gun_pistol"
+  | "gun_rifle"
+  | "melee_knife"
+  | "melee_baton"
+  | "landmine"
+  | "remote_bomb"
+  | "decoy"
+  | "smokescreen"
+  | "animal_trap"
+  | "alien_beer"
+  | "ten_foot_pole"
+  | "towel"
+  | "sonic_screwdriver"
+  | "lightsaber"
+  | "tricorder"
+  | "lose_the_game_book"
+  | "hitchhikers_guide"
+  | "babel_fish"
+  | "starfleet_badge"
+  | "hempen_rope_50ft"
+  | "treasure_map_1"
+  | "treasure_map_2"
+  | "treasure_map_3"
+  | "iron_axe"
+  | "iron_pickaxe"
+  | "iron_knife"
+  | "iron_sword"
+  | "wood"
+  | "iron_ore"
+  | "cooked_meat";
+
 export interface ToolTemplate {
-  readonly id: string;
+  readonly id: TemplateId;
   readonly effectiveness: Array<[string, number]>;
   readonly energyCost: number;
   readonly skillBonus?: Array<[string, number]>;
@@ -23,7 +70,7 @@ export interface ToolTemplate {
 }
 
 export interface WeaponTemplate {
-  readonly id: string;
+  readonly id: TemplateId;
   readonly damage: { base: number; type: DamageType; criticalMultiplier: number };
   readonly attackSpeed: number;
   readonly range: number;
@@ -32,14 +79,14 @@ export interface WeaponTemplate {
 }
 
 export interface MaterialTemplate {
-  readonly id: string;
+  readonly id: TemplateId;
   readonly processingMethods: (typeof ProcessingMethod)[keyof typeof ProcessingMethod][];
   readonly derivatives: string[];
   readonly purityLevel?: number;
 }
 
 export interface ConsumableTemplate {
-  readonly id: string;
+  readonly id: TemplateId;
   readonly effects: ItemEffect[];
   readonly duration: number;
   readonly cooldown?: number;

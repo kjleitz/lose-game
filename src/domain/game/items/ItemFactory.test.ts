@@ -27,7 +27,5 @@ describe("ItemFactory (new catalog)", () => {
     expect(excellent.stats.value).toBeCloseTo((base.stats.value ?? 0) * 1.25);
   });
 
-  it("throws for unknown template", () => {
-    expect(() => factory.createItem("unknown_item")).toThrow();
-  });
+  // Type system now prevents unknown template IDs at compile time
 });

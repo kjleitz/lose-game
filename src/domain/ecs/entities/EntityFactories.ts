@@ -95,10 +95,24 @@ export function createEnemyEntity(world: World, enemy: OldEnemy): EntityBuilder 
       // Basic drop table so enemies can drop items on death (planet/space)
       .addComponent(Components.LootDropTable, {
         guaranteed: [
-          { itemType: "organic_matter", minQuantity: 1, maxQuantity: 2, probability: 1.0 },
+          { itemTemplateId: "body_parts", minQuantity: 1, maxQuantity: 2, probability: 1.0 },
         ],
-        possible: [{ itemType: "alien_hide", minQuantity: 1, maxQuantity: 1, probability: 0.35 }],
-        rare: [{ itemType: "rare_essence", minQuantity: 1, maxQuantity: 1, probability: 0.05 }],
+        possible: [
+          { itemTemplateId: "health_pack_small", minQuantity: 1, maxQuantity: 1, probability: 0.4 },
+          { itemTemplateId: "xp_pack_small", minQuantity: 1, maxQuantity: 3, probability: 0.6 },
+          { itemTemplateId: "alien_beer", minQuantity: 1, maxQuantity: 1, probability: 0.2 },
+          { itemTemplateId: "flashlight", minQuantity: 1, maxQuantity: 1, probability: 0.15 },
+        ],
+        rare: [
+          {
+            itemTemplateId: "health_pack_large",
+            minQuantity: 1,
+            maxQuantity: 1,
+            probability: 0.08,
+          },
+          { itemTemplateId: "melee_knife", minQuantity: 1, maxQuantity: 1, probability: 0.05 },
+          { itemTemplateId: "gun_pistol", minQuantity: 1, maxQuantity: 1, probability: 0.02 },
+        ],
         modifiers: [
           {
             type: "damage_type_bonus",
@@ -228,10 +242,20 @@ export function createBasicEnemy(world: World, id: string, x: number, y: number)
     })
     .addComponent(Components.LootDropTable, {
       guaranteed: [
-        { itemType: "organic_matter", minQuantity: 1, maxQuantity: 2, probability: 1.0 },
+        { itemTemplateId: "body_parts", minQuantity: 1, maxQuantity: 3, probability: 1.0 },
       ],
-      possible: [{ itemType: "alien_hide", minQuantity: 1, maxQuantity: 1, probability: 0.4 }],
-      rare: [{ itemType: "rare_essence", minQuantity: 1, maxQuantity: 1, probability: 0.08 }],
+      possible: [
+        { itemTemplateId: "health_pack_small", minQuantity: 1, maxQuantity: 2, probability: 0.5 },
+        { itemTemplateId: "xp_pack_small", minQuantity: 2, maxQuantity: 4, probability: 0.7 },
+        { itemTemplateId: "rocket_fuel", minQuantity: 1, maxQuantity: 1, probability: 0.3 },
+        { itemTemplateId: "towel", minQuantity: 1, maxQuantity: 1, probability: 0.1 },
+      ],
+      rare: [
+        { itemTemplateId: "health_pack_large", minQuantity: 1, maxQuantity: 1, probability: 0.12 },
+        { itemTemplateId: "gun_rifle", minQuantity: 1, maxQuantity: 1, probability: 0.06 },
+        { itemTemplateId: "shield_mk1", minQuantity: 1, maxQuantity: 1, probability: 0.04 },
+        { itemTemplateId: "ten_foot_pole", minQuantity: 1, maxQuantity: 1, probability: 0.03 },
+      ],
       modifiers: [
         {
           type: "damage_type_bonus",

@@ -1,5 +1,5 @@
 import type { Item } from "./Item";
-import { BaseItemType, ItemQuality, ItemRarity } from "./Item";
+import { ItemFactory } from "./ItemFactory";
 import { TIME } from "../../../config/time";
 import type { DamageableEntity, DropTable } from "../damage/DamageableEntity";
 import type { Player } from "../player";
@@ -27,6 +27,7 @@ export class DroppedItemSystem {
   private nextId = 1;
   private readonly PICKUP_RANGE = 40; // pixels
   private readonly ITEM_DESPAWN_SEC = TIME.DROPPED_ITEM_DESPAWN_SEC;
+  private itemFactory = new ItemFactory();
 
   dropItemsFromEntity(entity: DamageableEntity, position: Point2D): DroppedItem[] {
     const droppedItems: DroppedItem[] = [];
@@ -165,15 +166,15 @@ export class DroppedItemSystem {
     if (dropTable.guaranteed != null) {
       for (const drop of dropTable.guaranteed) {
         if (
-          typeof drop.itemType === "string" &&
-          drop.itemType.length > 0 &&
+          typeof drop.itemTemplateId === "string" &&
+          drop.itemTemplateId.length > 0 &&
           Math.random() < drop.probability
         ) {
           const quantity =
             Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) +
             drop.minQuantity;
 
-          const item = this.createItemFromType(drop.itemType);
+          const item = this.itemFactory.createItem(drop.itemTemplateId);
           if (item != null && quantity > 0) {
             drops.push({ item, quantity });
           }
@@ -185,15 +186,15 @@ export class DroppedItemSystem {
     if (dropTable.possible != null) {
       for (const drop of dropTable.possible) {
         if (
-          typeof drop.itemType === "string" &&
-          drop.itemType.length > 0 &&
+          typeof drop.itemTemplateId === "string" &&
+          drop.itemTemplateId.length > 0 &&
           Math.random() < drop.probability
         ) {
           const quantity =
             Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) +
             drop.minQuantity;
 
-          const item = this.createItemFromType(drop.itemType);
+          const item = this.itemFactory.createItem(drop.itemTemplateId);
           if (item != null && quantity > 0) {
             drops.push({ item, quantity });
           }
@@ -205,15 +206,15 @@ export class DroppedItemSystem {
     if (dropTable.rare != null) {
       for (const drop of dropTable.rare) {
         if (
-          typeof drop.itemType === "string" &&
-          drop.itemType.length > 0 &&
+          typeof drop.itemTemplateId === "string" &&
+          drop.itemTemplateId.length > 0 &&
           Math.random() < drop.probability
         ) {
           const quantity =
             Math.floor(Math.random() * (drop.maxQuantity - drop.minQuantity + 1)) +
             drop.minQuantity;
 
-          const item = this.createItemFromType(drop.itemType);
+          const item = this.itemFactory.createItem(drop.itemTemplateId);
           if (item != null && quantity > 0) {
             drops.push({ item, quantity });
           }
@@ -222,105 +223,6 @@ export class DroppedItemSystem {
     }
 
     return drops;
-  }
-
-  private createItemFromType(itemType: string): Item | null {
-    // Create basic items for common drop types
-    switch (itemType) {
-      case "organic_matter":
-        return {
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: "organic_matter",
-          baseType: BaseItemType.MATERIAL,
-          name: "Organic Matter",
-          description: "Basic biological material from defeated creatures",
-          properties: {
-            weight: 0.2,
-            volume: 0.3,
-            stackable: true,
-            maxStackSize: 50,
-            quality: ItemQuality.COMMON,
-            rarity: ItemRarity.COMMON,
-            tradeable: true,
-            dropOnDeath: false,
-          },
-          stats: {
-            value: 2,
-          },
-          requirements: {},
-          effects: [],
-          metadata: {
-            discoveredAt: Date.now(),
-            icon: "items/body_parts.svg",
-            category: "materials",
-          },
-          implemented: false,
-        };
-
-      case "alien_hide":
-        return {
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: "alien_hide",
-          baseType: BaseItemType.MATERIAL,
-          name: "Alien Hide",
-          description: "Tough hide from an alien creature, useful for crafting",
-          properties: {
-            weight: 1.0,
-            volume: 1.0,
-            stackable: true,
-            maxStackSize: 20,
-            quality: ItemQuality.GOOD,
-            rarity: ItemRarity.UNCOMMON,
-            tradeable: true,
-            dropOnDeath: false,
-          },
-          stats: {
-            value: 15,
-          },
-          requirements: {},
-          effects: [],
-          metadata: {
-            discoveredAt: Date.now(),
-            icon: "items/placeholder.svg",
-            category: "materials",
-          },
-          implemented: false,
-        };
-
-      case "rare_essence":
-        return {
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: "rare_essence",
-          baseType: BaseItemType.MATERIAL,
-          name: "Rare Essence",
-          description: "A mysterious essence with unknown properties",
-          properties: {
-            weight: 0.1,
-            volume: 0.2,
-            stackable: true,
-            maxStackSize: 10,
-            quality: ItemQuality.EXCELLENT,
-            rarity: ItemRarity.RARE,
-            tradeable: true,
-            dropOnDeath: false,
-          },
-          stats: {
-            value: 100,
-          },
-          requirements: {},
-          effects: [],
-          metadata: {
-            discoveredAt: Date.now(),
-            icon: "items/placeholder.svg",
-            category: "materials",
-          },
-          implemented: false,
-        };
-
-      default:
-        console.warn(`Unknown item type: ${itemType}`);
-        return null;
-    }
   }
 
   private randomOffset(): number {

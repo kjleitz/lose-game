@@ -94,14 +94,10 @@ export class GameApp {
     const factory = new ItemFactory();
     if (last?.inventory && last.inventory.length > 0) {
       for (const entry of last.inventory) {
-        const { type, quantity } = entry;
-        // Recreate item from templates by type
-        try {
-          const item = factory.createItem(type);
-          hudInventory.addItem(item, quantity);
-        } catch {
-          // ignore unknown templates
-        }
+        const { itemTemplateId, quantity } = entry;
+        // Recreate item from templates by template ID
+        const item = factory.createItem(itemTemplateId);
+        hudInventory.addItem(item, quantity);
       }
     } else {
       // Seed a simple starting inventory if none saved
@@ -364,7 +360,7 @@ export class GameApp {
               .filter((slot) => slot.item != null && slot.quantity > 0)
               .map((slot) => {
                 const item = slot.item!;
-                return { type: item.type, quantity: slot.quantity };
+                return { itemTemplateId: item.type, quantity: slot.quantity };
               });
             saveSessionState({
               player: { x: playerView.x, y: playerView.y },

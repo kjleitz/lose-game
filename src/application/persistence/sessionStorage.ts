@@ -4,9 +4,16 @@ import {
   detectBackend,
   type NamespacedStore,
 } from "../../lib/storage";
+import type { TemplateId } from "../../domain/game/items/ItemTemplates";
+import { ItemTemplates } from "../../domain/game/items/ItemTemplates";
+
+function isValidTemplateId(value: string): value is TemplateId {
+  const templates = new ItemTemplates();
+  return templates.getTemplate(value) !== undefined;
+}
 
 export interface InventoryEntry {
-  type: string;
+  itemTemplateId: TemplateId;
   quantity: number;
 }
 
@@ -40,14 +47,15 @@ const sessionCodec = createJsonCodec<SessionState>((raw) => {
     const out: InventoryEntry[] = [];
     for (const entry of inv) {
       if (!isRecord(entry)) continue;
-      const typeVal = entry["type"];
+      const typeVal = entry["itemTemplateId"];
       const quantityVal = entry["quantity"];
       if (
         typeof typeVal === "string" &&
         typeof quantityVal === "number" &&
-        Number.isFinite(quantityVal)
+        Number.isFinite(quantityVal) &&
+        isValidTemplateId(typeVal)
       ) {
-        out.push({ type: typeVal, quantity: quantityVal });
+        out.push({ itemTemplateId: typeVal, quantity: quantityVal });
       }
     }
     inventory = out;

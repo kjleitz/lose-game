@@ -16,12 +16,12 @@ import {
   MaterialType,
   ConsumableType,
 } from "./Item";
-import { ItemTemplates } from "./ItemTemplates";
+import { ItemTemplates, type TemplateId } from "./ItemTemplates";
 
 export class ItemFactory {
   private templates = new ItemTemplates();
 
-  createItem(templateId: string, quality?: ItemQuality, modifiers?: string[]): Item {
+  createItem(templateId: TemplateId, quality?: ItemQuality, modifiers?: string[]): Item {
     const template = this.templates.getTemplate(templateId);
     if (!template) {
       throw new Error(`Template ${templateId} not found`);
@@ -302,7 +302,7 @@ export class ItemFactory {
 
 // Supporting interfaces
 export interface ItemTemplate {
-  readonly id: string;
+  readonly id: TemplateId;
   readonly baseType: BaseItemType;
   readonly name: string;
   readonly description: string;

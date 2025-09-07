@@ -57,7 +57,10 @@ export function createPickupSystem(
           let autoUsed = false;
           // Emit a final strong attraction cue so autoused items still wwomp
           if (onAttractStrength) onAttractStrength(1);
-          if (dropped.item.type === "xp_energy" || dropped.item.metadata.autoUseOnPickup === true) {
+          if (
+            dropped.item.type === "xp_pack_small" ||
+            dropped.item.metadata.autoUseOnPickup === true
+          ) {
             const xpEntities = world.query({ player: Player, experience: PlayerExperience });
             if (xpEntities.length > 0) {
               const exp = xpEntities[0].components.experience;

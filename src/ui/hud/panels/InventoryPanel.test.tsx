@@ -10,7 +10,7 @@ describe("InventoryPanel", (): void => {
 
     const tool: Item = {
       id: "test-tool-1",
-      type: "knife",
+      type: "melee_knife",
       baseType: BaseItemType.TOOL,
       name: "Basic Knife",
       description: "A simple cutting tool",

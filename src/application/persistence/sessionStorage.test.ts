@@ -44,8 +44,8 @@ describe("sessionStorage + GameApp integration", () => {
       player: { x: 0, y: 0 },
       mode: "space",
       inventory: [
-        { type: "rocket_fuel", quantity: 3 },
-        { type: "alien_beer", quantity: 1 },
+        { itemTemplateId: "rocket_fuel", quantity: 3 },
+        { itemTemplateId: "alien_beer", quantity: 1 },
       ],
     });
     const canvas = createCanvas();

@@ -1,4 +1,5 @@
 import type { Point2D } from "../../../shared/types/geometry";
+import type { TemplateId } from "../items/ItemTemplates";
 import type {
   DamageableEntity,
   DamageEvent,
@@ -147,7 +148,7 @@ export interface HarvestableProperties {
 }
 
 export interface HarvestResource {
-  readonly itemType: string;
+  readonly itemTemplateId: TemplateId;
   readonly baseQuantity: number;
   readonly probability: number; // 0-1 chance to drop
   readonly qualityRange: [number, number]; // min, max quality
@@ -362,7 +363,7 @@ export class FloraInstanceImpl implements FloraInstance {
     const guaranteed = this.species.harvestable.resources
       .filter((resource) => resource.probability >= 1.0)
       .map((resource) => ({
-        itemType: resource.itemType,
+        itemTemplateId: resource.itemTemplateId,
         minQuantity: Math.floor(resource.baseQuantity * this.genetics.yieldBonus),
         maxQuantity: Math.ceil(resource.baseQuantity * this.genetics.yieldBonus * 1.2),
         probability: 1.0,
@@ -371,7 +372,7 @@ export class FloraInstanceImpl implements FloraInstance {
     const possible = this.species.harvestable.resources
       .filter((resource) => resource.probability < 1.0 && resource.probability > 0.1)
       .map((resource) => ({
-        itemType: resource.itemType,
+        itemTemplateId: resource.itemTemplateId,
         minQuantity: Math.floor(resource.baseQuantity * this.genetics.yieldBonus),
         maxQuantity: Math.ceil(resource.baseQuantity * this.genetics.yieldBonus * 1.2),
         probability: resource.probability,
@@ -380,7 +381,7 @@ export class FloraInstanceImpl implements FloraInstance {
     const rare = this.species.harvestable.resources
       .filter((resource) => resource.probability <= 0.1)
       .map((resource) => ({
-        itemType: resource.itemType,
+        itemTemplateId: resource.itemTemplateId,
         minQuantity: Math.floor(resource.baseQuantity * this.genetics.yieldBonus),
         maxQuantity: Math.ceil(resource.baseQuantity * this.genetics.yieldBonus * 1.2),
         probability: resource.probability,

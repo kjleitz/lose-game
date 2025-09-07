@@ -3,6 +3,8 @@ import { Entity, type EntityBuilder, World } from "../../lib/ecs";
 import type { Circle2D, ViewSize } from "../../shared/types/geometry";
 import type { DroppedItem as DroppedItemShape } from "../game/items/DroppedItemSystem";
 import type { Item } from "../game/items/Item";
+import { ItemFactory } from "../game/items/ItemFactory";
+import type { TemplateId } from "../game/items/ItemTemplates";
 import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
 import type { PlanetSurface } from "../game/planet-surface/types";
 import type { Planet } from "../game/planets";
@@ -40,6 +42,7 @@ import type { AmmoType } from "../../shared/types/combat";
 
 export class GameSessionECS {
   private world = new World();
+  private itemFactory = new ItemFactory();
   private playerEntityId: number | null = null;
   private mode: "space" | "planet" = "space";
   // Coordinate spaces are distinct per mode; we map the active one into Position
@@ -937,98 +940,26 @@ export class GameSessionECS {
     type: PlanetSurface["resources"][number]["type"],
     amount: number,
   ): { item: Item; quantity: number } {
-    const id = `item_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    if (type === "energy") {
-      return {
-        item: {
-          id,
-          type: "xp_energy",
-          baseType: "consumable",
-          name: "Energy Shard",
-          description: "A shard of pure energy that grants experience on pickup.",
-          properties: {
-            weight: 0,
-            volume: 0,
-            stackable: true,
-            maxStackSize: 9999,
-            quality: "common",
-            rarity: "common",
-            tradeable: false,
-            dropOnDeath: false,
-          },
-          stats: { value: amount },
-          requirements: {},
-          effects: [],
-          metadata: {
-            discoveredAt: Date.now(),
-            icon: "items/xp_pack_small.svg",
-            category: "boosters",
-          },
-          implemented: false,
-        },
-        quantity: amount,
-      } as const;
+    let templateId: TemplateId;
+    let quantity: number;
+
+    switch (type) {
+      case "energy":
+        templateId = "xp_pack_small";
+        quantity = amount;
+        break;
+      case "organic":
+        templateId = "body_parts";
+        quantity = Math.max(1, Math.floor(amount / 10));
+        break;
+      default: // mineral
+        templateId = "rocket_fuel";
+        quantity = Math.max(1, Math.floor(amount / 8));
+        break;
     }
-    if (type === "organic") {
-      return {
-        item: {
-          id,
-          type: "organic_matter",
-          baseType: "material",
-          name: "Organic Matter",
-          description: "Organic material useful for crafting.",
-          properties: {
-            weight: 0.2,
-            volume: 0.3,
-            stackable: true,
-            maxStackSize: 50,
-            quality: "common",
-            rarity: "common",
-            tradeable: true,
-            dropOnDeath: false,
-          },
-          stats: { value: 2 },
-          requirements: {},
-          effects: [],
-          metadata: {
-            discoveredAt: Date.now(),
-            icon: "items/body_parts.svg",
-            category: "materials",
-          },
-          implemented: false,
-        },
-        quantity: Math.max(1, Math.floor(amount / 10)),
-      } as const;
-    }
-    return {
-      item: {
-        id,
-        type: "metal_ore",
-        baseType: "material",
-        name: "Metal Ore",
-        description: "Unrefined ore containing useful metals.",
-        properties: {
-          weight: 0.5,
-          volume: 0.4,
-          stackable: true,
-          maxStackSize: 50,
-          quality: "common",
-          rarity: "common",
-          tradeable: true,
-          dropOnDeath: false,
-        },
-        stats: { value: 4 },
-        requirements: {},
-        effects: [],
-        metadata: {
-          discoveredAt: Date.now(),
-          icon: "items/placeholder.svg",
-          category: "materials",
-        },
-        implemented: false,
-      },
-      quantity: Math.max(1, Math.floor(amount / 8)),
-    } as const;
+
+    const item = this.itemFactory.createItem(templateId);
+    return { item, quantity };
   }
 
   // Planet-mode ship state (for renderer/UI)

@@ -1,8 +1,9 @@
 import type { DamageType } from "../damage/DamageableEntity";
+import type { TemplateId } from "./ItemTemplates";
 
 export interface Item {
   readonly id: string;
-  readonly type: string;
+  readonly type: TemplateId;
   readonly baseType: BaseItemType;
   readonly name: string;
   readonly description: string;

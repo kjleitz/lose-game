@@ -1,4 +1,5 @@
 import type { Point2D } from "../../../shared/types/geometry";
+import type { TemplateId } from "../items/ItemTemplates";
 
 export interface DamageableEntity {
   readonly id: string;
@@ -70,7 +71,7 @@ export interface DropTable {
 }
 
 export interface DropEntry {
-  readonly itemType: string; // TODO: string literal union
+  readonly itemTemplateId: TemplateId;
   readonly minQuantity: number;
   readonly maxQuantity: number;
   readonly probability: number; // 0-1

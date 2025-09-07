@@ -166,7 +166,7 @@ export class WeaponSystem {
   private createBasicWeapon(): Item {
     return {
       id: "basic_blaster",
-      type: "plasma_pistol",
+      type: "gun_pistol",
       baseType: BaseItemType.WEAPON,
       name: "Basic Plasma Pistol",
       description: "A simple energy weapon for planetary exploration",

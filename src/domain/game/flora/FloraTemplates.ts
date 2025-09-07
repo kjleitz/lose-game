@@ -127,21 +127,21 @@ export class FloraTemplates {
       harvestable: {
         resources: [
           {
-            itemType: "wood",
+            itemTemplateId: "hempen_rope_50ft",
             baseQuantity: 5,
             probability: 1.0,
             qualityRange: [0.6, 1.0],
             condition: { growthStage: "mature" },
           },
           {
-            itemType: "acorns",
+            itemTemplateId: "body_parts",
             baseQuantity: 10,
             probability: 0.8,
             qualityRange: [0.4, 1.0],
             condition: { growthStage: "mature", season: "autumn" },
           },
           {
-            itemType: "oak_bark",
+            itemTemplateId: "body_parts",
             baseQuantity: 2,
             probability: 0.6,
             qualityRange: [0.5, 0.9],
@@ -270,20 +270,20 @@ export class FloraTemplates {
       harvestable: {
         resources: [
           {
-            itemType: "wild_berries",
+            itemTemplateId: "health_pack_small",
             baseQuantity: 8,
             probability: 1.0,
             qualityRange: [0.7, 1.0],
             condition: { growthStage: "fruiting", season: "summer" },
           },
           {
-            itemType: "berry_leaves",
+            itemTemplateId: "body_parts",
             baseQuantity: 3,
             probability: 0.7,
             qualityRange: [0.5, 0.8],
           },
           {
-            itemType: "berry_seeds",
+            itemTemplateId: "body_parts",
             baseQuantity: 2,
             probability: 0.4,
             qualityRange: [0.6, 0.9],
@@ -417,21 +417,21 @@ export class FloraTemplates {
       harvestable: {
         resources: [
           {
-            itemType: "healing_herbs",
+            itemTemplateId: "health_pack_small",
             baseQuantity: 3,
             probability: 1.0,
             qualityRange: [0.8, 1.0],
             condition: { growthStage: "mature" },
           },
           {
-            itemType: "herb_essence",
+            itemTemplateId: "health_pack_large",
             baseQuantity: 1,
             probability: 0.3,
             qualityRange: [0.9, 1.0],
             condition: { growthStage: "mature", tool: "essence_extractor" },
           },
           {
-            itemType: "herb_seeds",
+            itemTemplateId: "body_parts",
             baseQuantity: 5,
             probability: 0.8,
             qualityRange: [0.6, 0.9],
@@ -541,13 +541,13 @@ export class FloraTemplates {
       harvestable: {
         resources: [
           {
-            itemType: "plant_fiber",
+            itemTemplateId: "hempen_rope_50ft",
             baseQuantity: 2,
             probability: 1.0,
             qualityRange: [0.3, 0.7],
           },
           {
-            itemType: "grass_seeds",
+            itemTemplateId: "body_parts",
             baseQuantity: 4,
             probability: 0.6,
             qualityRange: [0.4, 0.8],

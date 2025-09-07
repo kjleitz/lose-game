@@ -34,9 +34,13 @@ describe("DamageSystem", () => {
     };
 
     const dropTable: DropTable = {
-      guaranteed: [{ itemType: "wood", minQuantity: 1, maxQuantity: 3, probability: 1.0 }],
-      possible: [{ itemType: "seeds", minQuantity: 1, maxQuantity: 2, probability: 0.5 }],
-      rare: [{ itemType: "rare_wood", minQuantity: 1, maxQuantity: 1, probability: 0.1 }],
+      guaranteed: [
+        { itemTemplateId: "body_parts", minQuantity: 1, maxQuantity: 3, probability: 1.0 },
+      ],
+      possible: [
+        { itemTemplateId: "alien_beer", minQuantity: 1, maxQuantity: 2, probability: 0.5 },
+      ],
+      rare: [{ itemTemplateId: "lightsaber", minQuantity: 1, maxQuantity: 1, probability: 0.1 }],
       modifiers: [],
     };
 
@@ -142,11 +146,11 @@ describe("DamageSystem", () => {
 
       const drops = dropService.calculateDrops(testEntity, killingBlow);
 
-      // Should always get wood (guaranteed drop)
-      const woodDrop = drops.find((drop) => drop.itemType === "wood");
-      expect(woodDrop).toBeDefined();
-      expect(woodDrop!.quantity).toBeGreaterThanOrEqual(1);
-      expect(woodDrop!.quantity).toBeLessThanOrEqual(3);
+      // Should always get body parts (guaranteed drop)
+      const bodyPartsDrop = drops.find((drop) => drop.itemTemplateId === "body_parts");
+      expect(bodyPartsDrop).toBeDefined();
+      expect(bodyPartsDrop!.quantity).toBeGreaterThanOrEqual(1);
+      expect(bodyPartsDrop!.quantity).toBeLessThanOrEqual(3);
     });
 
     it("should respect drop probabilities", () => {
@@ -171,7 +175,7 @@ describe("DamageSystem", () => {
           testEntity.dropTable,
         );
         const drops = dropService.calculateDrops(entity, killingBlow);
-        if (drops.some((drop) => drop.itemType === "seeds")) {
+        if (drops.some((drop) => drop.itemTemplateId === "alien_beer")) {
           seedDropCount++;
         }
       }
