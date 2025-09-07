@@ -63,7 +63,6 @@ export class ItemFactory {
       effects: template.effects || [],
       metadata: {
         discoveredAt: Date.now(),
-        icon: template.icon,
         category: template.category,
         autoUseOnPickup: template.autoUseOnPickup,
       },
@@ -310,7 +309,6 @@ export interface ItemTemplate {
   readonly stats: ItemStats;
   readonly requirements?: ItemRequirements;
   readonly effects?: ItemEffect[];
-  readonly icon?: string;
   readonly category?: string;
   readonly autoUseOnPickup?: boolean;
 }

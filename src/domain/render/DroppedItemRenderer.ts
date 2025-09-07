@@ -45,7 +45,7 @@ export class DroppedItemRenderer {
     ctx.fill();
 
     // Draw item icon/representation using sprite
-    drawDroppedItem(ctx, droppedItem.x, droppedItem.y + floatOffset, droppedItem.item.baseType, 18);
+    drawDroppedItem(ctx, droppedItem.x, droppedItem.y + floatOffset, droppedItem.item, 18);
 
     // Draw quantity indicator if more than 1
     if (droppedItem.quantity > 1) {

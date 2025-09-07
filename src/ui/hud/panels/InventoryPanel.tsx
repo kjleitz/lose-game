@@ -16,40 +16,13 @@ interface InventoryPanelProps {
 }
 
 function ItemIcon({ item }: { item: Item }): JSX.Element {
-  const icon = item.metadata.icon;
-  if (icon != null && icon !== "") {
-    return (
-      <img
-        src={icon}
-        alt={item.name}
-        className="w-8 h-8 rounded border-2 border-gray-400 object-contain bg-black/30"
-        title={`${item.name} - ${item.description}`}
-      />
-    );
-  }
-  // Fallback: colored initial
-  const getItemColor = (it: Item): string => {
-    switch (it.baseType) {
-      case "tool":
-        return "#4ECDC4";
-      case "consumable":
-        return "#FFD93D";
-      case "material":
-        return "#A8A8A8";
-      case "artifact":
-        return "#FFD700";
-      default:
-        return "#666";
-    }
-  };
   return (
-    <div
-      className="w-8 h-8 rounded border-2 border-gray-400 flex items-center justify-center text-xs font-bold"
-      style={{ backgroundColor: getItemColor(item) }}
+    <img
+      src={`items/${item.type}.svg`}
+      alt={item.name}
+      className="w-8 h-8 rounded border-2 border-gray-400 object-contain bg-black/30"
       title={`${item.name} - ${item.description}`}
-    >
-      {item.name.charAt(0).toUpperCase()}
-    </div>
+    />
   );
 }
 

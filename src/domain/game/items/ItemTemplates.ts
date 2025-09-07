@@ -225,7 +225,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 15 },
-      icon: "items/health_pack_small.svg",
       category: "medical",
     });
     add({
@@ -244,7 +243,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 40 },
-      icon: "items/health_pack_large.svg",
       category: "medical",
     });
     add({
@@ -263,7 +261,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 5 },
-      icon: "items/xp_pack_small.svg",
       category: "boosters",
       autoUseOnPickup: true,
     });
@@ -283,7 +280,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 15 },
-      icon: "items/xp_pack_large.svg",
       category: "boosters",
       autoUseOnPickup: true,
     });
@@ -305,7 +301,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 3 },
-      icon: "items/body_parts.svg",
       category: "materials",
     });
     add({
@@ -324,7 +319,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 30 },
-      icon: "items/rocket_fuel.svg",
       category: "materials",
     });
 
@@ -345,7 +339,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 120 },
-      icon: "items/shield_mk1.svg",
       category: "equipment",
     });
     add({
@@ -364,7 +357,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 220 },
-      icon: "items/shield_mk2.svg",
       category: "equipment",
     });
     add({
@@ -383,7 +375,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 260 },
-      icon: "items/armor_combat.svg",
       category: "equipment",
     });
     add({
@@ -402,7 +393,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 140 },
-      icon: "items/night_vision_goggles.svg",
       category: "equipment",
     });
     add({
@@ -421,7 +411,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 300 },
-      icon: "items/translator_device.svg",
       category: "equipment",
     });
     add({
@@ -440,7 +429,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 500 },
-      icon: "items/space_suit.svg",
       category: "equipment",
     });
     add({
@@ -459,7 +447,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 20 },
-      icon: "items/flashlight.svg",
       category: "utilities",
     });
     add({
@@ -478,7 +465,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 90 },
-      icon: "items/tent.svg",
       category: "utilities",
     });
     add({
@@ -497,7 +483,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 160 },
-      icon: "items/inflatable_raft.svg",
       category: "utilities",
     });
 
@@ -518,7 +503,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 180 },
-      icon: "items/gun_pistol.svg",
       category: "weapons",
     });
     add({
@@ -537,7 +521,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 320 },
-      icon: "items/gun_rifle.svg",
       category: "weapons",
     });
     add({
@@ -556,7 +539,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 40 },
-      icon: "items/melee_knife.svg",
       category: "weapons",
     });
     add({
@@ -575,7 +557,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 60 },
-      icon: "items/melee_baton.svg",
       category: "weapons",
     });
 
@@ -596,7 +577,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 120 },
-      icon: "items/landmine.svg",
       category: "explosives",
     });
     add({
@@ -615,7 +595,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 180 },
-      icon: "items/remote_bomb.svg",
       category: "explosives",
     });
     add({
@@ -634,7 +613,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 50 },
-      icon: "items/decoy.svg",
       category: "utilities",
     });
     add({
@@ -653,7 +631,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 45 },
-      icon: "items/smokescreen.svg",
       category: "utilities",
     });
 
@@ -674,7 +651,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 70 },
-      icon: "items/animal_trap.svg",
       category: "traps",
     });
 
@@ -695,7 +671,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 25 },
-      icon: "items/alien_beer.svg",
       category: "consumables",
     });
 
@@ -716,7 +691,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 35 },
-      icon: "items/ten_foot_pole.svg",
       category: "utilities",
     });
     add({
@@ -735,7 +709,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 10 },
-      icon: "items/towel.svg",
       category: "utilities",
     });
 
@@ -756,7 +729,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 500 },
-      icon: "items/sonic_screwdriver.svg",
       category: "tools",
     });
     add({
@@ -775,7 +747,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 2000 },
-      icon: "items/lightsaber.svg",
       category: "weapons",
     });
     add({
@@ -794,7 +765,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 600 },
-      icon: "items/tricorder.svg",
       category: "tools",
     });
     add({
@@ -813,7 +783,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 15 },
-      icon: "items/lose_the_game_book.svg",
       category: "artifacts",
     });
     add({
@@ -832,7 +801,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 42 },
-      icon: "items/hitchhikers_guide.svg",
       category: "artifacts",
     });
     add({
@@ -851,7 +819,6 @@ export class ItemTemplates {
         dropOnDeath: false,
       },
       stats: { value: 999 },
-      icon: "items/babel_fish.svg",
       category: "artifacts",
     });
     add({
@@ -870,7 +837,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 120 },
-      icon: "items/starfleet_badge.svg",
       category: "artifacts",
     });
     add({
@@ -889,7 +855,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 25 },
-      icon: "items/hempen_rope_50ft.svg",
       category: "utilities",
     });
     add({
@@ -908,7 +873,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 75 },
-      icon: "items/treasure_map_1.svg",
       category: "artifacts",
     });
     add({
@@ -927,7 +891,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 100 },
-      icon: "items/treasure_map_2.svg",
       category: "artifacts",
     });
     add({
@@ -946,7 +909,6 @@ export class ItemTemplates {
         dropOnDeath: true,
       },
       stats: { value: 150 },
-      icon: "items/treasure_map_3.svg",
       category: "artifacts",
     });
   }

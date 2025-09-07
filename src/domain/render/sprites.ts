@@ -1,3 +1,5 @@
+import type { TemplateId } from "../game/items/ItemTemplates";
+
 // Generic sprite cache with themeable variants
 interface CachedSprite {
   img: HTMLImageElement;
@@ -591,15 +593,25 @@ export type DroppedItemSpriteType =
   | "blueprint"
   | "artifact";
 
+// Cache for individual item icons
+const itemIconCache: Map<string, HTMLImageElement> = new Map();
+
 export function drawDroppedItem(
   ctx: DrawCtx,
   x: number,
   y: number,
-  baseType: DroppedItemSpriteType,
+  item: { type: TemplateId; baseType: DroppedItemSpriteType },
   size = 16,
 ): void {
-  const key = `item-${baseType}`;
-  const { img } = getSpriteByKey(key);
+  const iconPath = `items/${item.type}.svg`;
+  let img = itemIconCache.get(iconPath);
+
+  if (!img) {
+    img = new Image();
+    img.src = `/lose-game/${iconPath}`;
+    itemIconCache.set(iconPath, img);
+  }
+
   ctx.save();
   ctx.translate(x, y);
   ctx.drawImage(img, -size / 2, -size / 2, size, size);

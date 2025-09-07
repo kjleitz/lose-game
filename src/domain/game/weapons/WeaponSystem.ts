@@ -197,7 +197,7 @@ export class WeaponSystem {
       },
       requirements: {},
       effects: [],
-      metadata: { discoveredAt: Date.now(), icon: "items/gun_pistol.svg", category: "weapons" },
+      metadata: { discoveredAt: Date.now(), category: "weapons" },
       implemented: false,
     };
   }

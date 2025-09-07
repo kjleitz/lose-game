@@ -16,7 +16,7 @@ describe("ItemFactory (new catalog)", () => {
     expect(pistol.baseType).toBe(BaseItemType.WEAPON);
     expect(pistol.name).toBe("Pistol");
     expect(pistol.implemented).toBe(false);
-    expect(pistol.metadata.icon).toBeDefined();
+    // Icon is now derived from type: items/${pistol.type}.svg
   });
 
   it("applies quality modifiers to value and name", () => {
