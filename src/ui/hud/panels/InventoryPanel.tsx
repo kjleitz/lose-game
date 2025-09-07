@@ -17,7 +17,7 @@ interface InventoryPanelProps {
 
 function ItemIcon({ item }: { item: Item }): JSX.Element {
   const icon = item.metadata.icon;
-  if (icon) {
+  if (icon != null && icon !== "") {
     return (
       <img
         src={icon}

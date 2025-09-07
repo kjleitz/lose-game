@@ -107,10 +107,14 @@ export class GameApp {
       // Seed a simple starting inventory if none saved
       try {
         hudInventory.addItem(factory.createItem("ten_foot_pole"), 1);
-      } catch {}
+      } catch (error) {
+        console.warn("Failed to add ten_foot_pole to starting inventory:", error);
+      }
       try {
         hudInventory.addItem(factory.createItem("towel"), 1);
-      } catch {}
+      } catch (error) {
+        console.warn("Failed to add towel to starting inventory:", error);
+      }
     }
 
     // Attach DOM listeners

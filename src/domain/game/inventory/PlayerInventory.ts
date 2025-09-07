@@ -445,11 +445,29 @@ export class PlayerInventoryManager implements PlayerInventory {
     return indexA - indexB;
   }
 
+  private isValidInventoryCategory(category: string): category is InventoryCategory {
+    const validCategories = new Set([
+      "medical",
+      "boosters",
+      "explosives",
+      "weapons",
+      "tools",
+      "equipment",
+      "utilities",
+      "traps",
+      "materials",
+      "consumables",
+      "artifacts",
+      "misc",
+    ]);
+    return validCategories.has(category);
+  }
+
   private getItemCategory(item: Item): InventoryCategory {
     // Honor explicit category hint when provided
-    const c = item.metadata.category;
-    if (typeof c === "string" && (this.categories as ReadonlyArray<string>).includes(c)) {
-      return c as InventoryCategory;
+    const category = item.metadata.category;
+    if (typeof category === "string" && this.isValidInventoryCategory(category)) {
+      return category;
     }
     switch (item.baseType) {
       case "tool":

@@ -111,7 +111,8 @@ These are the guiding principles for development in this repo. Keep them short, 
 
 ### Nullish Checks
 
-- Use `x == null` and `x != null` exclusively for nullish checks so both `null` and `undefined` are handled. Use `===`/`!==` everywhere else. ESLint is configured (`eqeqeq` with `{ null: "ignore" }`) to enforce this.
+- Use `x == null` and `x != null` exclusively for nullish checks so both `null` and `undefined` are handled. Use `===`/`!==` everywhere else. ESLint is configured (`eqeqeq` with `{ null: "ignore" }`) to enforce this. Do not use `=== undefined` or `=== null` or `!== undefined` or `!== null`. If you must compare directly against a nullish value to exclude the other one, you're probably doing something wrong.
+- Don't do `if (typeof someNullableString === 'string')`, do `if (someNullableString != null)`. You're masking other type issues when you use the former style.
 
 > Core mantra: “Fix your types first.” If types are too complicated, simplify the code.
 
