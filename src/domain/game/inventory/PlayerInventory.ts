@@ -143,7 +143,7 @@ export class PlayerInventoryManager implements PlayerInventory {
 
     // 2. Try to stack with existing items
     const stackableSlot = this.findStackableSlot(item);
-    if (stackableSlot && this.canAddToStack(stackableSlot, quantity)) {
+    if (stackableSlot && this.canAddToStack(stackableSlot)) {
       return this.addToStack(stackableSlot, quantity);
     }
 
@@ -330,9 +330,9 @@ export class PlayerInventoryManager implements PlayerInventory {
     return true; // No durability requirements
   }
 
-  private canAddToStack(slot: InventorySlot, quantity: number): boolean {
+  private canAddToStack(slot: InventorySlot): boolean {
     if (!slot.item) return false;
-    return slot.quantity + quantity <= slot.item.properties.maxStackSize;
+    return true; // All stackable items can stack infinitely
   }
 
   private addToStack(slot: InventorySlot, quantity: number): AddItemResult {
@@ -370,7 +370,7 @@ export class PlayerInventoryManager implements PlayerInventory {
     target: InventorySlot,
     quantity: number,
   ): MoveItemResult {
-    if (!target.item || !this.canAddToStack(target, quantity)) {
+    if (!target.item || !this.canAddToStack(target)) {
       return { success: false, reason: "Cannot stack items" };
     }
 

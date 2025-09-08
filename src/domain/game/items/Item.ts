@@ -34,7 +34,6 @@ export interface ItemProperties {
   readonly weight: number;
   readonly volume: number; // for container capacity calculations
   readonly stackable: boolean;
-  readonly maxStackSize: number;
   readonly durability?: DurabilityProperties;
   readonly perishable?: PerishableProperties;
   readonly quality: ItemQuality;

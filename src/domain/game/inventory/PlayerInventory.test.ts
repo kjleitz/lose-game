@@ -90,19 +90,18 @@ describe("PlayerInventory", () => {
       expect(axeSlots).toHaveLength(2);
     });
 
-    it("should respect max stack size", () => {
-      const wood = itemFactory.createItem("body_parts"); // max stack 50
+    it("should stack items infinitely", () => {
+      const wood = itemFactory.createItem("body_parts");
 
       inventory.addItem(wood, 50);
       const result = inventory.addItem(wood, 1);
 
       expect(result.success).toBe(true);
 
-      // Should create new stack
+      // Should stack into single slot
       const woodSlots = inventory.findItems((item) => item.type === "body_parts");
-      expect(woodSlots).toHaveLength(2);
-      expect(woodSlots[0].quantity).toBe(50);
-      expect(woodSlots[1].quantity).toBe(1);
+      expect(woodSlots).toHaveLength(1);
+      expect(woodSlots[0].quantity).toBe(51);
     });
   });
 

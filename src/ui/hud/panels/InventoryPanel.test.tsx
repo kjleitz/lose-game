@@ -18,7 +18,6 @@ describe("InventoryPanel", (): void => {
         weight: 0.5,
         volume: 1,
         stackable: false,
-        maxStackSize: 1,
         durability: {
           maxDurability: 100,
           currentDurability: 80,
@@ -54,7 +53,6 @@ describe("InventoryPanel", (): void => {
         weight: 0.1,
         volume: 0.5,
         stackable: true,
-        maxStackSize: 10,
         quality: ItemQuality.COMMON,
         rarity: ItemRarity.COMMON,
         tradeable: true,

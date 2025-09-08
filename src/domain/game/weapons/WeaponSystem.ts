@@ -174,7 +174,6 @@ export class WeaponSystem {
         weight: 1.5,
         volume: 2,
         stackable: false,
-        maxStackSize: 1,
         durability: {
           maxDurability: 100,
           currentDurability: 100,
