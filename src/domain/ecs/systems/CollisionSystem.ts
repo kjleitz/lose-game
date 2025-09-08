@@ -70,13 +70,17 @@ export function createCollisionSystem(world: World): System {
       if (distance < combinedRadius) {
         // Hit!
         targetHealth.current -= projDamage.amount;
-        // Hit flash on target
-        const flashDur = 0.12;
-        world.addComponentToEntity(
-          target.entity,
-          HitFlash,
-          HitFlash.create({ remaining: flashDur, duration: flashDur }),
-        );
+
+        // Only add hit flash if target still exists (could be destroyed by previous projectile)
+        if (world.hasEntity(target.entity)) {
+          const flashDur = 0.12;
+          world.addComponentToEntity(
+            target.entity,
+            HitFlash,
+            HitFlash.create({ remaining: flashDur, duration: flashDur }),
+          );
+        }
+
         // Emit an impact event entity for SFX systems
         // Tag as a player-hit when the target is the player, so audio can be unique
         const targetIsPlayer = world.hasComponent(target.entity, Player);
@@ -85,7 +89,7 @@ export function createCollisionSystem(world: World): System {
           .addComponent(Position, { x: targetPos.x, y: targetPos.y })
           .addComponent(ImpactEvent, { kind: targetIsPlayer ? "player" : "generic" });
 
-        if (targetHealth.current <= 0) {
+        if (targetHealth.current <= 0 && world.hasEntity(target.entity)) {
           // Spawn drops if entity has a drop table
           if (world.hasComponent(target.entity, LootDropTable)) {
             const ent = new ECSEntity(target.entity, world);
