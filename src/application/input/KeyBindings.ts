@@ -16,6 +16,7 @@ const DEFAULT_KEY_TO_ACTION: Record<string, Action | undefined> = {
   KeyL: "land",
   KeyT: "takeoff",
   KeyI: "inventory",
+  KeyB: "board",
   // Optional speed controls
   ShiftLeft: "boost",
   ShiftRight: "boost",
@@ -64,6 +65,7 @@ const ACTIONS = {
   land: true,
   takeoff: true,
   inventory: true,
+  board: true,
 } as const;
 
 function isAction(x: string): x is Action {

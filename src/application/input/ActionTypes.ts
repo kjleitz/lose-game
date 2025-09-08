@@ -10,7 +10,8 @@ export type Action =
   | "speedDown"
   | "land"
   | "takeoff"
-  | "inventory";
+  | "inventory"
+  | "board";
 
 export type ActionState = Set<Action>;
 

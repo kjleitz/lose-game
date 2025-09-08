@@ -40,6 +40,7 @@ const ACTION_LABELS: Record<Action, string> = {
   land: "Land on Planet",
   takeoff: "Take Off",
   inventory: "Toggle Inventory",
+  board: "Board Ship",
 };
 
 const ACTION_LIST: Action[] = [

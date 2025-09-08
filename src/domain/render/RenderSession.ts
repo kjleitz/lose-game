@@ -1,6 +1,7 @@
 import type { Circle2D } from "../../shared/types/geometry";
 import type { DroppedItem } from "../game/items/DroppedItemSystem";
 import type { PlanetSurface } from "../game/planet-surface/types";
+import type { ShipInterior } from "../game/ship-interior/types";
 import type { EnemyView as Enemy, PlayerView } from "../game/views";
 import type { StarView } from "./StarRenderer";
 
@@ -8,7 +9,7 @@ import type { StarView } from "./StarRenderer";
 // different render paths only use a subset, and tests provide lightweight mocks.
 export interface RenderSession {
   // Mode/state
-  getCurrentModeType: () => "space" | "planet";
+  getCurrentModeType: () => "space" | "planet" | "ship";
 
   // World queries used by renderers
   getPlayer: () => PlayerView | null;
@@ -16,6 +17,7 @@ export interface RenderSession {
   getProjectiles: () => Array<Circle2D>;
   getDroppedItems?: () => DroppedItem[];
   getPlanetSurface?: () => PlanetSurface | undefined;
+  getShipInterior?: () => ShipInterior | undefined;
 
   // Space rendering extras
   // Stars are required for consistent space rendering and overlays

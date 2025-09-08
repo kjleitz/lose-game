@@ -19,7 +19,7 @@ export interface InventoryEntry {
 
 export interface SessionState {
   player: { x: number; y: number };
-  mode: "space" | "planet";
+  mode: "space" | "planet" | "ship";
   planetId?: string;
   inventory?: InventoryEntry[];
   perkPoints?: number;
@@ -38,7 +38,8 @@ const sessionCodec = createJsonCodec<SessionState>((raw) => {
   const y = player["y"];
   if (typeof x !== "number" || typeof y !== "number") throw new Error("Invalid player coords");
   const modeVal = record["mode"];
-  if (modeVal !== "space" && modeVal !== "planet") throw new Error("Invalid mode");
+  if (modeVal !== "space" && modeVal !== "planet" && modeVal !== "ship")
+    throw new Error("Invalid mode");
   const planetId = record["planetId"];
   const inv = record["inventory"];
   const savedPerkPoints = record["perkPoints"];

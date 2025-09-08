@@ -13,7 +13,7 @@ import { Radar } from "./widgets/Radar";
 import type { AmmoType } from "../../shared/types/combat";
 
 interface HudProps {
-  mode?: "space" | "planet";
+  mode?: "space" | "planet" | "ship";
   planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
   player: Point2D;
   playerAngle?: number;

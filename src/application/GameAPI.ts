@@ -20,10 +20,13 @@ export interface GameOptions {
 }
 
 export interface GameSnapshot {
-  mode: "space" | "planet";
+  mode: "space" | "planet" | "ship";
   planet?: {
     inShip: boolean;
     ship: { x: number; y: number; angle: number } | null;
+  };
+  ship?: {
+    room: string;
   };
   player: Kinematics2D & {
     health: number;
@@ -52,7 +55,7 @@ export type GameEvent =
   | { type: "toast"; message: string }
   | { type: "inputChanged"; actions: Action[] }
   | { type: "speedChanged"; value: number }
-  | { type: "modeChange"; mode: "space" | "planet" }
+  | { type: "modeChange"; mode: "space" | "planet" | "ship" }
   | { type: "death" }
   | { type: "healthChanged"; value: number }
   | { type: "xpChanged"; value: number }

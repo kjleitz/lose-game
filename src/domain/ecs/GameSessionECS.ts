@@ -7,6 +7,8 @@ import { ItemFactory } from "../game/items/ItemFactory";
 import type { TemplateId } from "../game/items/ItemTemplates";
 import { generatePlanetSurfaceFor } from "../game/planet-surface/generate";
 import type { PlanetSurface } from "../game/planet-surface/types";
+import { generateCorvetteInterior } from "../game/ship-interior/generate";
+import type { ShipInterior, Door, InteractiveStation } from "../game/ship-interior/types";
 import type { Planet } from "../game/planets";
 import type { Player } from "../game/player";
 import type { EnemyView as Enemy, EntityCounts, PlayerView } from "../game/views";
@@ -33,6 +35,8 @@ import { createPerkEffectsSystem } from "./systems/PerkEffectsSystem";
 import { createPerkUnlockSystem, type PerkUnlockRequest } from "./systems/PerkUnlockSystem";
 import { createPerkSellSystem, type PerkSellRequest } from "./systems/PerkSellSystem";
 import { createPlanetTerrainCollisionSystem } from "./systems/PlanetTerrainCollisionSystem";
+import { createShipInteriorCollisionSystem } from "./systems/ShipInteriorCollisionSystem";
+import { createShipInteriorInteractionSystem } from "./systems/ShipInteriorInteractionSystem";
 import { createPlayerControlSystem } from "./systems/PlayerControlSystem";
 import { createProjectileSystem } from "./systems/ProjectileSystem";
 import { createSfxEventCollectorSystem, type SfxEvent } from "./systems/SfxEventCollectorSystem";
@@ -44,10 +48,11 @@ export class GameSessionECS {
   private world = new World();
   private itemFactory = new ItemFactory();
   private playerEntityId: number | null = null;
-  private mode: "space" | "planet" = "space";
+  private mode: "space" | "planet" | "ship" = "space";
   // Coordinate spaces are distinct per mode; we map the active one into Position
   private landedPlanetId: string | null = null;
   private planetSurface: PlanetSurface | undefined;
+  private shipInterior: ShipInterior | undefined;
   // When on a planet, allow entering the ship and flying above terrain
   private inPlanetShip: boolean = false;
   private starHeat: { angle: number; intensity: number } | null = null;
@@ -206,12 +211,21 @@ export class GameSessionECS {
   private handleModeTransitions(actions: Set<Action>): void {
     if (this.mode === "space") {
       this.handleSpaceModeTransitions(actions);
-    } else {
+    } else if (this.mode === "planet") {
       this.handlePlanetModeTransitions(actions);
+    } else if (this.mode === "ship") {
+      this.handleShipModeTransitions(actions);
     }
   }
 
   private handleSpaceModeTransitions(actions: Set<Action>): void {
+    // Check for ship boarding first
+    if (actions.has("board") && this.interactCooldown <= 0) {
+      this.enterShipInterior();
+      this.interactCooldown = 0.25;
+      return;
+    }
+
     const nearbyPlanetId = this.findNearbyPlanetId();
     if (!(nearbyPlanetId != null && actions.has("land"))) return;
 
@@ -248,6 +262,26 @@ export class GameSessionECS {
   }
 
   private handlePlanetModeTransitions(actions: Set<Action>): void {
+    // Check for ship interior boarding (when on foot and near ship)
+    if (actions.has("board") && !this.inPlanetShip && this.interactCooldown <= 0) {
+      const surface = this.planetSurface;
+      const players = this.world.query({
+        position: Components.Position,
+        player: Components.Player,
+      });
+      if (surface && players.length > 0) {
+        const { x, y } = players[0].components.position;
+        const dx = x - surface.landingSite.x;
+        const dy = y - surface.landingSite.y;
+        const nearLanding = Math.hypot(dx, dy) <= 64;
+        if (nearLanding) {
+          this.enterShipInterior();
+          this.interactCooldown = 0.25;
+          return;
+        }
+      }
+    }
+
     // Enter/exit ship with C: exit anywhere; enter only near the grounded ship
     if (actions.has("interact") && this.interactCooldown <= 0) {
       const surface = this.planetSurface;
@@ -326,11 +360,164 @@ export class GameSessionECS {
     this.starHeat = null;
   }
 
+  private handleShipModeTransitions(actions: Set<Action>): void {
+    // Exit ship interior back to space or planet
+    if (actions.has("board") && this.interactCooldown <= 0) {
+      this.exitShipInterior();
+      this.interactCooldown = 0.25;
+    }
+  }
+
+  private enterShipInterior(): void {
+    // Generate ship interior layout
+    this.shipInterior = generateCorvetteInterior();
+
+    // Move to ship mode
+    this.mode = "ship";
+
+    // Place player at ship interior spawn point
+    const players = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      rotation: Components.Rotation,
+      player: Components.Player,
+    });
+    if (players.length > 0 && this.shipInterior != null) {
+      const { position, velocity, rotation } = players[0].components;
+      position.x = this.shipInterior.playerSpawnPoint.x;
+      position.y = this.shipInterior.playerSpawnPoint.y;
+      velocity.dx = 0;
+      velocity.dy = 0;
+      rotation.angle = 0; // Face right in ship interior
+
+      // Set camera position and zoom for ship interior
+      this.camera.x = position.x;
+      this.camera.y = position.y;
+      this.camera.zoom = 2.5; // Zoom in for ship interior
+      this.cameraVx = 0;
+      this.cameraVy = 0;
+      this.lookaheadX = 0;
+      this.lookaheadY = 0;
+    }
+  }
+
+  private exitShipInterior(): void {
+    if (this.landedPlanetId != null) {
+      // Return to planet surface (on foot near ship)
+      this.mode = "planet";
+      const surface = this.planetSurface;
+      const players = this.world.query({
+        position: Components.Position,
+        velocity: Components.Velocity,
+        rotation: Components.Rotation,
+        player: Components.Player,
+      });
+      if (surface && players.length > 0) {
+        const { position, velocity, rotation } = players[0].components;
+        // Place player near the landed ship
+        position.x = surface.landingSite.x + 30; // Slight offset from ship
+        position.y = surface.landingSite.y;
+        velocity.dx = 0;
+        velocity.dy = 0;
+        rotation.angle = surface.shipAngle ?? 0;
+
+        // Restore planet mode camera zoom
+        this.camera.x = position.x;
+        this.camera.y = position.y;
+        this.camera.zoom = 1.5; // Planet zoom level
+        this.cameraVx = 0;
+        this.cameraVy = 0;
+        this.lookaheadX = 0;
+        this.lookaheadY = 0;
+      }
+      this.inPlanetShip = false;
+    } else {
+      // Return to space mode
+      this.mode = "space";
+      const players = this.world.query({
+        position: Components.Position,
+        velocity: Components.Velocity,
+        rotation: Components.Rotation,
+        player: Components.Player,
+      });
+      if (players.length > 0) {
+        const { position, velocity } = players[0].components;
+        // Place player back in ship in space - use camera position as reference
+        position.x = this.camera.x;
+        position.y = this.camera.y;
+        velocity.dx = 0;
+        velocity.dy = 0;
+        // Keep current rotation
+
+        // Restore space mode camera zoom
+        this.camera.zoom = 1.0; // Space zoom level
+        this.cameraVx = 0;
+        this.cameraVy = 0;
+        this.lookaheadX = 0;
+        this.lookaheadY = 0;
+      }
+    }
+
+    // Clear ship interior
+    this.shipInterior = undefined;
+  }
+
+  private handleShipInteraction(type: "door" | "station", target: Door | InteractiveStation): void {
+    this.interactCooldown = 0.25; // Set cooldown to prevent rapid interactions
+
+    if (type === "door" && "isOpen" in target) {
+      this.handleDoorInteraction(target);
+    } else if (type === "station" && "functionality" in target) {
+      this.handleStationInteraction(target);
+    }
+  }
+
+  private handleDoorInteraction(door: Door): void {
+    // Toggle door open/closed state
+    if (this.shipInterior) {
+      const shipDoor = this.shipInterior.doors.find((existingDoor) => existingDoor.id === door.id);
+      if (shipDoor) {
+        shipDoor.isOpen = !shipDoor.isOpen;
+        this.toastEvents.push(`Door ${shipDoor.isOpen ? "opened" : "closed"}`);
+      }
+    }
+  }
+
+  private handleStationInteraction(station: InteractiveStation): void {
+    // Handle different station types
+    switch (station.type) {
+      case "pilot_console":
+        // Could teleport back to cockpit/space mode
+        this.toastEvents.push("Accessing pilot console...");
+        this.exitShipInterior();
+        break;
+      case "navigation":
+        this.toastEvents.push("Navigation systems online");
+        break;
+      case "cargo_terminal":
+        this.toastEvents.push("Cargo bay access");
+        break;
+      case "engine_controls":
+        this.toastEvents.push("Engine systems nominal");
+        break;
+      case "life_support":
+        this.toastEvents.push("Life support operational");
+        break;
+      default:
+        this.toastEvents.push(`Interacted with ${station.name}`);
+    }
+  }
+
   private runEcsSystems(actions: Set<Action>, dt: number): void {
     const perkEffectsSystem = createPerkEffectsSystem(this.world);
     // In planet mode, use ship-style controls if the player is flying the ship
+    // In ship interior mode, use planet-style walking controls
     const controlMode: "space" | "planet" =
-      this.mode === "planet" && this.inPlanetShip ? "space" : this.mode;
+      this.mode === "planet" && this.inPlanetShip
+        ? "space"
+        : this.mode === "ship"
+          ? "planet"
+          : this.mode;
     const controlTuning =
       this.mode === "planet" && this.inPlanetShip
         ? { spaceAccelMult: 2.5, spaceMaxSpeedMult: 3.0, spaceTurnMult: 1.5 }
@@ -425,6 +612,22 @@ export class GameSessionECS {
       const blocker = createPlanetTerrainCollisionSystem(this.world, () => this.planetSurface);
       blocker.run();
     }
+    if (this.mode === "ship") {
+      const shipCollisionSystem = createShipInteriorCollisionSystem(
+        this.world,
+        () => this.shipInterior,
+      );
+      shipCollisionSystem.run();
+
+      const shipInteractionSystem = createShipInteriorInteractionSystem(
+        this.world,
+        () => this.shipInterior,
+        actions,
+        this.interactCooldown,
+        (type, target) => this.handleShipInteraction(type, target),
+      );
+      shipInteractionSystem.run();
+    }
     projectileSystem.run();
     hitFlashSystem.run();
     meleeAnimSystem.run();
@@ -464,6 +667,7 @@ export class GameSessionECS {
     this.mode = "space";
     this.landedPlanetId = null;
     this.planetSurface = undefined;
+    this.shipInterior = undefined;
     this.inPlanetShip = false;
     this.interactCooldown = 0;
     this.inPlanetShipAnim = 0;
@@ -884,7 +1088,7 @@ export class GameSessionECS {
   }
 
   // Mode management (simplified for now)
-  getCurrentModeType(): "space" | "planet" {
+  getCurrentModeType(): "space" | "planet" | "ship" {
     return this.mode;
   }
 
@@ -1017,9 +1221,16 @@ export class GameSessionECS {
         hints.push("Press T to takeoff");
       } else if (nearLanding) {
         hints.push("Press C to enter ship");
+        hints.push("Press B to board ship interior");
       }
       this.notification =
         `Exploring ${this.landedPlanetId}` + (hints.length ? ` - ${hints.join(" | ")}` : "");
+      return;
+    }
+    // Ship interior mode
+    if (this.mode === "ship") {
+      this.notification =
+        "Inside Corvette - Press B to exit | Press C to interact with doors/stations";
       return;
     }
     // Space mode proximity hint to land
@@ -1029,7 +1240,11 @@ export class GameSessionECS {
       return;
     }
     const nearbyPlanetId = this.findNearbyPlanetId();
-    this.notification = nearbyPlanetId != null ? `Press L to land on ${nearbyPlanetId}` : null;
+    if (nearbyPlanetId != null) {
+      this.notification = `Press L to land on ${nearbyPlanetId} | Press B to board ship`;
+    } else {
+      this.notification = "Press B to board ship";
+    }
   }
 
   private createSolarNeighborhood(): void {
@@ -1354,6 +1569,11 @@ export class GameSessionECS {
     return this.planetSurface;
   }
 
+  // Expose ship interior for renderer (ECS path)
+  getShipInterior(): ShipInterior | undefined {
+    return this.shipInterior;
+  }
+
   // Legacy resource collection removed: resources are promoted to items and handled by pickup system
 
   // Allow application layer to set player position on load/restore
@@ -1372,13 +1592,23 @@ export class GameSessionECS {
     this.lookaheadY = 0;
   }
 
-  getModeSnapshot(): { mode: "space" | "planet"; planetId?: string } {
+  getModeSnapshot(): { mode: "space" | "planet" | "ship"; planetId?: string } {
     return { mode: this.mode, planetId: this.landedPlanetId ?? undefined };
   }
 
-  restoreMode(data: { mode: "space" | "planet"; planetId?: string }): void {
+  restoreMode(data: { mode: "space" | "planet" | "ship"; planetId?: string }): void {
     if (data.mode === "planet") {
       this.mode = "planet";
+      this.landedPlanetId = data.planetId ?? null;
+      if (this.landedPlanetId != null) {
+        const planet = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
+        if (planet != null)
+          this.planetSurface = generatePlanetSurfaceFor({ id: planet.id, radius: planet.radius });
+      }
+    } else if (data.mode === "ship") {
+      this.mode = "ship";
+      this.shipInterior = generateCorvetteInterior();
+      // Keep planet info if we were landed
       this.landedPlanetId = data.planetId ?? null;
       if (this.landedPlanetId != null) {
         const planet = this.getPlanets().find((pl) => pl.id === this.landedPlanetId);
@@ -1389,6 +1619,7 @@ export class GameSessionECS {
       this.mode = "space";
       this.landedPlanetId = null;
       this.planetSurface = undefined;
+      this.shipInterior = undefined;
     }
     this.updateNotifications();
   }

@@ -5,6 +5,7 @@ import type { EnemyView as Enemy } from "../game/views";
 import type { Camera } from "./camera";
 import { SpaceModeRenderer } from "./SpaceModeRenderer";
 import { PlanetModeRenderer } from "./PlanetModeRenderer";
+import { ShipModeRenderer } from "./ShipModeRenderer";
 import type { RenderSession } from "./RenderSession";
 
 type MinimalGameSession = RenderSession;
@@ -12,6 +13,7 @@ type MinimalGameSession = RenderSession;
 export class GameRenderer {
   private readonly space = new SpaceModeRenderer();
   private readonly planet = new PlanetModeRenderer();
+  private readonly ship = new ShipModeRenderer();
 
   render(
     ctx: CanvasRenderingContext2D,
@@ -25,7 +27,7 @@ export class GameRenderer {
     dpr: number,
     gameSession: MinimalGameSession,
   ): void {
-    const currentMode: "space" | "planet" = gameSession.getCurrentModeType();
+    const currentMode = gameSession.getCurrentModeType();
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -46,6 +48,14 @@ export class GameRenderer {
       return;
     }
 
-    this.planet.render(ctx, player, camera, actions, size, dpr, gameSession);
+    if (currentMode === "planet") {
+      this.planet.render(ctx, player, camera, actions, size, dpr, gameSession);
+      return;
+    }
+
+    if (currentMode === "ship") {
+      this.ship.render(ctx, player, camera, actions, size, dpr, gameSession);
+      return;
+    }
   }
 }

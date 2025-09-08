@@ -12,7 +12,7 @@ interface RadarEnemy {
 }
 
 interface RadarProps {
-  mode?: "space" | "planet";
+  mode?: "space" | "planet" | "ship";
   planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
   player: Point2D;
   playerAngle?: number;

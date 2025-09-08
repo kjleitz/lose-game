@@ -44,7 +44,7 @@ export function CanvasRoot(): JSX.Element {
   const uiPaused = paused || settingsOpen || perksOpen;
   const lastAppliedPause = useRef<boolean>(false);
   const [hudState, setHudState] = useState<{
-    mode: "space" | "planet";
+    mode: "space" | "planet" | "ship";
     planet?: { inShip: boolean; ship: { x: number; y: number; angle: number } | null };
     player: Point2D;
     experience: number;
