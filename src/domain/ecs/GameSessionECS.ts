@@ -53,6 +53,7 @@ export class GameSessionECS {
   private landedPlanetId: string | null = null;
   private planetSurface: PlanetSurface | undefined;
   private shipInterior: ShipInterior | undefined;
+  private spaceShipPosition: { x: number; y: number } | null = null;
   // When on a planet, allow entering the ship and flying above terrain
   private inPlanetShip: boolean = false;
   private starHeat: { angle: number; intensity: number } | null = null;
@@ -369,6 +370,18 @@ export class GameSessionECS {
   }
 
   private enterShipInterior(): void {
+    // Store current ship position in space coordinates before entering interior
+    const players = this.world.query({
+      position: Components.Position,
+      velocity: Components.Velocity,
+      rotation: Components.Rotation,
+      player: Components.Player,
+    });
+    if (players.length > 0) {
+      const { position } = players[0].components;
+      this.spaceShipPosition = { x: position.x, y: position.y };
+    }
+
     // Generate ship interior layout
     this.shipInterior = generateCorvetteInterior();
 
@@ -376,12 +389,6 @@ export class GameSessionECS {
     this.mode = "ship";
 
     // Place player at ship interior spawn point
-    const players = this.world.query({
-      position: Components.Position,
-      velocity: Components.Velocity,
-      rotation: Components.Rotation,
-      player: Components.Player,
-    });
     if (players.length > 0 && this.shipInterior != null) {
       const { position, velocity, rotation } = players[0].components;
       position.x = this.shipInterior.playerSpawnPoint.x;
@@ -440,16 +447,18 @@ export class GameSessionECS {
         rotation: Components.Rotation,
         player: Components.Player,
       });
-      if (players.length > 0) {
+      if (players.length > 0 && this.spaceShipPosition) {
         const { position, velocity } = players[0].components;
-        // Place player back in ship in space - use camera position as reference
-        position.x = this.camera.x;
-        position.y = this.camera.y;
+        // Place player back in ship at the stored space position
+        position.x = this.spaceShipPosition.x;
+        position.y = this.spaceShipPosition.y;
         velocity.dx = 0;
         velocity.dy = 0;
         // Keep current rotation
 
-        // Restore space mode camera zoom
+        // Restore space mode camera zoom and center on player
+        this.camera.x = position.x;
+        this.camera.y = position.y;
         this.camera.zoom = 1.0; // Space zoom level
         this.cameraVx = 0;
         this.cameraVy = 0;
@@ -458,8 +467,9 @@ export class GameSessionECS {
       }
     }
 
-    // Clear ship interior
+    // Clear ship interior and stored position
     this.shipInterior = undefined;
+    this.spaceShipPosition = null;
   }
 
   private handleShipInteraction(type: "door" | "station", target: Door | InteractiveStation): void {
