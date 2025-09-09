@@ -1,51 +1,43 @@
 # L.O.S.E.: Lots of Outer Space to Explore
 
-Top‑down 2D open‑world space exploration game. Canvas for the world; React for HUD/menus. Browser‑only.
-
-Documentation
-
-- Docs index: docs/index.md
-- Fundamental Rules: docs/rules.md
-- Architecture: docs/architecture.md
-- Testing: docs/testing.md
-- CI: docs/ci.md
-- HUD: docs/hud.md
-- ADRs: docs/decisions/
-- Contributing: CONTRIBUTING.md
+Remake of a game I started building a while back that never went anywhere. Much more to this one.
 
 ## Getting Started
 
-- Node 24, npm
 - Install: `npm install`
-- Dev: `npm run dev` → open printed URL
-- Tests: `npm run test` (watch) / `npm run coverage`
-- Lint/format: `npm run lint` / `npm run format`
-- Build/preview: `npm run build` → `npm run preview`
-
-## Project Structure
-
-- `src/ui/` — HUD and canvas mount (`CanvasRoot`), React components and hooks
-- `src/application/` — application layer (game loop, input orchestration)
-- `src/domain/` — core game logic (game state, rendering services, AI, services)
-- `src/engine/` — reusable engine pieces (`core/` loop, `input/`), extracted from application over time
-- `src/games/` — mode-specific games (`space/`, `planet/`) in the dual‑game architecture
-- `src/lib/ecs/` — internal ECS library package used by game systems
-- `src/shared/` — shared utilities, types, and constants
-- `src/infrastructure/` — project assets and technical adapters
-- `docs/` — overview, architecture, roadmap, ADRs
+- Development server: `npm run dev`
+- Preview production server: `npm run preview`
+- Tests: `npm run test`
+- Coverage: `npm run coverage`
+- Lint: `npm run lint`
+- Format: `npm run format`
+- Typecheck: `npm run typecheck`
+- Build/preview: `npm run build`/`npm run preview`
+- Run all required checks (typecheck, lint, tests): `npm run checks`
 
 ## Docs
 
-- Overview: `docs/overview.md`
-- Architecture: `docs/architecture.md`
-- Dual‑Game System: `docs/architecture/dual-game-system.md`
-- Roadmap: `docs/roadmap.md`
+- Core MUST-FOLLOW rules for the project: `RULES.md`
 - Decisions (ADRs): `docs/decisions/`
-- Contributor guide: `AGENTS.md`
-- Core Rules: `docs/rules.md`
+  - add a new ADR if making a significant design change
 
-## Notes
+## Quality Gates
 
-- Fixed‑timestep loop (60Hz default) with render decoupled
-- HiDPI canvas scaling; no path aliases
-- Tooling: ESLint + Prettier + Husky, Vitest + RTL, Tailwind
+- Typecheck: `npm run typecheck`
+- Lint: `npm run lint`
+- Tests (unit): `npm run test`
+- Tests (E2E): `npm run e2e`
+  - **NOTE:** e2e tests are on hold
+- Typecheck && lint && test: `npm run checks`
+
+## Conventions
+
+- See `RULES.md`
+
+## Style
+
+- See `eslint.config.js` and `RULES.md`
+
+## Formatting
+
+- Prettier; see `.prettierrc.json`
