@@ -106,4 +106,4 @@ Phased Plan
 
 References
 
-- ADR-0006 (this decision): docs/decisions/adr-0006-enemy-ai-behavior-tree.md
+- ADR-0006 (this decision): docs/adr/adr-0006-enemy-ai-behavior-tree.md

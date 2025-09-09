@@ -18,7 +18,7 @@ Remake of a game I started building a while back that never went anywhere. Much 
 ## Docs
 
 - Core MUST-FOLLOW rules for the project: `RULES.md`
-- Decisions (ADRs): `docs/decisions/`
+- Decisions (ADRs): `docs/adr/`
   - add a new ADR if making a significant design change
 
 ## Quality Gates
