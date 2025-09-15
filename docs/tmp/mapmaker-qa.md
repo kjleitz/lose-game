@@ -595,9 +595,9 @@ Document any issues discovered during testing:
 
 ## Test Results Summary
 
-**Test Date**: ****\_\_\_****
-**Tester**: ****\_\_\_****
-**Version/Commit**: ****\_\_\_****
+**Test Date**: \***\*\_\_\_\*\***
+**Tester**: \***\*\_\_\_\*\***
+**Version/Commit**: \***\*\_\_\_\*\***
 
 **Overall Results**:
 
