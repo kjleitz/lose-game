@@ -1,0 +1,300 @@
+import type { Point2D } from "../../../shared/types/geometry";
+import type { Wall, Room } from "../../../domain/game/ship-interior/types";
+
+export interface DetectedRoom {
+  id: string;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  enclosingWalls: string[]; // Wall IDs that form this room
+  floorArea: Point2D[]; // Points that define the room's floor area
+}
+
+export interface RoomDetectionGrid {
+  width: number;
+  height: number;
+  cellSize: number;
+  grid: boolean[][]; // true = wall, false = empty space
+}
+
+export class RoomDetector {
+  private gridCellSize = 4; // Size of each grid cell for flood fill
+
+  public detectRooms(
+    walls: Wall[],
+    bounds: { x: number; y: number; width: number; height: number },
+  ): DetectedRoom[] {
+    // Create a collision grid from walls
+    const grid = this.createWallGrid(walls, bounds);
+
+    // Find all enclosed areas using flood fill
+    const enclosedAreas = this.findEnclosedAreas(grid);
+
+    // Convert areas to room objects
+    const rooms = enclosedAreas.map((area, index) => this.areaToRoom(area, index, walls));
+
+    // Filter out rooms that are too small
+    return rooms.filter((room) => this.isValidRoom(room));
+  }
+
+  public updateRoomConnections(
+    rooms: DetectedRoom[],
+    doors: { x: number; y: number; connectsRooms: [string, string] }[],
+  ): DetectedRoom[] {
+    // Update door connections based on room detection
+    for (const door of doors) {
+      const roomsAtDoor = rooms.filter((room) => this.isPointInRoom(door, room));
+
+      if (roomsAtDoor.length === 2) {
+        door.connectsRooms = [roomsAtDoor[0].id, roomsAtDoor[1].id];
+      }
+    }
+
+    return rooms;
+  }
+
+  private createWallGrid(
+    walls: Wall[],
+    bounds: { x: number; y: number; width: number; height: number },
+  ): RoomDetectionGrid {
+    const gridWidth = Math.ceil(bounds.width / this.gridCellSize);
+    const gridHeight = Math.ceil(bounds.height / this.gridCellSize);
+
+    const grid: boolean[][] = [];
+    for (let y = 0; y < gridHeight; y++) {
+      const row: boolean[] = [];
+      for (let x = 0; x < gridWidth; x++) {
+        row.push(false);
+      }
+      grid[y] = row;
+    }
+
+    // Mark wall cells as blocked
+    for (const wall of walls) {
+      this.rasterizeWall(wall, grid, bounds);
+    }
+
+    return {
+      width: gridWidth,
+      height: gridHeight,
+      cellSize: this.gridCellSize,
+      grid,
+    };
+  }
+
+  private rasterizeWall(
+    wall: Wall,
+    grid: boolean[][],
+    bounds: { x: number; y: number; width: number; height: number },
+  ): void {
+    // Use Bresenham's line algorithm to mark wall cells
+    const startX = Math.floor((wall.x1 - bounds.x) / this.gridCellSize);
+    const startY = Math.floor((wall.y1 - bounds.y) / this.gridCellSize);
+    const endX = Math.floor((wall.x2 - bounds.x) / this.gridCellSize);
+    const endY = Math.floor((wall.y2 - bounds.y) / this.gridCellSize);
+
+    const points = this.bresenhamLine(startX, startY, endX, endY);
+
+    for (const point of points) {
+      if (point.x >= 0 && point.x < grid[0].length && point.y >= 0 && point.y < grid.length) {
+        grid[point.y][point.x] = true;
+
+        // Also mark adjacent cells for wall thickness
+        const thickness = Math.ceil(wall.thickness / this.gridCellSize / 2);
+        for (let dy = -thickness; dy <= thickness; dy++) {
+          for (let dx = -thickness; dx <= thickness; dx++) {
+            const newX = point.x + dx;
+            const newY = point.y + dy;
+            if (newX >= 0 && newX < grid[0].length && newY >= 0 && newY < grid.length) {
+              grid[newY][newX] = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private bresenhamLine(startX: number, startY: number, endX: number, endY: number): Point2D[] {
+    const points: Point2D[] = [];
+    let x0 = startX;
+    let y0 = startY;
+    const x1 = endX;
+    const y1 = endY;
+
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+
+    while (true) {
+      points.push({ x: x0, y: y0 });
+
+      if (x0 === x1 && y0 === y1) break;
+
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+
+    return points;
+  }
+
+  private findEnclosedAreas(gridData: RoomDetectionGrid): Point2D[][] {
+    const { grid, width, height } = gridData;
+    const visited: boolean[][] = [];
+    for (let y = 0; y < height; y++) {
+      const row: boolean[] = [];
+      for (let x = 0; x < width; x++) {
+        row.push(false);
+      }
+      visited[y] = row;
+    }
+
+    const enclosedAreas: Point2D[][] = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (!grid[y][x] && !visited[y][x]) {
+          const area = this.floodFill(x, y, grid, visited);
+          if (this.isAreaEnclosed(area, grid)) {
+            enclosedAreas.push(area);
+          }
+        }
+      }
+    }
+
+    return enclosedAreas;
+  }
+
+  private floodFill(
+    startX: number,
+    startY: number,
+    grid: boolean[][],
+    visited: boolean[][],
+  ): Point2D[] {
+    const area: Point2D[] = [];
+    const stack: Point2D[] = [{ x: startX, y: startY }];
+    const width = grid[0].length;
+    const height = grid.length;
+
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      const { x, y } = current;
+
+      if (x < 0 || x >= width || y < 0 || y >= height || visited[y][x] || grid[y][x]) {
+        continue;
+      }
+
+      visited[y][x] = true;
+      area.push({ x, y });
+
+      // Add neighbors
+      stack.push({ x: x + 1, y });
+      stack.push({ x: x - 1, y });
+      stack.push({ x, y: y + 1 });
+      stack.push({ x, y: y - 1 });
+    }
+
+    return area;
+  }
+
+  private isAreaEnclosed(area: Point2D[], grid: boolean[][]): boolean {
+    // Check if area touches the boundary - if it does, it's not enclosed
+    const width = grid[0].length;
+    const height = grid.length;
+
+    for (const point of area) {
+      if (point.x === 0 || point.x === width - 1 || point.y === 0 || point.y === height - 1) {
+        return false;
+      }
+    }
+
+    return area.length > 4; // Minimum size for a room
+  }
+
+  private areaToRoom(area: Point2D[], index: number, walls: Wall[]): DetectedRoom {
+    // Calculate bounding box
+    const minX = Math.min(...area.map((point) => point.x));
+    const maxX = Math.max(...area.map((point) => point.x));
+    const minY = Math.min(...area.map((point) => point.y));
+    const maxY = Math.max(...area.map((point) => point.y));
+
+    // Convert grid coordinates back to world coordinates
+    const worldBounds = {
+      x: minX * this.gridCellSize,
+      y: minY * this.gridCellSize,
+      width: (maxX - minX + 1) * this.gridCellSize,
+      height: (maxY - minY + 1) * this.gridCellSize,
+    };
+
+    // Find walls that contribute to this room
+    const enclosingWalls = this.findEnclosingWalls(walls);
+
+    return {
+      id: `room-${index + 1}`,
+      bounds: worldBounds,
+      enclosingWalls,
+      floorArea: area.map((point) => ({
+        x: point.x * this.gridCellSize,
+        y: point.y * this.gridCellSize,
+      })),
+    };
+  }
+
+  private findEnclosingWalls(walls: Wall[]): string[] {
+    // Simplified: return all walls. In practice you'd want more sophisticated
+    // wall-to-room association logic based on spatial relationships
+    return walls.map((wall) => wall.id);
+  }
+
+  private isValidRoom(room: DetectedRoom): boolean {
+    const minRoomSize = 64; // Minimum room size in pixels
+    return room.bounds.width >= minRoomSize && room.bounds.height >= minRoomSize;
+  }
+
+  private isPointInRoom(point: { x: number; y: number }, room: DetectedRoom): boolean {
+    const { bounds } = room;
+    return (
+      point.x >= bounds.x &&
+      point.x <= bounds.x + bounds.width &&
+      point.y >= bounds.y &&
+      point.y <= bounds.y + bounds.height
+    );
+  }
+
+  public convertDetectedRoomsToShipRooms(detectedRooms: DetectedRoom[]): Room[] {
+    return detectedRooms.map((detectedRoom, index) => ({
+      id: detectedRoom.id,
+      name: `Room ${index + 1}`,
+      bounds: detectedRoom.bounds,
+      type: this.inferRoomType(detectedRoom),
+      lighting: {
+        color: "#ffffff",
+        intensity: 0.8,
+      },
+    }));
+  }
+
+  private inferRoomType(
+    room: DetectedRoom,
+  ): "bridge" | "quarters" | "cargo" | "engine" | "corridor" {
+    // Simple heuristic based on room size
+    const area = room.bounds.width * room.bounds.height;
+
+    if (area < 1000) return "corridor";
+    if (area < 5000) return "quarters";
+    if (area < 10000) return "bridge";
+    if (area < 20000) return "engine";
+    return "cargo";
+  }
+}

@@ -26,12 +26,13 @@ Agents, you must preserve the exact wording of the following bullet points.
 - No path aliases; always use relative ES module imports.
 - Formatting and style: 2-space indent, semicolons on, double quotes.
 
+> Core mantra: "Fix your types first." If types are too complicated, simplify the code.
+
 ### Nullish Checks
 
-- Use `x == null` and `x != null` exclusively for nullish checks so both `null` and `undefined` are handled. Use `===`/`!==` everywhere else. ESLint is configured (`eqeqeq` with `{ null: "ignore" }`) to enforce this. Do not use `=== undefined` or `=== null` or `!== undefined` or `!== null`. If you must compare directly against a nullish value to exclude the other one, you're probably doing something wrong.
-- Don't do `if (typeof someNullableString === 'string')`, do `if (someNullableString != null)`. You're masking other type issues when you use the former style.
-
-> Core mantra: "Fix your types first." If types are too complicated, simplify the code.
+- Use `x == null` and `x != null` exclusively for nullish checks so both `null` and `undefined` are handled. Use `===`/`!==` everywhere else. ESLint is configured (`eqeqeq` with `{ null: "ignore" }`) to enforce this.
+- Do not use `=== undefined` or `=== null` or `!== undefined` or `!== null`. If you must compare directly against a nullish value to exclude the other one, you're probably doing something wrong. **Just use `== null` or `!= null` instead!**
+- Don't positively check a type if you really mean to check if something is nullish. For example, don't do `if (typeof someNullableString === 'string')`, do `if (someNullableString != null)`. You're masking other type issues when you use the former style.
 
 ### Style and Naming
 
@@ -60,14 +61,9 @@ Agents, you must preserve the exact wording of the following bullet points.
 - Keep tests aligned with the intended product behavior. Prefer high-value, integration-style tests at stable boundaries.
 - When refactoring, update tests to reflect the new design; do not preserve obsolete seams.
 - We want comprehensive unit tests which test INTENDED behavior (not just EXISTING behavior... which may actually be broken in some cases! We'll find out when we write tests against INTENDED BEHAVIOR.)
+- Prefer testing outcomes and results, not testing that certain functions get called. There are plenty of exceptions to this rule, but try to stick to it. If there's a way to test the outcome/result without testing the internal implementation, that is a better test.
 
 > Direct quote for emphasis: "GET RID OF THE LEGACY STUFF. Things SHOULD NOT hang around JUST TO SATISFY TESTS. Tests are there to validate your application. Your application is NOT THERE TO VALIDATE THE TESTS."
-
-### Testing Guidelines
-
-- Framework: Vitest; components via React Testing Library.
-- Name tests `*.test.ts` / `*.test.tsx`; colocate near code or in `tests/`.
-- Target ≥80% coverage on changed code; include integration tests for systems (e.g., physics step, collision pass).
 
 ### Tooling Discipline
 
@@ -77,9 +73,10 @@ Agents, you must preserve the exact wording of the following bullet points.
 
 - On every substantive change, run ALL three before handing off or opening a PR:
   - `npm run typecheck` — no TypeScript errors.
-  - `npm run test` — tests pass (add or update as needed for changes).
   - `npm run lint` — lints pass without disabling rules.
-- Formatting: if diff is messy, run `npm run format` to align with Prettier.
+  - `npm run test` — tests pass (add or update as needed for changes).
+- Alternatively, run all three at once (fails on the first one with errors):
+  - `npm run checks` - basically just _typecheck && lint && test_
 
 ### Commit & PR Guidelines
 
@@ -88,29 +85,30 @@ Agents, you must preserve the exact wording of the following bullet points.
 - PRs: clear description, linked issues (`Closes #123`), screenshots for UI, steps to verify, and risks/rollbacks. CI (build/typecheck/lint/test) must pass.
 - Describe the change, link issues (`Closes #123`).
 - Include screenshots for UI changes (HUD panels, overlays).
-- Note risks/rollbacks; ensure CI is green (typecheck/lint/unit/e2e as applicable).
+- Note risks/rollbacks; ensure CI is green (typecheck/lint/test as applicable).
 
 ### Security & Configuration
 
 - Do not commit secrets. Provide `.env.example` if env vars are needed.
 - `.gitignore` should include `node_modules/`, `dist/`, coverage artifacts, and editor files.
 
-## Project Rules
+## L.O.S.E. Project-Specific Rules
 
-### Architecture Migration
+### Architecture Preferences
 
 - When introducing a new architecture or subsystem (e.g., ECS planet mode), deprecate and remove the old implementation (e.g., legacy `PlanetGame`/`GameManager`) once the replacement is stable.
-- Temporary duplication during migration is acceptable only with an explicit, near-term removal plan (tracked issue or PR checklist).
-  - Current status: Legacy classes (`PlanetGame`, `SpaceGame`, `GameManager`, engine/core) have been removed. Modes are states inside `GameSessionECS` and share canonical `PlanetSurface` types.
+  - Temporary duplication during migration is acceptable only with an explicit, near-term removal plan (tracked issue, PR checklist, or documented work guide).
+- Prefer extracting shared helpers over duplication.
+- Do not duplicate structural types (e.g., `PlanetSurface`) in renderers or systems; import the canonical type.
 
-### Enforcement
+### Tests
 
-- PRs that add duplicate logic must include a removal plan (owner + date). Prefer extracting shared helpers over duplication.
-  - Do not duplicate structural types (e.g., `PlanetSurface`) in renderers or systems; import the canonical type.
+- Name tests `*.test.ts` / `*.test.tsx`; colocate next to the file it tests; e.g., `src/foo/barBaz.ts` => `src/foo/barBaz.test.ts`
+- Target ≥80% coverage on changed code; include integration tests for systems (e.g., physics step, collision pass).
 
 ### World Coordinates
 
-- Maintain distinct coordinate spaces for space and planet modes.
+- Maintain distinct coordinate spaces for different modes (space, planet, ship, etc.).
   - Player has separate x/y in space and x/y on a planet; do not mutate one while the other mode is active.
   - On landing, move the player to the planet-local landing site. Do not translate the surface to match space coordinates.
   - On takeoff, place the player hovering just outside the planet in space (near the planet's world position), not at an arbitrary prior approach vector.

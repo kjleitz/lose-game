@@ -109,6 +109,8 @@ export default tseslint.config([
           exceptions: ["i", "j", "k", "x", "y"],
         },
       ],
+      // Treat missing/extra hook dependencies as errors
+      "react-hooks/exhaustive-deps": "error",
     },
   },
   {

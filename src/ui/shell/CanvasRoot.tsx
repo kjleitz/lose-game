@@ -11,6 +11,7 @@ import { Hud } from "../hud/Hud";
 import { SettingsModal, DeathOverlay } from "../overlays/dialogs";
 import { PerkModal } from "../overlays/dialogs/PerkModal";
 import { PauseMenu } from "../overlays/menus/PauseMenu";
+import { MapMaker } from "../../tools/map-maker/MapMaker";
 
 function useCanvasSize(): ViewSize {
   const [size, setSize] = useState<ViewSize>({
@@ -36,12 +37,13 @@ export function CanvasRoot(): JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [perksOpen, setPerksOpen] = useState(false);
   const [dead, setDead] = useState(false);
+  const [mapMakerOpen, setMapMakerOpen] = useState(false);
   const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // When any UI menu is open, the game should be paused.
   // We centralize pause/resume side effects based on this derived state.
-  const uiPaused = paused || settingsOpen || perksOpen;
+  const uiPaused = paused || settingsOpen || perksOpen || mapMakerOpen;
   const lastAppliedPause = useRef<boolean>(false);
   const [hudState, setHudState] = useState<{
     mode: "space" | "planet" | "ship";
@@ -151,14 +153,6 @@ export function CanvasRoot(): JSX.Element {
       ctrl.start();
     })();
 
-    const onEsc = (event: KeyboardEvent): void => {
-      if (event.code === "Escape") {
-        // Toggle the explicit pause menu; actual pause/resume is handled by the effect below.
-        setPaused((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", onEsc);
-
     return (): void => {
       disposed = true;
       if (unsub) unsub();
@@ -167,11 +161,32 @@ export function CanvasRoot(): JSX.Element {
       if (unsubSpeed) unsubSpeed();
       if (unsubToast) unsubToast();
       if (unsubDeath) unsubDeath();
-      window.removeEventListener("keydown", onEsc);
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };
   }, [width, height]);
+
+  // Keyboard shortcuts listener, depends on current UI state flags
+  useEffect(() => {
+    const onEsc = (event: KeyboardEvent): void => {
+      if (event.code === "Escape") {
+        // Close map-maker first if open, otherwise toggle pause menu
+        if (mapMakerOpen) {
+          setMapMakerOpen(false);
+        } else {
+          setPaused((prev) => !prev);
+        }
+      }
+      // Press 'M' to toggle Map Maker (only when gameplay UI is active)
+      if (event.code === "KeyM" && !settingsOpen && !perksOpen && !paused && !dead) {
+        setMapMakerOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onEsc);
+    return (): void => {
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [mapMakerOpen, settingsOpen, perksOpen, paused, dead]);
 
   function handleItemUse(item: Item): void {
     console.log("Using item:", item.name);
@@ -302,6 +317,19 @@ export function CanvasRoot(): JSX.Element {
         onUnlock={(perkId): void => controllerRef.current?.unlockPerk?.(perkId)}
         onSell={(perkId): void => controllerRef.current?.sellPerk?.(perkId)}
       />
+      {mapMakerOpen ? (
+        <div className="absolute inset-0 z-50 bg-gray-900">
+          <div className="absolute top-4 left-4 z-10">
+            <button
+              onClick={() => setMapMakerOpen(false)}
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded shadow-lg"
+            >
+              Close Map Maker (ESC)
+            </button>
+          </div>
+          <MapMaker />
+        </div>
+      ) : null}
     </div>
   );
 }
