@@ -11,6 +11,7 @@ export interface DetectedRoom {
   };
   enclosingWalls: string[]; // Wall IDs that form this room
   floorArea: Point2D[]; // Points that define the room's floor area
+  boundary: Point2D[]; // Ordered polygon outlining the room in world coords
 }
 
 export interface RoomDetectionGrid {
@@ -34,7 +35,7 @@ export class RoomDetector {
     const enclosedAreas = this.findEnclosedAreas(grid);
 
     // Convert areas to room objects
-    const rooms = enclosedAreas.map((area, index) => this.areaToRoom(area, index, walls));
+    const rooms = enclosedAreas.map((area, index) => this.areaToRoom(area, index, walls, bounds));
 
     // Filter out rooms that are too small
     return rooms.filter((room) => this.isValidRoom(room));
@@ -222,17 +223,22 @@ export class RoomDetector {
     return area.length > 4; // Minimum size for a room
   }
 
-  private areaToRoom(area: Point2D[], index: number, walls: Wall[]): DetectedRoom {
+  private areaToRoom(
+    area: Point2D[],
+    index: number,
+    walls: Wall[],
+    bounds: { x: number; y: number; width: number; height: number },
+  ): DetectedRoom {
     // Calculate bounding box
     const minX = Math.min(...area.map((point) => point.x));
     const maxX = Math.max(...area.map((point) => point.x));
     const minY = Math.min(...area.map((point) => point.y));
     const maxY = Math.max(...area.map((point) => point.y));
 
-    // Convert grid coordinates back to world coordinates
+    // Convert grid coordinates back to world coordinates, including the bounds offset
     const worldBounds = {
-      x: minX * this.gridCellSize,
-      y: minY * this.gridCellSize,
+      x: bounds.x + minX * this.gridCellSize,
+      y: bounds.y + minY * this.gridCellSize,
       width: (maxX - minX + 1) * this.gridCellSize,
       height: (maxY - minY + 1) * this.gridCellSize,
     };
@@ -240,14 +246,18 @@ export class RoomDetector {
     // Find walls that contribute to this room
     const enclosingWalls = this.findEnclosingWalls(walls);
 
+    // Build a boundary path (ordered polygon) around the filled area
+    const boundary = this.buildBoundaryFromArea(area, bounds);
+
     return {
       id: `room-${index + 1}`,
       bounds: worldBounds,
       enclosingWalls,
       floorArea: area.map((point) => ({
-        x: point.x * this.gridCellSize,
-        y: point.y * this.gridCellSize,
+        x: bounds.x + point.x * this.gridCellSize,
+        y: bounds.y + point.y * this.gridCellSize,
       })),
+      boundary,
     };
   }
 
@@ -255,6 +265,119 @@ export class RoomDetector {
     // Simplified: return all walls. In practice you'd want more sophisticated
     // wall-to-room association logic based on spatial relationships
     return walls.map((wall) => wall.id);
+  }
+
+  // Build an ordered boundary polygon around the filled grid area by extracting
+  // outer cell edges and tracing them into a single loop. Points are converted
+  // to world coordinates using the bounds offset and grid cell size.
+  private buildBoundaryFromArea(
+    area: Point2D[],
+    bounds: { x: number; y: number; width: number; height: number },
+  ): Point2D[] {
+    // Collect unique edges around each filled cell; shared edges cancel out
+    interface Vertex {
+      x: number;
+      y: number;
+    }
+    interface Segment {
+      a: Vertex;
+      b: Vertex;
+    }
+    const segmentKey = (segment: Segment): string => {
+      const ax = Math.min(segment.a.x, segment.b.x);
+      const ay = Math.min(segment.a.y, segment.b.y);
+      const bx = Math.max(segment.a.x, segment.b.x);
+      const by = Math.max(segment.a.y, segment.b.y);
+      return `${ax},${ay}-${bx},${by}`;
+    };
+
+    const edgeCount = new Map<string, { segment: Segment; count: number }>();
+
+    for (const cell of area) {
+      const x = cell.x;
+      const y = cell.y;
+      // Define the 4 edges of the cell in grid-vertex coordinates
+      const top: Segment = { a: { x, y }, b: { x: x + 1, y } };
+      const right: Segment = { a: { x: x + 1, y }, b: { x: x + 1, y: y + 1 } };
+      const bottom: Segment = { a: { x, y: y + 1 }, b: { x: x + 1, y: y + 1 } };
+      const left: Segment = { a: { x, y }, b: { x, y: y + 1 } };
+      const edges = [top, right, bottom, left];
+      for (const edge of edges) {
+        const key = segmentKey(edge);
+        const entry = edgeCount.get(key);
+        if (entry) {
+          entry.count += 1;
+        } else {
+          edgeCount.set(key, { segment: edge, count: 1 });
+        }
+      }
+    }
+
+    // Keep edges that are not shared (count === 1)
+    const boundaryEdges: Segment[] = [];
+    edgeCount.forEach((value) => {
+      if (value.count === 1) boundaryEdges.push(value.segment);
+    });
+
+    if (boundaryEdges.length === 0) return [];
+
+    // Build adjacency map of vertices to connected vertices
+    const vertexKey = (vertex: Vertex): string => `${vertex.x},${vertex.y}`;
+    const neighbors = new Map<string, Vertex[]>();
+    const uniqueVertex = new Map<string, Vertex>();
+    for (const seg of boundaryEdges) {
+      const aKey = vertexKey(seg.a);
+      const bKey = vertexKey(seg.b);
+      if (!neighbors.has(aKey)) neighbors.set(aKey, []);
+      if (!neighbors.has(bKey)) neighbors.set(bKey, []);
+      neighbors.get(aKey)!.push(seg.b);
+      neighbors.get(bKey)!.push(seg.a);
+      if (!uniqueVertex.has(aKey)) uniqueVertex.set(aKey, seg.a);
+      if (!uniqueVertex.has(bKey)) uniqueVertex.set(bKey, seg.b);
+    }
+
+    // Find starting vertex: minimal y, then minimal x
+    const allVertices = Array.from(uniqueVertex.values());
+    allVertices.sort((left, right) => (left.y === right.y ? left.x - right.x : left.y - right.y));
+    const start = allVertices[0];
+
+    // Trace the loop by always choosing the next neighbor that isn't the previous
+    const ordered: Vertex[] = [start];
+    let current = start;
+    let previous: Vertex | null = null;
+    const safeLimit = boundaryEdges.length * 4 + 10; // guard against infinite loops
+
+    for (let i = 0; i < safeLimit; i++) {
+      const key = vertexKey(current);
+      const adj = neighbors.get(key) ?? [];
+      let next: Vertex | null = null;
+      for (const candidate of adj) {
+        if (previous && candidate.x === previous.x && candidate.y === previous.y) {
+          continue;
+        }
+        next = candidate;
+        break;
+      }
+      if (!next) {
+        // Dead end; try going back if only one neighbor exists
+        if (adj.length > 0) next = adj[0];
+      }
+      if (!next) break;
+      if (next.x === start.x && next.y === start.y) {
+        // Closed loop
+        break;
+      }
+      ordered.push(next);
+      previous = current;
+      current = next;
+    }
+
+    // Convert grid vertices to world coordinates
+    const boundaryWorld: Point2D[] = ordered.map((vertex) => ({
+      x: bounds.x + vertex.x * this.gridCellSize,
+      y: bounds.y + vertex.y * this.gridCellSize,
+    }));
+    return boundaryWorld;
   }
 
   private isValidRoom(room: DetectedRoom): boolean {

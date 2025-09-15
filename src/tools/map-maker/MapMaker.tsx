@@ -558,7 +558,7 @@ export function MapMaker({
   return (
     <div className={`flex h-screen bg-gray-900 text-white ${className ?? ""}`}>
       {/* Left sidebar - Tools and Properties */}
-      <div className="w-80 flex flex-col space-y-4 p-4 bg-gray-800 border-r border-gray-700">
+      <div className="w-80 flex flex-col space-y-4 p-4 bg-gray-800 border-r border-gray-700 overflow-y-auto min-h-0">
         {/* Mode toggle */}
         <div className="hud-panel p-3">
           <div className="flex items-center justify-between mb-2">
@@ -661,7 +661,7 @@ export function MapMaker({
       </div>
 
       {/* Right sidebar - Layers */}
-      <div className="w-64 p-4 bg-gray-800 border-l border-gray-700">
+      <div className="w-64 p-4 bg-gray-800 border-l border-gray-700 overflow-y-auto min-h-0">
         <LayerPanel
           layers={layers}
           onLayerToggle={handleLayerToggle}

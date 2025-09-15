@@ -131,15 +131,45 @@ export class PreviewRenderer {
           break;
         }
         case "rooms": {
-          context.strokeStyle = "#ffff00";
-          context.lineWidth = 2;
-          context.setLineDash([5, 5]);
-          ship.rooms.forEach((room) => {
-            if (this.isRoomInViewport(room, viewportBounds)) {
-              this.renderRoomOutline(context, room);
+          // Render filled room areas and outlines, using detected boundary if available
+          const roomFeatures = ship.layers.rooms.rooms;
+          for (const lf of roomFeatures) {
+            const boundsProp = lf.properties["bounds"];
+            if (!this.isRectBounds(boundsProp)) continue;
+            const bounds = boundsProp;
+            if (!this.isRectInViewport(bounds, viewportBounds)) continue;
+
+            // Find matching domain room for type-based color, fallback to layer prop if present
+            const domainRoom = ship.rooms.find((roomItem) => roomItem.id === lf.id);
+            const roomType = this.getRoomTypeFromLayerOrDomain(lf, domainRoom);
+
+            // Build path (boundary polygon if provided; else rectangle)
+            const boundaryProp = lf.properties["boundary"];
+            const path = this.buildRoomPath(boundaryProp, bounds);
+
+            // Fill interior with a subtle room-type color
+            const fillColor = this.getRoomFillColor(roomType);
+            context.save();
+            context.fillStyle = fillColor;
+            if (path) {
+              context.fill(path);
             }
-          });
-          context.setLineDash([]);
+
+            // If a floor pattern is set, overlay a simple pattern within the room
+            const patternProp = lf.properties["floorPattern"];
+            if (typeof patternProp === "string") {
+              this.renderFloorPattern(context, path, patternProp);
+            }
+            context.restore();
+
+            // Draw dashed outline on top
+            context.save();
+            context.strokeStyle = "#ffff00";
+            context.lineWidth = 2;
+            context.setLineDash([5, 5]);
+            if (path) context.stroke(path);
+            context.restore();
+          }
           break;
         }
         case "lighting": {
@@ -283,11 +313,216 @@ export class PreviewRenderer {
     context.restore();
   }
 
-  private renderRoomOutline(
+  // Deprecated: kept for reference; outlines now rendered with buildRoomPath
+  // private renderRoomOutline(
+  //   context: CanvasRenderingContext2D,
+  //   room: { bounds: { x: number; y: number; width: number; height: number } },
+  // ): void {
+  //   context.strokeRect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
+  // }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return value != null && typeof value === "object";
+  }
+
+  private isRectBounds(
+    value: unknown,
+  ): value is { x: number; y: number; width: number; height: number } {
+    if (!this.isRecord(value)) return false;
+    return (
+      typeof value.x === "number" &&
+      typeof value.y === "number" &&
+      typeof value.width === "number" &&
+      typeof value.height === "number"
+    );
+  }
+
+  private isPointList(value: unknown): value is Array<{ x: number; y: number }> {
+    return (
+      Array.isArray(value) &&
+      value.every(
+        (point) =>
+          this.isRecord(point) && typeof point.x === "number" && typeof point.y === "number",
+      )
+    );
+  }
+
+  private isRectInViewport(
+    rect: { x: number; y: number; width: number; height: number },
+    bounds: { x: number; y: number; width: number; height: number },
+  ): boolean {
+    return (
+      rect.x + rect.width >= bounds.x &&
+      rect.x <= bounds.x + bounds.width &&
+      rect.y + rect.height >= bounds.y &&
+      rect.y <= bounds.y + bounds.height
+    );
+  }
+
+  private getRoomTypeFromLayerOrDomain(
+    lf: { properties: Record<string, unknown> },
+    domainRoom: { type: string } | undefined,
+  ): "bridge" | "quarters" | "cargo" | "engine" | "corridor" {
+    const typeCandidate = lf.properties["roomType"];
+    if (
+      typeCandidate === "bridge" ||
+      typeCandidate === "quarters" ||
+      typeCandidate === "cargo" ||
+      typeCandidate === "engine" ||
+      typeCandidate === "corridor"
+    ) {
+      return typeCandidate;
+    }
+    const dt = domainRoom?.type;
+    return dt === "bridge" ||
+      dt === "quarters" ||
+      dt === "cargo" ||
+      dt === "engine" ||
+      dt === "corridor"
+      ? dt
+      : "corridor";
+  }
+
+  private getRoomFillColor(type: "bridge" | "quarters" | "cargo" | "engine" | "corridor"): string {
+    switch (type) {
+      case "bridge":
+        return "rgba(42, 58, 74, 0.35)";
+      case "quarters":
+        return "rgba(58, 42, 42, 0.35)";
+      case "cargo":
+        return "rgba(42, 58, 42, 0.35)";
+      case "engine":
+        return "rgba(74, 42, 42, 0.35)";
+      default:
+        return "rgba(42, 42, 58, 0.35)";
+    }
+  }
+
+  private buildRoomPath(
+    boundaryProp: unknown,
+    fallbackRect: { x: number; y: number; width: number; height: number },
+  ): Path2D | null {
+    const path = new Path2D();
+    if (this.isPointList(boundaryProp) && boundaryProp.length > 1) {
+      path.moveTo(boundaryProp[0].x, boundaryProp[0].y);
+      for (let i = 1; i < boundaryProp.length; i++) {
+        path.lineTo(boundaryProp[i].x, boundaryProp[i].y);
+      }
+      path.closePath();
+      return path;
+    }
+    // Fallback to rectangle bounds
+    path.rect(fallbackRect.x, fallbackRect.y, fallbackRect.width, fallbackRect.height);
+    return path;
+  }
+
+  private renderFloorPattern(
     context: CanvasRenderingContext2D,
-    room: { bounds: { x: number; y: number; width: number; height: number } },
+    clipPath: Path2D | null,
+    pattern: string,
   ): void {
-    context.strokeRect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
+    if (!clipPath) return;
+    context.save();
+    context.clip(clipPath);
+
+    // Use large area drawing without reading transform to avoid type noise
+    // High-contrast procedural patterns for clear visibility
+    switch (pattern) {
+      case "grating": {
+        const step = 10;
+        // First diagonal set (light)
+        context.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        context.lineWidth = 2;
+        for (let diag = -1000; diag < 1000; diag += step) {
+          context.beginPath();
+          context.moveTo(diag, -1000);
+          context.lineTo(diag + 2000, 1000);
+          context.stroke();
+        }
+        // Second diagonal set (dark, crosshatch)
+        context.strokeStyle = "rgba(40, 40, 40, 0.9)";
+        context.lineWidth = 1.5;
+        for (let diag = -1000; diag < 1000; diag += step) {
+          context.beginPath();
+          context.moveTo(diag + 1000, -1000);
+          context.lineTo(diag - 1000, 1000);
+          context.stroke();
+        }
+        break;
+      }
+      case "tile": {
+        const size = 16;
+        // Heavy grid lines
+        context.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        context.lineWidth = 2;
+        for (let x = -1000; x <= 1000; x += size) {
+          context.beginPath();
+          context.moveTo(x, -1000);
+          context.lineTo(x, 1000);
+          context.stroke();
+        }
+        for (let y = -1000; y <= 1000; y += size) {
+          context.beginPath();
+          context.moveTo(-1000, y);
+          context.lineTo(1000, y);
+          context.stroke();
+        }
+        // Subtle inner grout dots for more texture
+        context.fillStyle = "rgba(40, 40, 40, 0.9)";
+        for (let y = -1000 + size / 2; y <= 1000; y += size) {
+          for (let x = -1000 + size / 2; x <= 1000; x += size) {
+            context.beginPath();
+            context.arc(x, y, 1.5, 0, Math.PI * 2);
+            context.fill();
+          }
+        }
+        break;
+      }
+      case "carpet": {
+        // High-contrast weave-like checkered pattern
+        const square = 8;
+        for (let y = -1000; y <= 1000; y += square) {
+          for (let x = -1000; x <= 1000; x += square) {
+            const even = (Math.floor(x / square) + Math.floor(y / square)) % 2 === 0;
+            context.fillStyle = even ? "rgba(200, 90, 90, 0.85)" : "rgba(120, 40, 40, 0.85)";
+            context.fillRect(x, y, square, square);
+          }
+        }
+        break;
+      }
+      case "metal":
+      default: {
+        // Riveted plate + subtle stripes
+        for (let y = -1000; y <= 1000; y += 18) {
+          for (let x = -1000; x <= 1000; x += 18) {
+            // Rivet core (light)
+            context.fillStyle = "rgba(230, 230, 230, 0.95)";
+            context.beginPath();
+            context.arc(x, y, 2.5, 0, Math.PI * 2);
+            context.fill();
+            // Rivet ring (dark outline)
+            context.strokeStyle = "rgba(40, 40, 40, 0.95)";
+            context.lineWidth = 1.5;
+            context.beginPath();
+            context.arc(x, y, 3.5, 0, Math.PI * 2);
+            context.stroke();
+          }
+        }
+        // Diagonal brushed lines
+        context.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        context.lineWidth = 1.5;
+        const stripeStep = 28;
+        for (let diag = -1000; diag < 1000; diag += stripeStep) {
+          context.beginPath();
+          context.moveTo(diag, -1000);
+          context.lineTo(diag + 2000, 1000);
+          context.stroke();
+        }
+        break;
+      }
+    }
+
+    context.restore();
   }
 
   private renderSpawnPoint(
@@ -492,15 +727,5 @@ export class PreviewRenderer {
     );
   }
 
-  private isRoomInViewport(
-    room: { bounds: { x: number; y: number; width: number; height: number } },
-    viewportBounds: { x: number; y: number; width: number; height: number },
-  ): boolean {
-    return (
-      room.bounds.x + room.bounds.width >= viewportBounds.x &&
-      room.bounds.x <= viewportBounds.x + viewportBounds.width &&
-      room.bounds.y + room.bounds.height >= viewportBounds.y &&
-      room.bounds.y <= viewportBounds.y + viewportBounds.height
-    );
-  }
+  // Room visibility is checked directly on bounds elsewhere; helper removed.
 }

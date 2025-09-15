@@ -234,6 +234,8 @@ export function EnhancedShipEditor({
                 bounds: room.bounds,
                 enclosingWalls: room.enclosingWalls,
                 detected: true,
+                floorArea: room.floorArea,
+                boundary: room.boundary,
               },
             })),
             autoDetected: true,
@@ -335,12 +337,146 @@ export function EnhancedShipEditor({
           if (ls.objects.locked) return;
           handleStationPlacement(snappedPos);
           break;
+        case "room_fill": {
+          if (ls.rooms.locked) return;
+          // Find the room under the click position
+          const room = project.rooms.find(
+            (roomItem) =>
+              snappedPos.x >= roomItem.bounds.x &&
+              snappedPos.x <= roomItem.bounds.x + roomItem.bounds.width &&
+              snappedPos.y >= roomItem.bounds.y &&
+              snappedPos.y <= roomItem.bounds.y + roomItem.bounds.height,
+          );
+          if (!room) return;
+          // Read tool properties
+          const typeProp = engine.getToolPropertyString("roomType");
+          const lightColorProp = engine.getToolPropertyString("lightColor");
+          const lightIntensityProp = engine.getToolPropertyNumber("lightIntensity");
+          const nextType: "bridge" | "quarters" | "cargo" | "engine" | "corridor" =
+            typeProp === "bridge" ||
+            typeProp === "quarters" ||
+            typeProp === "cargo" ||
+            typeProp === "engine" ||
+            typeProp === "corridor"
+              ? typeProp
+              : room.type;
+          const nextColor =
+            typeof lightColorProp === "string" ? lightColorProp : room.lighting.color;
+          const nextIntensity =
+            typeof lightIntensityProp === "number" ? lightIntensityProp : room.lighting.intensity;
+          // Update domain rooms
+          const updatedRooms = project.rooms.map((roomItem) =>
+            roomItem.id === room.id
+              ? {
+                  ...roomItem,
+                  type: nextType,
+                  lighting: { color: nextColor, intensity: nextIntensity },
+                }
+              : roomItem,
+          );
+          // Also mirror into layer feature properties for rooms
+          const updatedLayerRooms = project.layers.rooms.rooms.map((layerFeature) =>
+            layerFeature.id === room.id
+              ? {
+                  ...layerFeature,
+                  properties: {
+                    ...layerFeature.properties,
+                    roomType: nextType,
+                    lightColor: nextColor,
+                    lightIntensity: nextIntensity,
+                  },
+                }
+              : layerFeature,
+          );
+          const updatedProject: ShipInteriorProject = {
+            ...project,
+            rooms: updatedRooms,
+            layers: {
+              ...project.layers,
+              rooms: { ...project.layers.rooms, rooms: updatedLayerRooms },
+            },
+          };
+          onProjectUpdate(updatedProject);
+          break;
+        }
+        case "floor_texture": {
+          if (ls.rooms.locked) return;
+          // Paint floor pattern metadata onto the room layer feature under the click
+          const isRecord = (value: unknown): value is Record<string, unknown> =>
+            value != null && typeof value === "object";
+          const isRectBounds = (
+            value: unknown,
+          ): value is { x: number; y: number; width: number; height: number } => {
+            if (!isRecord(value)) return false;
+            const x = value["x"];
+            const y = value["y"];
+            const width = value["width"];
+            const height = value["height"];
+            return (
+              typeof x === "number" &&
+              typeof y === "number" &&
+              typeof width === "number" &&
+              typeof height === "number"
+            );
+          };
+          const roomLayer = project.layers.rooms.rooms.find((layerFeature) => {
+            const boundsProp = layerFeature.properties["bounds"];
+            if (isRectBounds(boundsProp)) {
+              const bx = boundsProp.x;
+              const by = boundsProp.y;
+              const bw = boundsProp.width;
+              const bh = boundsProp.height;
+              return (
+                snappedPos.x >= bx &&
+                snappedPos.x <= bx + bw &&
+                snappedPos.y >= by &&
+                snappedPos.y <= by + bh
+              );
+            }
+            return false;
+          });
+          if (!roomLayer) return;
+          const patternProp = engine.getToolPropertyString("pattern");
+          const nextPattern =
+            patternProp === "metal" ||
+            patternProp === "grating" ||
+            patternProp === "carpet" ||
+            patternProp === "tile"
+              ? patternProp
+              : undefined;
+          if (nextPattern == null) return;
+          const updatedLayerRooms = project.layers.rooms.rooms.map((layerFeature) =>
+            layerFeature.id === roomLayer.id
+              ? {
+                  ...layerFeature,
+                  properties: { ...layerFeature.properties, floorPattern: nextPattern },
+                }
+              : layerFeature,
+          );
+          const updatedProject: ShipInteriorProject = {
+            ...project,
+            layers: {
+              ...project.layers,
+              rooms: { ...project.layers.rooms, rooms: updatedLayerRooms },
+            },
+          };
+          onProjectUpdate(updatedProject);
+          break;
+        }
         case "select":
           handleSelectionStart(snappedPos);
           break;
       }
     },
-    [engine, wallTool, project, handleDoorPlacement, handleSelectionStart, handleStationPlacement],
+    [
+      engine,
+      wallTool,
+      project,
+      handleDoorPlacement,
+      handleSelectionStart,
+      handleStationPlacement,
+      onProjectUpdate,
+    ],
   );
 
   const handleMouseUp = useCallback(
