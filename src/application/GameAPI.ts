@@ -90,7 +90,7 @@ export interface GameController {
   setZoom(zoom: number): void;
   getSnapshot(): GameSnapshot;
   bus: GameBus;
-  dispatch(action: Action): void;
+  dispatch(action: Action, pressed?: boolean): void;
   rebind(action: Action, code: string): void;
   // Optional extras exposed by some controllers
   getInventory?: () => PlayerInventory;

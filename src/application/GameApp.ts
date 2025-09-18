@@ -147,16 +147,12 @@ export class GameApp {
     const onMouseDown: EventListener = (evt) => {
       if (!(evt instanceof MouseEvent)) return;
       if (evt.button !== 0) return; // left button only
-      const next = new Set(input.actions);
-      next.add("fire");
-      input.actions = next;
+      input.enqueueAction("fire", true);
     };
     const onMouseUp: EventListener = (evt) => {
       if (!(evt instanceof MouseEvent)) return;
       if (evt.button !== 0) return;
-      const next = new Set(input.actions);
-      next.delete("fire");
-      input.actions = next;
+      input.enqueueAction("fire", false);
     };
     canvas.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
@@ -467,11 +463,8 @@ export class GameApp {
       },
       getSnapshot,
       bus,
-      dispatch(action: Action): void {
-        // Programmatic input: set into current actions set
-        const next = new Set(input.actions);
-        next.add(action);
-        input.actions = next;
+      dispatch(action: Action, pressed = true): void {
+        input.enqueueAction(action, pressed);
       },
       rebind(action: Action, code: string): void {
         setKeyBinding(action, code);

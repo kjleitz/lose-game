@@ -1,4 +1,4 @@
-import type { ActionState, ActionQueue } from "./ActionTypes";
+import type { Action, ActionState, ActionQueue } from "./ActionTypes";
 import { mapKeyToAction } from "./KeyBindings";
 
 export function createActionState(): ActionState {
@@ -21,6 +21,10 @@ export function createActionQueue(): ActionQueue {
 export function enqueueKeyEvent(queue: ActionQueue, code: string, pressed: boolean): void {
   const action = mapKeyToAction(code);
   if (!action) return;
+  queue.push({ action, pressed });
+}
+
+export function enqueueAction(queue: ActionQueue, action: Action, pressed: boolean): void {
   queue.push({ action, pressed });
 }
 

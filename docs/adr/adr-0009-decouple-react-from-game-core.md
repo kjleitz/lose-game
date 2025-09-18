@@ -57,7 +57,7 @@
   - `setZoom(zoom: number): void`
   - `getSnapshot(): GameSnapshot`
   - `bus: GameBus` (typed event bus)
-  - `dispatch(action: Action): void` (optional programmatic input)
+  - `dispatch(action: Action, pressed?: boolean): void` (optional programmatic input)
   - `rebind(action: Action, code: string): void`
 
 - `GameOptions`

@@ -21,6 +21,7 @@ interface RadarProps {
   enemies?: RadarEnemy[];
   screenW: number;
   screenH: number;
+  mobileLayout?: boolean;
 }
 
 export function Radar({
@@ -33,6 +34,7 @@ export function Radar({
   enemies = [],
   screenW,
   screenH,
+  mobileLayout = false,
 }: RadarProps): JSX.Element {
   const radarService = new RadarService(screenW, screenH);
   const RADAR_SIZE = radarService.RADAR_SIZE;
@@ -148,8 +150,11 @@ export function Radar({
         );
       }
     }
+    const planetRadarClass = mobileLayout
+      ? "relative hud-panel p-2"
+      : "absolute right-8 bottom-8 z-10 hud-panel p-2";
     return (
-      <div className="absolute right-8 bottom-8 z-10 hud-panel p-2">
+      <div className={planetRadarClass}>
         <svg width={RECT_W} height={RECT_H} style={{ display: "block" }}>
           <defs>
             <clipPath id="rect-radar-clip">
@@ -188,8 +193,9 @@ export function Radar({
     );
   }
 
+  const containerClass = mobileLayout ? "relative" : "absolute right-8 bottom-8 z-10";
   return (
-    <div className="absolute right-8 bottom-8 z-10">
+    <div className={containerClass}>
       <svg width={RADAR_SIZE} height={RADAR_SIZE} style={{ display: "block" }}>
         <defs>
           <clipPath id="radar-clip">

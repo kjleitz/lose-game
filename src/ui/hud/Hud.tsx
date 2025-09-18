@@ -10,6 +10,7 @@ import { InventoryPanel } from "./panels/InventoryPanel";
 import { StatusPanel } from "./panels/StatusPanel";
 import { Notification } from "./widgets/Notification";
 import { Radar } from "./widgets/Radar";
+import { Button } from "../controls";
 import type { AmmoType } from "../../shared/types/combat";
 
 interface HudProps {
@@ -35,6 +36,7 @@ interface HudProps {
   playerSpeed?: number;
   inventory?: PlayerInventory;
   inventoryVisible?: boolean;
+  mobileLayout?: boolean;
   onChangeSpeed?: (n: number) => void;
   onOpenSettings?: () => void;
   onToggleInventory?: () => void;
@@ -70,6 +72,7 @@ export function Hud({
   playerSpeed,
   inventory,
   inventoryVisible = false,
+  mobileLayout = false,
   onChangeSpeed,
   onOpenSettings,
   onToggleInventory,
@@ -81,21 +84,28 @@ export function Hud({
   ammoOptions,
   onSelectAmmo,
 }: HudProps): JSX.Element {
+  const statusAnchorClass = mobileLayout ? "left-4 top-4" : "left-4 bottom-4";
+
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
-      <Radar
-        mode={mode}
-        planet={planet}
-        player={player}
-        playerAngle={playerAngle}
-        planets={planets}
-        stars={stars}
-        enemies={enemies}
-        screenW={screenW}
-        screenH={screenH}
-      />
-      <Notification message={notification} />
-      <div className="absolute left-4 bottom-4 pointer-events-auto z-20" style={{ minWidth: 180 }}>
+      {mobileLayout ? null : (
+        <Radar
+          mode={mode}
+          planet={planet}
+          player={player}
+          playerAngle={playerAngle}
+          planets={planets}
+          stars={stars}
+          enemies={enemies}
+          screenW={screenW}
+          screenH={screenH}
+        />
+      )}
+      {mobileLayout ? null : <Notification message={notification} />}
+      <div
+        className={`absolute ${statusAnchorClass} pointer-events-auto z-20`}
+        style={{ minWidth: 180 }}
+      >
         <StatusPanel
           health={health}
           healthMax={healthMax}
@@ -105,29 +115,71 @@ export function Hud({
           perkPoints={perkPoints}
           onOpenPerks={onOpenPerks}
         />
+        {mobileLayout ? (
+          <div className="mt-2 space-y-2 text-right">
+            <Notification message={notification} mobileLayout />
+            {onToggleInventory ? (
+              <Button size="xs" onClick={onToggleInventory}>
+                {inventoryVisible ? "Hide Inv" : "Inventory"}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-      <div className="absolute right-4 top-4 z-20">
-        <ControlsPanel
-          actions={actions}
-          paused={paused}
-          speedMultiplier={speedMultiplier}
-          playerSpeed={playerSpeed}
-          onChangeSpeed={onChangeSpeed}
-          onOpenSettings={onOpenSettings}
-          onGrantPerkPoints={onGrantPerkPoints}
-          selectedAmmo={selectedAmmo}
-          ammoOptions={ammoOptions}
-          onSelectAmmo={onSelectAmmo}
-        />
-      </div>
+      {mobileLayout ? (
+        <div className="absolute right-4 top-4 z-20 flex flex-col items-end gap-2 pointer-events-none">
+          <div className="pointer-events-auto">
+            <Radar
+              mode={mode}
+              planet={planet}
+              player={player}
+              playerAngle={playerAngle}
+              planets={planets}
+              stars={stars}
+              enemies={enemies}
+              screenW={screenW}
+              screenH={screenH}
+              mobileLayout
+            />
+          </div>
+          <div className="pointer-events-auto">
+            <ControlsPanel
+              actions={actions}
+              paused={paused}
+              playerSpeed={playerSpeed}
+              onOpenSettings={onOpenSettings}
+              mobileLayout
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="absolute right-4 top-4 z-20">
+          <ControlsPanel
+            actions={actions}
+            paused={paused}
+            speedMultiplier={speedMultiplier}
+            playerSpeed={playerSpeed}
+            onChangeSpeed={onChangeSpeed}
+            onOpenSettings={onOpenSettings}
+            onGrantPerkPoints={onGrantPerkPoints}
+            onToggleInventory={onToggleInventory}
+            inventoryVisible={inventoryVisible}
+            showInventoryToggle={false}
+            selectedAmmo={selectedAmmo}
+            ammoOptions={ammoOptions}
+            onSelectAmmo={onSelectAmmo}
+          />
+        </div>
+      )}
       {/* Speedometer moved into ControlsPanel (top-right) */}
       <div className="pointer-events-auto">
         <InventoryPanel
           inventory={inventory}
           visible={inventoryVisible}
-          onToggle={onToggleInventory}
+          onToggle={mobileLayout ? onToggleInventory : undefined}
           onItemUse={onItemUse}
           onItemDrop={onItemDrop}
+          mobileLayout={mobileLayout}
         />
       </div>
     </div>

@@ -5,6 +5,7 @@ import {
   createActionQueue,
   createActionState,
   enqueueKeyEvent,
+  enqueueAction,
 } from "./ActionManager";
 
 describe("Action queue", () => {
@@ -28,5 +29,14 @@ describe("Action queue", () => {
     enqueueKeyEvent(q, "KeyZ", true); // unmapped
     const next = consumeQueue(state, q);
     expect(next).toBe(state); // unchanged reference if no effective events
+  });
+
+  it("applies direct action enqueue calls", () => {
+    const state = createActionState();
+    const q = createActionQueue();
+    enqueueAction(q, "fire", true);
+    enqueueAction(q, "fire", false);
+    const next = consumeQueue(state, q);
+    expect(next.has("fire")).toBe(false);
   });
 });

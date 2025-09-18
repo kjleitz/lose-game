@@ -2,9 +2,10 @@ import {
   createActionQueue,
   createActionState,
   enqueueKeyEvent,
+  enqueueAction,
   consumeQueue,
 } from "./ActionManager";
-import type { ActionState } from "./ActionTypes";
+import type { Action, ActionState } from "./ActionTypes";
 
 export class InputManager {
   public actions = createActionState();
@@ -16,6 +17,10 @@ export class InputManager {
 
   enqueueKeyUp(code: string): void {
     enqueueKeyEvent(this.actionQueue, code, false);
+  }
+
+  enqueueAction(action: Action, pressed: boolean): void {
+    enqueueAction(this.actionQueue, action, pressed);
   }
 
   updateActions(): ActionState {

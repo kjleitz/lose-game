@@ -12,6 +12,9 @@ import { SettingsModal, DeathOverlay } from "../overlays/dialogs";
 import { PerkModal } from "../overlays/dialogs/PerkModal";
 import { PauseMenu } from "../overlays/menus/PauseMenu";
 import { MapMaker } from "../../tools/map-maker/MapMaker";
+import { useMobileLayout } from "../hooks/useMobileLayout";
+import { TouchControlsOverlay } from "../hud/widgets/TouchControlsOverlay";
+import { CrosshairOverlay } from "../hud/widgets/CrosshairOverlay";
 
 function useCanvasSize(): ViewSize {
   const [size, setSize] = useState<ViewSize>({
@@ -38,7 +41,6 @@ export function CanvasRoot(): JSX.Element {
   const [perksOpen, setPerksOpen] = useState(false);
   const [dead, setDead] = useState(false);
   const [mapMakerOpen, setMapMakerOpen] = useState(false);
-  const [, /* inventoryVisible */ setInventoryVisible] = useState(true);
   const controllerRef = useRef<GameController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // When any UI menu is open, the game should be paused.
@@ -76,9 +78,15 @@ export function CanvasRoot(): JSX.Element {
   const [hudActions, setHudActions] = useState<Set<Action>>(() => new Set());
   const [speed, setSpeed] = useState<number>(1);
   const [playerSpeed, setPlayerSpeed] = useState<number>(0);
+  const isMobileLayout = useMobileLayout();
+  const [inventoryVisible, setInventoryVisible] = useState<boolean>(() => !isMobileLayout);
   const [cursorAimEnabled, setCursorAimEnabled] = useState<boolean>(false);
   const [showCursorHint, setShowCursorHint] = useState<boolean>(false);
   const cursorHintShown = useRef<boolean>(false);
+
+  useEffect(() => {
+    setInventoryVisible(!isMobileLayout);
+  }, [isMobileLayout]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -207,6 +215,17 @@ export function CanvasRoot(): JSX.Element {
     }
   }, [uiPaused]);
 
+  const snapshot = controllerRef.current?.getSnapshot();
+  const playerAngle = snapshot?.player.angle ?? 0;
+  const stars = snapshot?.stars ?? [];
+  const enemies =
+    snapshot?.enemies?.map((enemy) => ({
+      id: enemy.id,
+      x: enemy.x,
+      y: enemy.y,
+      radius: enemy.radius,
+    })) ?? [];
+
   return (
     <div className="relative w-screen h-screen overflow-hidden" data-testid="game-root">
       <canvas ref={canvasRef} className="block w-full h-full" />
@@ -217,6 +236,13 @@ export function CanvasRoot(): JSX.Element {
           canvasRef={canvasRef}
           showHint={showCursorHint}
           onHintDone={(): void => setShowCursorHint(false)}
+        />
+      ) : null}
+      {isMobileLayout && !uiPaused && !dead ? (
+        <TouchControlsOverlay
+          controller={controllerRef.current}
+          mode={hudState.mode}
+          spaceHeading={playerAngle}
         />
       ) : null}
       <DeathOverlay
@@ -230,7 +256,7 @@ export function CanvasRoot(): JSX.Element {
         mode={hudState.mode}
         planet={hudState.planet}
         player={hudState.player}
-        playerAngle={controllerRef.current?.getSnapshot().player.angle ?? 0}
+        playerAngle={playerAngle}
         experience={hudState.experience}
         level={hudState.level}
         xpToNextLevel={hudState.xpToNextLevel}
@@ -238,15 +264,8 @@ export function CanvasRoot(): JSX.Element {
         health={hudState.health}
         healthMax={hudState.healthMax}
         planets={hudState.planets}
-        stars={controllerRef.current?.getSnapshot().stars ?? []}
-        enemies={
-          controllerRef.current?.getSnapshot().enemies?.map((enemy) => ({
-            id: enemy.id,
-            x: enemy.x,
-            y: enemy.y,
-            radius: enemy.radius,
-          })) ?? []
-        }
+        stars={stars}
+        enemies={enemies}
         screenW={size.width}
         screenH={size.height}
         notification={notification}
@@ -255,11 +274,14 @@ export function CanvasRoot(): JSX.Element {
         speedMultiplier={speed}
         playerSpeed={playerSpeed}
         inventory={controllerRef.current?.getInventory?.()}
-        inventoryVisible={true}
+        inventoryVisible={inventoryVisible}
+        mobileLayout={isMobileLayout}
         onOpenPerks={(): void => setPerksOpen(true)}
         onChangeSpeed={(nextSpeed: number): void => controllerRef.current?.setSpeed(nextSpeed)}
         onOpenSettings={(): void => setSettingsOpen(true)}
-        onToggleInventory={(): void => setInventoryVisible((prev) => prev)}
+        onToggleInventory={
+          isMobileLayout ? (): void => setInventoryVisible((prev) => !prev) : undefined
+        }
         onItemUse={handleItemUse}
         onItemDrop={handleItemDrop}
         onGrantPerkPoints={(amount: number): void =>
@@ -325,4 +347,3 @@ export function CanvasRoot(): JSX.Element {
     </div>
   );
 }
-import { CrosshairOverlay } from "../hud/widgets/CrosshairOverlay";

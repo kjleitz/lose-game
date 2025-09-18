@@ -13,6 +13,7 @@ interface InventoryPanelProps {
   onToggle?: () => void;
   onItemUse?: (item: Item) => void;
   onItemDrop?: (item: Item, quantity: number) => void;
+  mobileLayout?: boolean;
 }
 
 function ItemIcon({ item }: { item: Item }): JSX.Element {
@@ -110,6 +111,7 @@ export function InventoryPanel({
   onToggle,
   onItemUse,
   onItemDrop,
+  mobileLayout = false,
 }: InventoryPanelProps): JSX.Element | null {
   if (!inventory) {
     return null;
@@ -128,11 +130,15 @@ export function InventoryPanel({
     const slot = slots.find((slotEntry) => slotEntry.id === `slot_${i}`);
     slotGrid.push(slot || null);
   }
+  const positionClass = mobileLayout
+    ? "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(20rem,calc(100vw-2rem))] max-h-[70vh]"
+    : "fixed left-4 top-4";
+  const visibilityClass = visible
+    ? "opacity-100 transform scale-100"
+    : "opacity-0 transform scale-95 pointer-events-none";
 
   return (
-    <Panel
-      className={`fixed left-4 top-4 p-4 transition-all duration-300 ${visible ? "opacity-100 transform scale-100" : "opacity-0 transform scale-95 pointer-events-none"}`}
-    >
+    <Panel className={`${positionClass} p-4 transition-all duration-300 ${visibilityClass} z-40`}>
       <header className="flex justify-between items-center mb-3">
         <h3 className="hud-text text-sm">Inventory</h3>
 
@@ -187,7 +193,7 @@ export function InventoryPanel({
       </div>
 
       <div className="mt-3 pt-3 hud-divider">
-        <div className="flex gap-2 text-xs">
+        <div className="flex gap-2 text-xs items-center">
           <Button
             onClick={(): void => inventory.sortInventory("category")}
             data-testid="sort-items-button"
@@ -195,7 +201,11 @@ export function InventoryPanel({
             Sort
           </Button>
 
-          <div className="hud-text text-[11px] opacity-70 flex items-center">Press I to toggle</div>
+          {mobileLayout ? null : (
+            <div className="hud-text text-[11px] opacity-70 flex items-center">
+              Press I to toggle
+            </div>
+          )}
         </div>
       </div>
     </Panel>
