@@ -130,21 +130,38 @@ export class SelectionTool {
   }
 
   private getDoorBounds(door: Door): { x: number; y: number; width: number; height: number } {
-    if (door.orientation === "horizontal") {
-      return {
-        x: door.x - door.width / 2,
-        y: door.y - door.height / 2,
-        width: door.width,
-        height: door.height,
-      };
-    } else {
-      return {
-        x: door.x - door.height / 2,
-        y: door.y - door.width / 2,
-        width: door.height,
-        height: door.width,
-      };
+    const rotation = this.getDoorRotation(door);
+    const halfWidth = door.width / 2;
+    const halfHeight = door.height / 2;
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    const corners = [
+      { x: -halfWidth, y: -halfHeight },
+      { x: halfWidth, y: -halfHeight },
+      { x: halfWidth, y: halfHeight },
+      { x: -halfWidth, y: halfHeight },
+    ];
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    for (const corner of corners) {
+      const worldX = door.x + corner.x * cos - corner.y * sin;
+      const worldY = door.y + corner.x * sin + corner.y * cos;
+      if (worldX < minX) minX = worldX;
+      if (worldX > maxX) maxX = worldX;
+      if (worldY < minY) minY = worldY;
+      if (worldY > maxY) maxY = worldY;
     }
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
   }
 
   private getWallBounds(wall: Wall): { x: number; y: number; width: number; height: number } {
@@ -179,4 +196,11 @@ export class SelectionTool {
   }
 
   // Geometry helpers moved to ../utils/geom
+
+  private getDoorRotation(door: Door): number {
+    if (typeof door.rotation === "number") {
+      return door.rotation;
+    }
+    return door.orientation === "vertical" ? Math.PI / 2 : 0;
+  }
 }

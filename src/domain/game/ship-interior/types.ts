@@ -1,5 +1,7 @@
 import type { Point2D } from "../../../shared/types/geometry";
 
+export type RoomFloorPattern = "metal" | "grating" | "carpet" | "tile";
+
 export interface ShipInterior {
   shipId: string;
   playerSpawnPoint: Point2D;
@@ -23,6 +25,8 @@ export interface Room {
     color: string;
     intensity: number;
   };
+  boundary?: Point2D[];
+  floorPattern?: RoomFloorPattern;
 }
 
 export interface Wall {
@@ -42,6 +46,7 @@ export interface Door {
   width: number;
   height: number;
   orientation: "horizontal" | "vertical";
+  rotation: number;
   isOpen: boolean;
   connectsRooms: [string, string]; // room IDs
   type: "sliding" | "manual" | "airlock";

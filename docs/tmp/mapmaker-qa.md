@@ -348,9 +348,28 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] File includes metadata (name, author, timestamps)
 - [ ] File can be imported/viewed externally
 
+### 18. Saved Maps Browser
+
+**Test Case**: Load maps from localStorage via the Saved Maps panel
+
+**Steps:**
+
+1. Save at least two different projects with distinct names
+2. Open the "Saved Maps" panel in the left sidebar
+3. Click a saved entry's `Load` button
+4. Verify the project switches to the selected save
+5. Use the `Delete` control on an entry and refresh the list
+
+**Expected Results:**
+
+- [ ] Saved Maps panel lists all `map-maker-*` entries from localStorage with metadata
+- [ ] Loading a saved entry switches the active project and mode accordingly
+- [ ] Deleting an entry removes it from localStorage after refresh
+- [ ] Panel reflects the currently active saved project highlight (if present)
+
 ## Layer Management
 
-### 18. Layer Visibility and Opacity
+### 19. Layer Visibility and Opacity
 
 **Test Case**: Control layer visibility and opacity
 
@@ -370,7 +389,7 @@ This document provides manual test cases for the map-maker tool implementation b
 
 ## Canvas Interaction
 
-### 19. Camera Controls
+### 20. Camera Controls
 
 **Test Case**: Pan and zoom the canvas view
 
@@ -389,7 +408,7 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Grid remains visible and properly scaled at different zooms
 - [ ] Camera position affects all rendered elements correctly
 
-### 20. Grid Snapping
+### 21. Grid Snapping
 
 **Test Case**: Verify grid snapping behavior
 
@@ -409,7 +428,7 @@ This document provides manual test cases for the map-maker tool implementation b
 
 ## Error Handling and Edge Cases
 
-### 21. Invalid Operations
+### 22. Invalid Operations
 
 **Test Case**: Verify handling of invalid user actions
 
@@ -427,7 +446,7 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Objects stay within reasonable bounds
 - [ ] Rapid input doesn't cause crashes or duplicate objects
 
-### 22. Undo/Redo Functionality
+### 23. Undo/Redo Functionality
 
 **Test Case**: Verify undo/redo operations
 
@@ -446,7 +465,7 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Redo button disables when no actions to redo
 - [ ] Action history is maintained correctly
 
-### 23. Copy/Paste Functionality
+### 24. Copy/Paste Functionality
 
 **Test Case**: Copy and paste selected objects
 
@@ -470,7 +489,7 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Copy/paste works across different areas of the canvas
 - [ ] Clipboard persists until new copy or page refresh
 
-### 24. Keyboard Shortcuts
+### 25. Keyboard Shortcuts
 
 **Test Case**: Verify all keyboard shortcuts function correctly
 
@@ -502,7 +521,7 @@ This document provides manual test cases for the map-maker tool implementation b
 
 ## Performance and Usability
 
-### 25. Performance Optimizations
+### 26. Performance Optimizations
 
 **Test Case**: Verify performance optimizations are working effectively
 
@@ -527,7 +546,7 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Memory cleanup prevents accumulation of unused objects
 - [ ] Complex layouts remain responsive
 
-### 26. Responsiveness
+### 27. Responsiveness
 
 **Test Case**: Verify tool remains responsive with complex layouts
 
@@ -544,7 +563,7 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Room detection completes in reasonable time
 - [ ] No significant lag during user interactions
 
-### 27. Visual Feedback
+### 28. Visual Feedback
 
 **Test Case**: Verify appropriate visual feedback for user actions
 
@@ -561,10 +580,12 @@ This document provides manual test cases for the map-maker tool implementation b
 - [ ] Selected objects are visually distinct
 - [ ] Cursors indicate current tool/mode
 - [ ] Hover effects provide useful feedback
+- [ ] Room fills render with high-contrast gradients and readable labels
+- [ ] Station icons show distinct glyphs/colors for each station type
 
 ## Integration Points
 
-### 28. Type Safety
+### 29. Type Safety
 
 **Test Case**: Verify TypeScript compilation and type safety
 

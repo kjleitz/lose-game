@@ -14,6 +14,7 @@ Game sprites and visual assets. All artwork is stored as SVG files organized by 
   - `ship/` - Player ship sprites
   - `terrain-*` - Environment sprites (rocks, structures, vegetation)
   - `thruster/` - Ship thruster sprites
+- **`maps/`** - `.losemap.json` files consumed at runtime (e.g., `default-ship.losemap.json` for the player corvette interior)
 
 ## Asset Guidelines
 

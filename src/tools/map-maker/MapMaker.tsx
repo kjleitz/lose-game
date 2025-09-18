@@ -1,26 +1,30 @@
 import type { JSX } from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { MapMakerEngine } from "./MapMakerEngine";
 import { MapCanvas } from "./canvas/MapCanvas";
 import { ToolPanel } from "./panels/ToolPanel";
 import { PropertyPanel } from "./panels/PropertyPanel";
 import { LayerPanel } from "./panels/LayerPanel";
+import { SavedProjectsPanel, type SavedProjectSummary } from "./panels/SavedProjectsPanel";
 import { EnhancedShipEditor } from "./modes/EnhancedShipEditor";
 import { PlanetEditor } from "./modes/PlanetEditor";
 import type { MapProject } from "./types/MapProject";
 import type { EditingTool } from "./types/EditingTools";
 import { getToolsForMode } from "./types/EditingTools";
+import { parseLoseMap, isLoseMapProject } from "../../shared/loseMap/guards";
 
 interface MapMakerProps {
   initialProject?: MapProject;
   onProjectChange?: (project: MapProject) => void;
   className?: string;
+  onClose?: () => void;
 }
 
 export function MapMaker({
   initialProject,
   onProjectChange,
   className,
+  onClose,
 }: MapMakerProps): JSX.Element {
   const [engine] = useState(
     () =>
@@ -40,6 +44,7 @@ export function MapMaker({
   const [_selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [savedProjects, setSavedProjects] = useState<SavedProjectSummary[]>([]);
 
   // Initialize default project if none provided
   useEffect(() => {
@@ -134,6 +139,64 @@ export function MapMaker({
 
   const availableTools = useMemo(() => getToolsForMode(mode), [mode]);
 
+  useEffect(() => {
+    if (mode === "ship" && engine.getCurrentTool() == null) {
+      engine.setTool("wall");
+    }
+  }, [engine, mode]);
+
+  const refreshSavedProjects = useCallback(() => {
+    if (typeof window === "undefined") {
+      setSavedProjects([]);
+      return;
+    }
+
+    const summaries: SavedProjectSummary[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key == null) continue;
+      if (!key.startsWith("map-maker-")) continue;
+      const raw = window.localStorage.getItem(key);
+      if (raw == null) continue;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      if (!isLoseMapProject(parsed)) continue;
+
+      const name = parsed.metadata.name;
+      const modified = parsed.metadata.modified || parsed.metadata.created;
+      summaries.push({
+        key,
+        name,
+        type: parsed.type,
+        modified,
+      });
+    }
+
+    summaries.sort((left, right) => {
+      const rightTime = Date.parse(right.modified);
+      const leftTime = Date.parse(left.modified);
+      if (Number.isNaN(rightTime) && Number.isNaN(leftTime)) return 0;
+      if (Number.isNaN(rightTime)) return 1;
+      if (Number.isNaN(leftTime)) return -1;
+      return rightTime - leftTime;
+    });
+    setSavedProjects(summaries);
+  }, []);
+
+  useEffect(() => {
+    refreshSavedProjects();
+  }, [refreshSavedProjects]);
+
+  const activeSavedKey = useMemo(() => {
+    if (!project) return null;
+    const key = storageKeyFor(project.metadata.name);
+    return savedProjects.some((entry) => entry.key === key) ? key : null;
+  }, [project, savedProjects]);
+
   const handleToolSelect = (toolId: string): void => {
     engine.setTool(toolId);
   };
@@ -221,11 +284,14 @@ export function MapMaker({
     engine.setMode(newMode);
   };
 
-  const handleProjectUpdate = (updatedProject: MapProject): void => {
-    setProject(updatedProject);
-    engine.setProject(updatedProject);
-    onProjectChange?.(updatedProject);
-  };
+  const handleProjectUpdate = useCallback(
+    (updatedProject: MapProject) => {
+      setProject(updatedProject);
+      engine.setProject(updatedProject);
+      onProjectChange?.(updatedProject);
+    },
+    [engine, onProjectChange],
+  );
 
   const handleSaveProject = (): void => {
     if (project) {
@@ -239,8 +305,9 @@ export function MapMaker({
       handleProjectUpdate(updatedProject);
 
       // Save to localStorage
-      const projectKey = `map-maker-${project.metadata.name}`;
+      const projectKey = storageKeyFor(project.metadata.name);
       localStorage.setItem(projectKey, JSON.stringify(updatedProject));
+      refreshSavedProjects();
 
       // TODO: Show success notification
       console.log("Project saved to localStorage");
@@ -262,6 +329,34 @@ export function MapMaker({
       URL.revokeObjectURL(url);
     }
   };
+
+  const handleLoadSavedProject = useCallback(
+    (key: string) => {
+      if (typeof window === "undefined") return;
+      const raw = window.localStorage.getItem(key);
+      if (raw == null) return;
+      let parsed: MapProject;
+      try {
+        parsed = parseLoseMap(raw);
+      } catch (error) {
+        console.error("Failed to load saved project", error);
+        return;
+      }
+      handleProjectUpdate(parsed);
+      engine.setMode(parsed.type);
+      refreshSavedProjects();
+    },
+    [engine, handleProjectUpdate, refreshSavedProjects],
+  );
+
+  const handleDeleteSavedProject = useCallback(
+    (key: string) => {
+      if (typeof window === "undefined") return;
+      window.localStorage.removeItem(key);
+      refreshSavedProjects();
+    },
+    [refreshSavedProjects],
+  );
 
   const handleUndo = (): void => {
     engine.undo();
@@ -587,6 +682,14 @@ export function MapMaker({
           values={toolProperties}
           onChange={handleToolPropertyChange}
         />
+
+        <SavedProjectsPanel
+          items={savedProjects}
+          activeKey={activeSavedKey}
+          onLoad={handleLoadSavedProject}
+          onDelete={handleDeleteSavedProject}
+          onRefresh={refreshSavedProjects}
+        />
       </div>
 
       {/* Main canvas area */}
@@ -632,6 +735,15 @@ export function MapMaker({
           </div>
 
           <div className="flex items-center space-x-2">
+            {onClose ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1 text-sm bg-red-600 hover:bg-red-500 rounded text-white"
+              >
+                Close (Esc)
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleSaveProject}
@@ -703,4 +815,8 @@ export function MapMaker({
       )}
     </div>
   );
+}
+
+function storageKeyFor(name: string): string {
+  return `map-maker-${name}`;
 }

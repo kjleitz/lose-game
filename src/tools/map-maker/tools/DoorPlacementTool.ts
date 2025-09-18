@@ -98,15 +98,19 @@ export class DoorPlacementTool {
 
   private createDoor(position: Point2D, wall: Wall): Door {
     const wallVector = { x: wall.x2 - wall.x1, y: wall.y2 - wall.y1 };
-    const isVertical = Math.abs(wallVector.y) > Math.abs(wallVector.x);
+    const rotation = Math.atan2(wallVector.y, wallVector.x);
+    const absCos = Math.abs(Math.cos(rotation));
+    const absSin = Math.abs(Math.sin(rotation));
+    const orientation: Door["orientation"] = absCos >= absSin ? "horizontal" : "vertical";
 
     return {
       id: createId("door"),
       x: position.x,
       y: position.y,
-      width: 32,
-      height: 8,
-      orientation: isVertical ? "vertical" : "horizontal",
+      width: 48,
+      height: 12,
+      orientation,
+      rotation,
       isOpen: false,
       connectsRooms: ["", ""], // Will be filled by room detection
       type: "sliding",

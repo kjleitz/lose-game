@@ -405,6 +405,7 @@ export class RoomDetector {
         color: "#ffffff",
         intensity: 0.8,
       },
+      boundary: detectedRoom.boundary,
     }));
   }
 

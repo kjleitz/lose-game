@@ -153,11 +153,22 @@ export class MapMakerEngine {
   }
 
   public setProject(project: MapProject): void {
+    const previousMode = this.config.mode;
     this.project = project;
     this.config.mode = project.type;
     this.rebuildFeatureIndex();
     this.clearHistory();
     this.clearSelection();
+    if (previousMode !== project.type) {
+      this.state.currentTool = null;
+      this.emit("modeChanged", project.type);
+    } else if (this.state.currentTool != null) {
+      this.emit("toolChanged", this.state.currentTool);
+      this.emit("toolPropertiesChanged", {
+        toolId: this.state.currentTool.id,
+        properties: this.getCurrentToolProperties(),
+      });
+    }
     this.emit("projectChanged", project);
   }
 
@@ -931,6 +942,13 @@ export class MapMakerEngine {
       orientationProp === "horizontal" || orientationProp === "vertical"
         ? orientationProp
         : "horizontal";
+    const rotationProp = lf.properties["rotation"];
+    const rotation =
+      typeof rotationProp === "number"
+        ? rotationProp
+        : orientation === "vertical"
+          ? Math.PI / 2
+          : 0;
     const isOpen = typeof lf.properties["isOpen"] === "boolean" ? lf.properties["isOpen"] : false;
     const doorTypeProp = lf.properties["doorType"];
     const type =
@@ -944,6 +962,7 @@ export class MapMakerEngine {
       width,
       height,
       orientation,
+      rotation,
       isOpen,
       connectsRooms: ["", ""],
       type,

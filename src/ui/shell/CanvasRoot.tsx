@@ -319,15 +319,7 @@ export function CanvasRoot(): JSX.Element {
       />
       {mapMakerOpen ? (
         <div className="absolute inset-0 z-50 bg-gray-900">
-          <div className="absolute top-4 left-4 z-10">
-            <button
-              onClick={() => setMapMakerOpen(false)}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded shadow-lg"
-            >
-              Close Map Maker (ESC)
-            </button>
-          </div>
-          <MapMaker />
+          <MapMaker onClose={() => setMapMakerOpen(false)} />
         </div>
       ) : null}
     </div>

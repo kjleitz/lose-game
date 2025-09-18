@@ -125,7 +125,9 @@ const planetTools: EditingTool[] = [
 - **Storage**: Maps saved to browser storage with project management
 - **Export**: Export maps as `.losemap.json` files for external use
 - **Import**: Load maps from storage for continued editing
-- **Game Integration**: Place exported `.losemap.json` files in `assets/maps/` directory for in-game use
+- **Game Integration**: Place exported `.losemap.json` files in `src/assets/maps/` directory for in-game use
+- **Default Ship Map**: `src/assets/maps/default-ship.losemap.json` provides the in-game ship interior and can be replaced with any exported ship project
+- **Saved Maps Panel**: Built-in browser panel lists and loads previously saved projects from localStorage
 - **File Management**: Save/Load/Export buttons with project browser
 - **Validation**: Maps validated against game constraints before export
 
@@ -175,6 +177,7 @@ private loadCustomShipInterior(mapFile: MapProject): ShipInterior {
 - **Save Button**: Save current project with name and metadata
 - **Load Button**: Browse and load existing projects from storage
 - **Export Button**: Export project as `.losemap.json` file for download
+- **Saved Maps Panel**: Manage browser-stored maps (load/delete) with one click
 - **Auto-save**: Periodic saves with conflict resolution
 
 ### Implementation Phases

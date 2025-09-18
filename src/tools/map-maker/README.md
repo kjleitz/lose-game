@@ -100,7 +100,9 @@ Switch between ship interior and planet surface editing with appropriate tool se
 
 - localStorage auto-save with project naming
 - JSON export/import (.losemap.json files)
+- Saved projects panel lists localStorage maps with quick load/delete controls
 - Metadata tracking (creation date, author, modifications)
+- Player ship interior in-game reads `src/assets/maps/default-ship.losemap.json`; replace this file with an exported project to update the runtime layout
 
 ### Performance Optimizations
 

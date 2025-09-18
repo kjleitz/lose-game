@@ -2,7 +2,12 @@ import type { JSX } from "react";
 import { useEffect, useState, useCallback } from "react";
 import type { MapMakerEngine } from "../MapMakerEngine";
 import type { ShipInteriorProject, LayerFeature } from "../types/MapProject";
-import type { Wall, Door, InteractiveStation } from "../../../domain/game/ship-interior/types";
+import type {
+  Wall,
+  Door,
+  InteractiveStation,
+  RoomFloorPattern,
+} from "../../../domain/game/ship-interior/types";
 import type { Point2D } from "../../../shared/types/geometry";
 import { WallDrawingTool } from "../tools/WallDrawingTool";
 import { SelectionTool, type SelectableFeature } from "../tools/SelectionTool";
@@ -292,6 +297,7 @@ export function EnhancedShipEditor({
       width: door.width,
       height: door.height,
       orientation: door.orientation,
+      rotation: door.rotation,
       doorType: door.type,
       isOpen: door.isOpen,
     },
@@ -437,13 +443,9 @@ export function EnhancedShipEditor({
           });
           if (!roomLayer) return;
           const patternProp = engine.getToolPropertyString("pattern");
-          const nextPattern =
-            patternProp === "metal" ||
-            patternProp === "grating" ||
-            patternProp === "carpet" ||
-            patternProp === "tile"
-              ? patternProp
-              : undefined;
+          const nextPattern: RoomFloorPattern | undefined = isRoomFloorPattern(patternProp)
+            ? patternProp
+            : undefined;
           if (nextPattern == null) return;
           const updatedLayerRooms = project.layers.rooms.rooms.map((layerFeature) =>
             layerFeature.id === roomLayer.id
@@ -453,8 +455,17 @@ export function EnhancedShipEditor({
                 }
               : layerFeature,
           );
+          const updatedRooms = project.rooms.map((roomItem) =>
+            roomItem.id === roomLayer.id
+              ? {
+                  ...roomItem,
+                  floorPattern: nextPattern,
+                }
+              : roomItem,
+          );
           const updatedProject: ShipInteriorProject = {
             ...project,
+            rooms: updatedRooms,
             layers: {
               ...project.layers,
               rooms: { ...project.layers.rooms, rooms: updatedLayerRooms },
@@ -536,3 +547,6 @@ export function EnhancedShipEditor({
   // This component manages state but doesn't render anything directly
   return <></>;
 }
+
+const isRoomFloorPattern = (value: unknown): value is RoomFloorPattern =>
+  value === "metal" || value === "grating" || value === "carpet" || value === "tile";

@@ -1,4 +1,5 @@
 import type { MapProject } from "../types/MapProject";
+import { renderStationGlyph } from "../../../domain/render/stationGlyph";
 import type { EditingTool } from "../types/EditingTools";
 import type { Wall, Door, InteractiveStation } from "../../../domain/game/ship-interior/types";
 import type { TerrainFeature, Resource } from "../../../domain/game/planet-surface/types";
@@ -122,7 +123,6 @@ export class PreviewRenderer {
               this.renderDoor(context, door);
             }
           });
-          context.fillStyle = "#4169e1";
           ship.stations.forEach((station) => {
             if (this.isInViewport(station.x, station.y, station.radius, viewportBounds)) {
               this.renderStation(context, station);
@@ -142,17 +142,23 @@ export class PreviewRenderer {
             // Find matching domain room for type-based color, fallback to layer prop if present
             const domainRoom = ship.rooms.find((roomItem) => roomItem.id === lf.id);
             const roomType = this.getRoomTypeFromLayerOrDomain(lf, domainRoom);
+            const palette = this.getRoomPalette(roomType);
 
             // Build path (boundary polygon if provided; else rectangle)
             const boundaryProp = lf.properties["boundary"];
             const path = this.buildRoomPath(boundaryProp, bounds);
 
-            // Fill interior with a subtle room-type color
-            const fillColor = this.getRoomFillColor(roomType);
+            // Fill interior with a saturated gradient for clear visibility
             context.save();
-            context.fillStyle = fillColor;
             if (path) {
+              const gradient = this.createRoomGradient(context, bounds, palette);
+              context.fillStyle = gradient;
               context.fill(path);
+
+              context.globalAlpha = 0.18;
+              context.fillStyle = palette.overlay;
+              context.fill(path);
+              context.globalAlpha = 1;
             }
 
             // If a floor pattern is set, overlay a simple pattern within the room
@@ -164,11 +170,18 @@ export class PreviewRenderer {
 
             // Draw dashed outline on top
             context.save();
-            context.strokeStyle = "#ffff00";
-            context.lineWidth = 2;
-            context.setLineDash([5, 5]);
+            context.strokeStyle = palette.outline;
+            context.lineWidth = 2.2;
+            context.setLineDash([6, 4]);
             if (path) context.stroke(path);
             context.restore();
+
+            this.drawRoomLabel(
+              context,
+              bounds,
+              this.getRoomDisplayName(domainRoom, roomType),
+              palette.label,
+            );
           }
           break;
         }
@@ -285,28 +298,30 @@ export class PreviewRenderer {
   }
 
   private renderDoor(context: CanvasRenderingContext2D, door: Door): void {
+    const rotation =
+      typeof door.rotation === "number"
+        ? door.rotation
+        : door.orientation === "vertical"
+          ? Math.PI / 2
+          : 0;
+
     context.save();
     context.translate(door.x, door.y);
-
-    if (door.orientation === "horizontal") {
-      context.fillRect(-door.width / 2, -door.height / 2, door.width, door.height);
-    } else {
-      context.fillRect(-door.height / 2, -door.width / 2, door.height, door.width);
-    }
-
+    context.rotate(rotation);
+    context.fillRect(-door.width / 2, -door.height / 2, door.width, door.height);
     context.restore();
   }
 
   private renderStation(context: CanvasRenderingContext2D, station: InteractiveStation): void {
-    context.beginPath();
-    context.arc(station.x, station.y, station.radius, 0, Math.PI * 2);
-    context.fill();
+    renderStationGlyph(context, station, {
+      includeLabel: true,
+      labelPosition: "inside",
+    });
 
-    // Render interaction radius
     context.save();
-    context.strokeStyle = "#4169e1";
-    context.lineWidth = 1;
-    context.setLineDash([3, 3]);
+    context.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    context.lineWidth = 1.5;
+    context.setLineDash([4, 4]);
     context.beginPath();
     context.arc(station.x, station.y, station.radius, 0, Math.PI * 2);
     context.stroke();
@@ -383,18 +398,119 @@ export class PreviewRenderer {
       : "corridor";
   }
 
-  private getRoomFillColor(type: "bridge" | "quarters" | "cargo" | "engine" | "corridor"): string {
+  private getRoomPalette(type: "bridge" | "quarters" | "cargo" | "engine" | "corridor"): {
+    gradientStart: string;
+    gradientEnd: string;
+    overlay: string;
+    outline: string;
+    label: string;
+  } {
     switch (type) {
       case "bridge":
-        return "rgba(42, 58, 74, 0.35)";
+        return {
+          gradientStart: "#0a2f4f",
+          gradientEnd: "#2a7dd9",
+          overlay: "rgba(96, 176, 255, 0.75)",
+          outline: "rgba(161, 224, 255, 0.9)",
+          label: "#e2f3ff",
+        };
       case "quarters":
-        return "rgba(58, 42, 42, 0.35)";
+        return {
+          gradientStart: "#4a1c1c",
+          gradientEnd: "#c86f48",
+          overlay: "rgba(255, 196, 160, 0.65)",
+          outline: "rgba(255, 190, 150, 0.9)",
+          label: "#ffe9de",
+        };
       case "cargo":
-        return "rgba(42, 58, 42, 0.35)";
+        return {
+          gradientStart: "#1d3f25",
+          gradientEnd: "#59a66c",
+          overlay: "rgba(142, 236, 164, 0.6)",
+          outline: "rgba(180, 255, 200, 0.9)",
+          label: "#dcffe8",
+        };
       case "engine":
-        return "rgba(74, 42, 42, 0.35)";
+        return {
+          gradientStart: "#4f2410",
+          gradientEnd: "#ff7a3d",
+          overlay: "rgba(255, 190, 120, 0.65)",
+          outline: "rgba(255, 218, 180, 0.9)",
+          label: "#fff1e6",
+        };
+      case "corridor":
       default:
-        return "rgba(42, 42, 58, 0.35)";
+        return {
+          gradientStart: "#1f1f3a",
+          gradientEnd: "#4f5fba",
+          overlay: "rgba(166, 184, 255, 0.55)",
+          outline: "rgba(206, 214, 255, 0.9)",
+          label: "#eef1ff",
+        };
+    }
+  }
+
+  private createRoomGradient(
+    context: CanvasRenderingContext2D,
+    bounds: { x: number; y: number; width: number; height: number },
+    palette: { gradientStart: string; gradientEnd: string },
+  ): CanvasGradient {
+    const gradient = context.createLinearGradient(
+      bounds.x,
+      bounds.y,
+      bounds.x,
+      bounds.y + bounds.height,
+    );
+    gradient.addColorStop(0, palette.gradientStart);
+    gradient.addColorStop(1, palette.gradientEnd);
+    return gradient;
+  }
+
+  private drawRoomLabel(
+    context: CanvasRenderingContext2D,
+    bounds: { x: number; y: number; width: number; height: number },
+    label: string,
+    color: string,
+  ): void {
+    context.save();
+    const fontSize = Math.max(
+      12,
+      Math.min(20, Math.floor(Math.min(bounds.width, bounds.height) / 4)),
+    );
+    context.font = `600 ${fontSize}px "Rajdhani", "Arial", sans-serif`;
+    context.fillStyle = color;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.shadowColor = "rgba(0, 0, 0, 0.45)";
+    context.shadowBlur = 6;
+    context.fillText(label, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    context.restore();
+  }
+
+  private getRoomDisplayName(
+    domainRoom: { name?: string } | undefined,
+    type: "bridge" | "quarters" | "cargo" | "engine" | "corridor",
+  ): string {
+    const name = domainRoom?.name;
+    if (typeof name === "string" && name.trim().length > 0) {
+      return name;
+    }
+    return this.formatRoomType(type);
+  }
+
+  private formatRoomType(type: "bridge" | "quarters" | "cargo" | "engine" | "corridor"): string {
+    switch (type) {
+      case "bridge":
+        return "Bridge";
+      case "quarters":
+        return "Crew Quarters";
+      case "cargo":
+        return "Cargo";
+      case "engine":
+        return "Engine";
+      case "corridor":
+      default:
+        return "Corridor";
     }
   }
 

@@ -1,6 +1,7 @@
 import type { Action } from "../../application/input/ActionTypes";
 import type { Kinematics2D, ViewSize } from "../../shared/types/geometry";
 import type { ShipInterior } from "../game/ship-interior/types";
+import { renderStationGlyph } from "./stationGlyph";
 import type { Camera } from "./camera";
 import type { RenderSession } from "./RenderSession";
 import { CameraTransform } from "./CameraTransform";
@@ -75,47 +76,22 @@ export class ShipModeRenderer {
   private renderShipFloors(ctx: CanvasRenderingContext2D, shipInterior: ShipInterior): void {
     ctx.save();
 
-    // Render room floors with different colors based on room type
     for (const room of shipInterior.rooms) {
-      let floorColor: string;
-      switch (room.type) {
-        case "bridge":
-          floorColor = "#2a3a4a";
-          break;
-        case "quarters":
-          floorColor = "#3a2a2a";
-          break;
-        case "cargo":
-          floorColor = "#2a3a2a";
-          break;
-        case "engine":
-          floorColor = "#4a2a2a";
-          break;
-        default:
-          floorColor = "#2a2a3a";
-      }
+      const path = this.buildRoomPath(room);
+      const fill = this.getRoomFillColor(room.type);
 
-      ctx.fillStyle = floorColor;
-      ctx.fillRect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
-
-      // Add subtle grid pattern
-      ctx.strokeStyle = "#555";
-      ctx.lineWidth = 0.5;
-      ctx.globalAlpha = 0.3;
-
-      const gridSize = 20;
-      for (let x = room.bounds.x; x < room.bounds.x + room.bounds.width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, room.bounds.y);
-        ctx.lineTo(x, room.bounds.y + room.bounds.height);
-        ctx.stroke();
+      ctx.save();
+      if (path) {
+        ctx.fillStyle = fill;
+        ctx.fill(path);
+      } else {
+        ctx.fillStyle = fill;
+        ctx.fillRect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
       }
-      for (let y = room.bounds.y; y < room.bounds.y + room.bounds.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(room.bounds.x, y);
-        ctx.lineTo(room.bounds.x + room.bounds.width, y);
-        ctx.stroke();
-      }
+      ctx.restore();
+
+      this.renderFloorPattern(ctx, room, path);
+      this.renderRoomLabel(ctx, room);
     }
 
     ctx.restore();
@@ -159,13 +135,19 @@ export class ShipModeRenderer {
       ctx.strokeStyle = "#fff";
       ctx.lineWidth = 1;
 
-      if (door.orientation === "horizontal") {
-        ctx.fillRect(door.x - door.width / 2, door.y - door.height / 2, door.width, door.height);
-        ctx.strokeRect(door.x - door.width / 2, door.y - door.height / 2, door.width, door.height);
-      } else {
-        ctx.fillRect(door.x - door.width / 2, door.y - door.height / 2, door.width, door.height);
-        ctx.strokeRect(door.x - door.width / 2, door.y - door.height / 2, door.width, door.height);
-      }
+      const rotation =
+        typeof door.rotation === "number"
+          ? door.rotation
+          : door.orientation === "vertical"
+            ? Math.PI / 2
+            : 0;
+
+      ctx.save();
+      ctx.translate(door.x, door.y);
+      ctx.rotate(rotation);
+      ctx.fillRect(-door.width / 2, -door.height / 2, door.width, door.height);
+      ctx.strokeRect(-door.width / 2, -door.height / 2, door.width, door.height);
+      ctx.restore();
 
       // Add door indicator
       ctx.fillStyle = "#fff";
@@ -181,45 +163,16 @@ export class ShipModeRenderer {
     ctx.save();
 
     for (const station of shipInterior.stations) {
-      let stationColor: string;
-      switch (station.type) {
-        case "pilot_console":
-          stationColor = "#4af";
-          break;
-        case "navigation":
-          stationColor = "#4fa";
-          break;
-        case "cargo_terminal":
-          stationColor = "#fa4";
-          break;
-        case "engine_controls":
-          stationColor = "#f44";
-          break;
-        default:
-          stationColor = "#aaa";
-      }
-
-      // Draw station base
-      ctx.fillStyle = stationColor;
-      ctx.globalAlpha = 0.8;
-      ctx.beginPath();
-      ctx.arc(station.x, station.y, 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Draw interaction radius (faint)
-      ctx.strokeStyle = stationColor;
-      ctx.globalAlpha = 0.2;
-      ctx.lineWidth = 1;
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([6, 6]);
       ctx.beginPath();
       ctx.arc(station.x, station.y, station.radius, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
 
-      // Draw station label
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = "#fff";
-      ctx.font = "8px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(station.name, station.x, station.y - 15);
+      renderStationGlyph(ctx, station, { includeLabel: false });
     }
 
     ctx.restore();
@@ -231,23 +184,256 @@ export class ShipModeRenderer {
     ctx.globalAlpha = 0.1;
 
     for (const room of shipInterior.rooms) {
-      const grad = ctx.createRadialGradient(
-        room.bounds.x + room.bounds.width / 2,
-        room.bounds.y + room.bounds.height / 2,
-        0,
-        room.bounds.x + room.bounds.width / 2,
-        room.bounds.y + room.bounds.height / 2,
-        Math.max(room.bounds.width, room.bounds.height) / 2,
-      );
-
+      const { x, y } = this.getRoomLabelPosition(room);
+      const radius = Math.max(room.bounds.width, room.bounds.height) / 2;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
       grad.addColorStop(0, room.lighting.color);
       grad.addColorStop(1, "transparent");
 
       ctx.fillStyle = grad;
-      ctx.fillRect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
+      const path = this.buildRoomPath(room);
+      if (path) {
+        ctx.fill(path);
+      } else {
+        ctx.fillRect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
+      }
     }
 
     ctx.restore();
+  }
+
+  private buildRoomPath(room: ShipInterior["rooms"][number]): Path2D | null {
+    if (Array.isArray(room.boundary) && room.boundary.length >= 3) {
+      const path = new Path2D();
+      const [first, ...rest] = room.boundary;
+      path.moveTo(first.x, first.y);
+      for (const point of rest) {
+        path.lineTo(point.x, point.y);
+      }
+      path.closePath();
+      return path;
+    }
+
+    const path = new Path2D();
+    path.rect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
+    return path;
+  }
+
+  private getRoomFillColor(type: ShipInterior["rooms"][number]["type"]): string {
+    switch (type) {
+      case "bridge":
+        return "#233b55";
+      case "quarters":
+        return "#3d2a2f";
+      case "cargo":
+        return "#2c3f33";
+      case "engine":
+        return "#4a2f23";
+      default:
+        return "#2b2f4a";
+    }
+  }
+
+  private renderFloorPattern(
+    ctx: CanvasRenderingContext2D,
+    room: ShipInterior["rooms"][number],
+    path: Path2D | null,
+  ): void {
+    if (!room.floorPattern) return;
+
+    ctx.save();
+    if (path) {
+      ctx.clip(path);
+    } else {
+      ctx.beginPath();
+      ctx.rect(room.bounds.x, room.bounds.y, room.bounds.width, room.bounds.height);
+      ctx.clip();
+    }
+
+    switch (room.floorPattern) {
+      case "grating":
+        this.drawGratingPattern(ctx, room);
+        break;
+      case "tile":
+        this.drawTilePattern(ctx, room);
+        break;
+      case "carpet":
+        this.drawCarpetPattern(ctx, room);
+        break;
+      case "metal":
+      default:
+        this.drawMetalPattern(ctx, room);
+        break;
+    }
+
+    ctx.restore();
+  }
+
+  private drawGratingPattern(
+    ctx: CanvasRenderingContext2D,
+    room: ShipInterior["rooms"][number],
+  ): void {
+    const step = 18;
+    ctx.strokeStyle = "rgba(200, 200, 200, 0.3)";
+    ctx.lineWidth = 2;
+    for (
+      let offset = -room.bounds.height;
+      offset < room.bounds.width + room.bounds.height;
+      offset += step
+    ) {
+      ctx.beginPath();
+      ctx.moveTo(room.bounds.x + offset, room.bounds.y);
+      ctx.lineTo(room.bounds.x + offset + room.bounds.height, room.bounds.y + room.bounds.height);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(40, 40, 40, 0.25)";
+    ctx.lineWidth = 1.2;
+    for (
+      let offset = -room.bounds.height;
+      offset < room.bounds.width + room.bounds.height;
+      offset += step
+    ) {
+      ctx.beginPath();
+      ctx.moveTo(room.bounds.x + offset + room.bounds.height, room.bounds.y);
+      ctx.lineTo(room.bounds.x + offset, room.bounds.y + room.bounds.height);
+      ctx.stroke();
+    }
+  }
+
+  private drawTilePattern(
+    ctx: CanvasRenderingContext2D,
+    room: ShipInterior["rooms"][number],
+  ): void {
+    const size = 24;
+    ctx.strokeStyle = "rgba(220, 220, 220, 0.25)";
+    ctx.lineWidth = 2;
+    for (let x = room.bounds.x; x <= room.bounds.x + room.bounds.width; x += size) {
+      ctx.beginPath();
+      ctx.moveTo(x, room.bounds.y);
+      ctx.lineTo(x, room.bounds.y + room.bounds.height);
+      ctx.stroke();
+    }
+    for (let y = room.bounds.y; y <= room.bounds.y + room.bounds.height; y += size) {
+      ctx.beginPath();
+      ctx.moveTo(room.bounds.x, y);
+      ctx.lineTo(room.bounds.x + room.bounds.width, y);
+      ctx.stroke();
+    }
+  }
+
+  private drawCarpetPattern(
+    ctx: CanvasRenderingContext2D,
+    room: ShipInterior["rooms"][number],
+  ): void {
+    const square = 20;
+    for (let y = room.bounds.y; y < room.bounds.y + room.bounds.height; y += square) {
+      for (let x = room.bounds.x; x < room.bounds.x + room.bounds.width; x += square) {
+        const even = ((Math.floor(x / square) + Math.floor(y / square)) & 1) === 0;
+        ctx.fillStyle = even ? "rgba(160, 60, 60, 0.35)" : "rgba(110, 35, 35, 0.35)";
+        ctx.fillRect(x, y, square, square);
+      }
+    }
+  }
+
+  private drawMetalPattern(
+    ctx: CanvasRenderingContext2D,
+    room: ShipInterior["rooms"][number],
+  ): void {
+    for (let y = room.bounds.y; y < room.bounds.y + room.bounds.height; y += 28) {
+      for (let x = room.bounds.x; x < room.bounds.x + room.bounds.width; x += 28) {
+        ctx.fillStyle = "rgba(220, 220, 220, 0.3)";
+        ctx.beginPath();
+        ctx.arc(x + 8, y + 8, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.lineWidth = 1;
+    for (
+      let diag = -room.bounds.height;
+      diag < room.bounds.width + room.bounds.height;
+      diag += 36
+    ) {
+      ctx.beginPath();
+      ctx.moveTo(room.bounds.x + diag, room.bounds.y);
+      ctx.lineTo(room.bounds.x + diag + room.bounds.height, room.bounds.y + room.bounds.height);
+      ctx.stroke();
+    }
+  }
+
+  private renderRoomLabel(
+    ctx: CanvasRenderingContext2D,
+    room: ShipInterior["rooms"][number],
+  ): void {
+    const label = room.name.trim() === "" ? this.formatRoomName(room.type) : room.name;
+    if (label.length === 0) return;
+
+    const { x, y } = this.getRoomLabelPosition(room);
+
+    ctx.save();
+    ctx.font = '600 14px "Rajdhani", "Arial", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const metrics = ctx.measureText(label);
+    const boxWidth = metrics.width + 16;
+    const boxHeight = 22;
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    ctx.fillRect(x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight);
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight);
+
+    ctx.fillStyle = "#f4f4f4";
+    ctx.fillText(label, x, y);
+
+    ctx.restore();
+  }
+
+  private getRoomLabelPosition(room: ShipInterior["rooms"][number]): { x: number; y: number } {
+    if (Array.isArray(room.boundary) && room.boundary.length >= 3) {
+      let area = 0;
+      let centroidX = 0;
+      let centroidY = 0;
+      for (let i = 0; i < room.boundary.length; i++) {
+        const current = room.boundary[i];
+        const next = room.boundary[(i + 1) % room.boundary.length];
+        const cross = current.x * next.y - next.x * current.y;
+        area += cross;
+        centroidX += (current.x + next.x) * cross;
+        centroidY += (current.y + next.y) * cross;
+      }
+      area *= 0.5;
+      if (Math.abs(area) > 0.0001) {
+        centroidX /= 6 * area;
+        centroidY /= 6 * area;
+        return { x: centroidX, y: centroidY };
+      }
+    }
+
+    return {
+      x: room.bounds.x + room.bounds.width / 2,
+      y: room.bounds.y + room.bounds.height / 2,
+    };
+  }
+
+  private formatRoomName(type: ShipInterior["rooms"][number]["type"]): string {
+    switch (type) {
+      case "bridge":
+        return "Bridge";
+      case "quarters":
+        return "Crew Quarters";
+      case "cargo":
+        return "Cargo Bay";
+      case "engine":
+        return "Engine Room";
+      case "corridor":
+      default:
+        return "Corridor";
+    }
   }
 
   private renderShipDroppedItems(ctx: CanvasRenderingContext2D, session: SessionLike): void {

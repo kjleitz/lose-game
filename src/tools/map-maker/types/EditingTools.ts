@@ -81,7 +81,7 @@ export const shipTools: EditingTool[] = [
         id: "width",
         name: "Width",
         type: "number",
-        defaultValue: 32,
+        defaultValue: 48,
         min: 16,
         max: 64,
         step: 8,
