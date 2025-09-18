@@ -99,7 +99,7 @@ Switch between ship interior and planet surface editing with appropriate tool se
 ### Project Persistence
 
 - localStorage auto-save with project naming
-- JSON export/import (.losemap files)
+- JSON export/import (.losemap.json files)
 - Metadata tracking (creation date, author, modifications)
 
 ### Performance Optimizations

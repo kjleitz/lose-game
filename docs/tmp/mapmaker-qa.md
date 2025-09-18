@@ -331,7 +331,7 @@ This document provides manual test cases for the map-maker tool implementation b
 
 ### 17. Export Functionality
 
-**Test Case**: Export maps as .losemap files
+**Test Case**: Export maps as .losemap.json files
 
 **Steps:**
 
@@ -343,7 +343,7 @@ This document provides manual test cases for the map-maker tool implementation b
 **Expected Results:**
 
 - [ ] Export triggers file download
-- [ ] File has .losemap extension
+- [ ] File has .losemap.json extension
 - [ ] File contains valid JSON with all project data
 - [ ] File includes metadata (name, author, timestamps)
 - [ ] File can be imported/viewed externally

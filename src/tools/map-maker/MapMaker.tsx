@@ -249,13 +249,13 @@ export function MapMaker({
 
   const handleExportProject = (): void => {
     if (project) {
-      const dataStr = JSON.stringify(project, null, 2);
+      const dataStr = JSON.stringify(project);
       const dataBlob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(dataBlob);
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${project.metadata.name}.losemap`;
+      link.download = `${project.metadata.name}.losemap.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
